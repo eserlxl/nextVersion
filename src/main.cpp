@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
   if (BASE_REF == "EMPTY") CLI = makeDefaultCliKv();
   else {
     std::string cliOutput;
-    std::vector<std::string> cliArgs = {"dev-bin/cli-options-analyzer.sh"};
+    std::vector<std::string> cliArgs = {std::string(DEV_BIN_DIR) + "/cli-options-analyzer.sh"};
     cliArgs.insert(cliArgs.end(), commonArgv.begin(), commonArgv.end());
     std::string command = buildCommand(cliArgs);
     runProcessCapture(command, cliOutput);
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
   if (BASE_REF == "EMPTY") SEC = makeDefaultSecurityKv();
   else {
     std::string secOutput;
-    std::vector<std::string> secArgs = {"dev-bin/security-keyword-analyzer.sh"};
+    std::vector<std::string> secArgs = {std::string(DEV_BIN_DIR) + "/security-keyword-analyzer.sh"};
     secArgs.insert(secArgs.end(), commonArgv.begin(), commonArgv.end());
     std::string command = buildCommand(secArgs);
     runProcessCapture(command, secOutput);
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
   if (BASE_REF == "EMPTY") KW = makeDefaultKeywordKv();
   else {
     std::string kwOutput;
-    std::vector<std::string> kwArgs = {"dev-bin/keyword-analyzer.sh"};
+    std::vector<std::string> kwArgs = {std::string(DEV_BIN_DIR) + "/keyword-analyzer.sh"};
     kwArgs.insert(kwArgs.end(), commonArgv.begin(), commonArgv.end());
     std::string command = buildCommand(kwArgs);
     runProcessCapture(command, kwOutput);
