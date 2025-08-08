@@ -59,12 +59,15 @@ grep_supports_pcre() {
 # $2: engine ("pcre" or "ere")
 count_occurrences() {
     local pattern="$1" engine="${2:-pcre}"
+    local count=0
     if [[ "$engine" == "pcre" ]]; then
-        LC_ALL=C grep -Pio "$pattern" 2>/dev/null | wc -l | tr -cd '0-9'
+        count="$(LC_ALL=C grep -Pio "$pattern" 2>/dev/null | wc -l || printf '0')"
     else
         # ERE fallback (pattern must be ERE-compatible)
-        LC_ALL=C grep -Eio "$pattern" 2>/dev/null | wc -l | tr -cd '0-9'
+        count="$(LC_ALL=C grep -Eio "$pattern" 2>/dev/null | wc -l || printf '0')"
     fi
+    # Ensure we return a valid number, defaulting to 0 if tr fails
+    printf '%s' "$count" | tr -cd '0-9' 2>/dev/null || printf '0'
 }
 
 # Build a git pathspec array from comma-separated globs (supports "!exclude")
