@@ -143,7 +143,12 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
 SecurityResults analyzeSecurity(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace, bool addedOnly) {
   SecurityResults s; std::string commits = getCommitMessages(repoRoot, baseRef, targetRef, false); std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, addedOnly);
   std::regex secRe(R"(\b(security|vuln|exploit|breach|attack|threat|malware|virus|trojan|backdoor|rootkit|phishing|ddos|overflow|injection|xss|csrf|sqli|rce|ssrf|xxe|privilege|escalation|bypass|mitigation|hardening|sandbox|auth|encryption|decryption|tls|ssl|certificate|secret|token|leak|expos|traversal)\b)", std::regex::icase); std::regex cveRe(R"(\bCVE-[0-9]{4}-[0-9]{4,7}\b)", std::regex::icase); std::regex memRe(R"(\b(buffer[- _]?overflow|stack[- _]?overflow|heap[- _]?overflow|use[- _]?after[- _]?free|double[- _]?free|null[- _]?pointer|dangling[- _]?pointer|out[- _]?of[- _]?bounds|oob|memory[- _]?leak|format[- _]?string|integer[- _]?overflow|signedness|race[- _]?condition|data[- _]?race|deadlock)\b)", std::regex::icase); std::regex crashRe(R"(\b(segfault|segmentation\s+fault|crash|abort|assert|panic|fatal\s+error|core\s+dump|stack\s+trace)\b)", std::regex::icase);
-  s.securityKeywordsCommits = std::distance(std::sregex_iterator(commits.begin(), commits.end(), secRe), std::sregex_iterator()); s.securityPatternsDiff = std::distance(std::sregex_iterator(diff.begin(), diff.end(), secRe), std::sregex_iterator()); s.cvePatterns = std::distance(std::sregex_iterator(diff.begin(), diff.end(), cveRe), std::sregex_iterator()); s.memorySafetyIssues = std::distance(std::sregex_iterator(diff.begin(), diff.end(), memRe), std::sregex_iterator()); s.crashFixes = std::distance(std::sregex_iterator(diff.begin(), diff.end(), crashRe), std::sregex_iterator()); return s;
+  s.securityKeywordsCommits = static_cast<int>(std::distance(std::sregex_iterator(commits.begin(), commits.end(), secRe), std::sregex_iterator()));
+  s.securityPatternsDiff = static_cast<int>(std::distance(std::sregex_iterator(diff.begin(), diff.end(), secRe), std::sregex_iterator()));
+  s.cvePatterns = static_cast<int>(std::distance(std::sregex_iterator(diff.begin(), diff.end(), cveRe), std::sregex_iterator()));
+  s.memorySafetyIssues = static_cast<int>(std::distance(std::sregex_iterator(diff.begin(), diff.end(), memRe), std::sregex_iterator()));
+  s.crashFixes = static_cast<int>(std::distance(std::sregex_iterator(diff.begin(), diff.end(), crashRe), std::sregex_iterator()));
+  return s;
 }
 
 int baseDeltaFor(const std::string &bumpType, int loc, const ConfigValues &cfg) {

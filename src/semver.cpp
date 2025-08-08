@@ -46,13 +46,15 @@ static int comparePrerelease(const std::string &a, const std::string &b) {
     const bool an = isNumeric(ai), bn = isNumeric(bi);
     if (an && bn) {
       const long long av = std::stoll(ai), bv = std::stoll(bi);
-      if (av < bv) return -1; if (av > bv) return 1;
+      if (av < bv) return -1;
+      if (av > bv) return 1;
     } else if (an && !bn) {
       return -1; // numeric < non-numeric
     } else if (!an && bn) {
       return 1;
     } else {
-      if (ai < bi) return -1; if (ai > bi) return 1;
+      if (ai < bi) return -1;
+      if (ai > bi) return 1;
     }
   }
   return 0;
