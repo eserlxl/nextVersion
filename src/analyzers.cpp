@@ -69,39 +69,150 @@ ConfigValues loadConfigValues(const std::string &projectRoot) {
   const std::string path = projectRoot.empty() ? std::string("dev-config/versioning.yml") : (projectRoot + "/dev-config/versioning.yml");
   const std::string text = readFileIfExists(path);
   if (text.empty()) return cfg;
+  
   auto findNum = [&](const std::string &section, const std::string &key) -> std::optional<long long> {
     std::istringstream iss(text); std::string line; bool in=false; int base=-1;
+    
+    // For nested sections, we need to handle them specially
+    if (section.find('.') != std::string::npos) {
+      // Handle nested sections like "bonuses.breaking_changes"
+      std::vector<std::string> parts;
+      std::istringstream sectionStream(section);
+      std::string part;
+      while (std::getline(sectionStream, part, '.')) {
+        parts.push_back(part);
+      }
+      
+      if (parts.size() >= 2) {
+        // Look for the nested structure
+        std::istringstream iss2(text);
+        std::string line2;
+        bool inParent = false;
+        bool inChild = false;
+        int parentIndent = -1;
+        int childIndent = -1;
+        
+        while (std::getline(iss2, line2)) {
+          int indent = 0;
+          while (indent < static_cast<int>(line2.size()) && (line2[indent] == ' ' || line2[indent] == '\t')) ++indent;
+          
+          if (!inParent) {
+            // Look for parent section
+            std::smatch m;
+            std::regex r(std::string("^[ \\t]*") + parts[0] + ":\\s*$");
+            if (std::regex_search(line2, m, r)) {
+              inParent = true;
+              parentIndent = indent;
+            }
+          } else if (!inChild) {
+            // Look for child section
+            if (indent > parentIndent) {
+              std::smatch m;
+              std::regex r(std::string("^[ \\t]*") + parts[1] + ":\\s*$");
+              if (std::regex_search(line2, m, r)) {
+                inChild = true;
+                childIndent = indent;
+              }
+            } else if (indent <= parentIndent) {
+              // We've left the parent section
+              break;
+            }
+          } else {
+            // Look for the key in the child section
+            if (indent > childIndent) {
+              std::smatch m;
+              std::regex r(std::string("^[ \\t]*") + key + ":\\s*([0-9]+(\\.[0-9]+)?)\\s*$");
+              if (std::regex_search(line2, m, r)) {
+                std::string num = m[1].str();
+                if (num.find('.') != std::string::npos) return static_cast<long long>(std::stod(num));
+                else return std::stoll(num);
+              }
+            } else if (indent <= childIndent) {
+              // We've left the child section
+              break;
+            }
+          }
+        }
+      }
+      return std::nullopt;
+    }
+    
+    // Handle simple sections
     while (std::getline(iss, line)) {
-      if (!in) { std::smatch m; std::regex r(std::string("^([ \\t]*)") + section + ":\\s*$"); if (std::regex_search(line, m, r)) { in=true; base = static_cast<int>(m[1].str().size()); } continue; }
-      int indent=0; while (indent < static_cast<int>(line.size()) && (line[indent]==' ' || line[indent]=='\t')) ++indent; if (indent <= base && line.find_first_not_of(" \t\r\n") != std::string::npos) break;
-      std::smatch m2; std::regex r2(std::string("^[ \\t]{") + std::to_string(base+1) + ",}" + key + ":\\s*([0-9]+(\\.[0-9]+)?)\\s*$");
-      if (std::regex_search(line, m2, r2)) { std::string num = m2[1].str(); if (num.find('.') != std::string::npos) return static_cast<long long>(std::stod(num)); else return std::stoll(num); }
+      if (!in) { 
+        std::smatch m; 
+        std::regex r(std::string("^([ \\t]*)") + section + ":\\s*$"); 
+        if (std::regex_search(line, m, r)) { 
+          in = true; 
+          base = static_cast<int>(m[1].str().size()); 
+        } 
+        continue; 
+      }
+      int indent = 0; 
+      while (indent < static_cast<int>(line.size()) && (line[indent] == ' ' || line[indent] == '\t')) ++indent; 
+      if (indent <= base && line.find_first_not_of(" \t\r\n") != std::string::npos) break;
+      std::smatch m2; 
+      std::regex r2(std::string("^[ \\t]{") + std::to_string(base+1) + ",}" + key + ":\\s*([0-9]+(\\.[0-9]+)?)\\s*$");
+      if (std::regex_search(line, m2, r2)) { 
+        std::string num = m2[1].str(); 
+        if (num.find('.') != std::string::npos) return static_cast<long long>(std::stod(num)); 
+        else return std::stoll(num); 
+      }
     }
     return std::nullopt;
   };
+  
+  // Parse thresholds
   if (auto v = findNum("thresholds","major_bonus")) cfg.majorBonusThreshold = static_cast<int>(*v);
   if (auto v = findNum("thresholds","minor_bonus")) cfg.minorBonusThreshold = static_cast<int>(*v);
   if (auto v = findNum("thresholds","patch_bonus")) cfg.patchBonusThreshold = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","breaking_cli")) cfg.bonusBreakingCli = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","removed_option")) cfg.bonusRemovedOption = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","cli_changes")) cfg.bonusCliChanges = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","manual_cli")) cfg.bonusManualCli = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","new_source")) cfg.bonusNewSource = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","new_test")) cfg.bonusNewTest = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","new_doc")) cfg.bonusNewDoc = static_cast<int>(*v);
-  if (auto v = findNum("bonuses","security")) cfg.bonusSecurity = static_cast<int>(*v);
+  
+  // Parse bonuses - handle both old flat structure and new nested structure
+  // Try new nested structure first, fall back to old flat structure
+  if (auto v = findNum("bonuses.breaking_changes","cli_breaking")) cfg.bonusBreakingCli = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","breaking_cli")) cfg.bonusBreakingCli = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.breaking_changes","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.breaking_changes","removed_features")) cfg.bonusRemovedOption = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","removed_option")) cfg.bonusRemovedOption = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.features","new_cli_command")) cfg.bonusCliChanges = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","cli_changes")) cfg.bonusCliChanges = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.features","new_config_option")) cfg.bonusManualCli = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","manual_cli")) cfg.bonusManualCli = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.features","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses.code_quality","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","new_source")) cfg.bonusNewSource = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.code_quality","new_test_suite")) cfg.bonusNewTest = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","new_test")) cfg.bonusNewTest = static_cast<int>(*v);
+  
+  if (auto v = findNum("bonuses.user_experience","user_docs")) cfg.bonusNewDoc = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","new_doc")) cfg.bonusNewDoc = static_cast<int>(*v);
+  
+  // Security bonus - try multiple possible locations in the new structure
+  if (auto v = findNum("bonuses.security_stability","security_vuln")) cfg.bonusSecurity = static_cast<int>(*v);
+  else if (auto v = findNum("bonuses","security")) cfg.bonusSecurity = static_cast<int>(*v);
+  
+  // Parse bonus multiplier cap
   {
     std::smatch m; std::regex r("^bonus_multiplier_cap:\\s*([0-9]+(\\.[0-9]+)?)\\s*$", std::regex::icase); std::istringstream iss(text); std::string ln; while (std::getline(iss, ln)) { if (std::regex_search(ln, m, r)) { cfg.bonusMultiplierCap = std::stod(m[1].str()); break; } }
   }
-  // loc_divisors: patch/minor/major
+  
+  // Parse loc_divisors
   if (auto v = findNum("loc_divisors","patch")) cfg.locDivisorPatch = static_cast<int>(*v);
   if (auto v = findNum("loc_divisors","minor")) cfg.locDivisorMinor = static_cast<int>(*v);
   if (auto v = findNum("loc_divisors","major")) cfg.locDivisorMajor = static_cast<int>(*v);
-  // base_deltas: patch/minor/major
+  
+  // Parse base_deltas
   if (auto v = findNum("base_deltas","patch")) cfg.baseDeltaPatch = static_cast<int>(*v);
   if (auto v = findNum("base_deltas","minor")) cfg.baseDeltaMinor = static_cast<int>(*v);
   if (auto v = findNum("base_deltas","major")) cfg.baseDeltaMajor = static_cast<int>(*v);
+  
   return cfg;
 }
 
@@ -124,9 +235,11 @@ KeywordResults analyzeKeywords(const std::string &repoRoot, const std::string &b
   std::regex cliBreakCode(R"(CLI[\- ]?BREAKING)", std::regex::icase);
   std::regex apiBreakCode(R"(API[\- ]?BREAKING)", std::regex::icase);
   std::regex generalBreakCommit(R"(BREAKING\s+CHANGE|BREAKING[^A-Za-z0-9]+.*(CHANGE|MAJOR))", std::regex::icase);
-  std::regex securityCode(R"(SECURITY)", std::regex::icase);
+  // Match bash version's comment pattern: (^|[[:space:]])[+-]?[[:space:]]*(//|/\\*|#|--)[[:space:]]*SECURITY
+  std::regex securityCode(R"((^|\s)[+-]?\s*(//|/\*|#|--)\s*SECURITY)", std::regex::icase);
   std::regex removedOptCode(R"(REMOVED\s+OPTION(S)?)", std::regex::icase);
-  std::regex secOrCve(R"(SECURITY|CVE-\d{4}-\d{4,7})", std::regex::icase);
+  // Match bash version's commit pattern: (SECURITY|VULNERABILIT(Y|IES)|CVE[- ]?[0-9]{4}-[0-9]+)
+  std::regex secOrCve(R"(SECURITY|VULNERABILIT(Y|IES)|CVE[- ]?[0-9]{4}-[0-9]+)", std::regex::icase);
   int cli_breaking = countRegex(diff, cliBreakCode) + countRegex(logs, cliBreakCode);
   int api_breaking = countRegex(diff, apiBreakCode) + countRegex(logs, apiBreakCode);
   int general_break = countRegex(logs, generalBreakCommit);

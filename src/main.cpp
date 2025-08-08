@@ -64,50 +64,40 @@ int main(int argc, char **argv) {
     fileKv = parseKv(ss.str());
   }
 
-  // 4) Analyze CLI options (native)
+  // 4) Analyze CLI options (use bash script)
   Kv CLI;
   if (BASE_REF == "EMPTY") CLI = makeDefaultCliKv();
   else {
-    CliResults cr = analyzeCliOptions(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace);
-    std::ostringstream ss;
-    ss << "CLI_CHANGES=" << (cr.cliChanges?"true":"false") << "\n";
-    ss << "BREAKING_CLI_CHANGES=" << (cr.breakingCliChanges?"true":"false") << "\n";
-    ss << "API_BREAKING=" << (cr.apiBreaking?"true":"false") << "\n";
-    ss << "MANUAL_CLI_CHANGES=" << (cr.manualCliChanges?"true":"false") << "\n";
-    ss << "REMOVED_SHORT_COUNT=" << cr.removedShortCount << "\n";
-    ss << "REMOVED_LONG_COUNT=" << cr.removedLongCount << "\n";
-    ss << "MANUAL_ADDED_LONG_COUNT=" << cr.manualAddedLongCount << "\n";
-    ss << "MANUAL_REMOVED_LONG_COUNT=" << cr.manualRemovedLongCount << "\n";
-    CLI = parseKv(ss.str());
+    std::string cliOutput;
+    std::vector<std::string> cliArgs = {"dev-bin/cli-options-analyzer.sh"};
+    cliArgs.insert(cliArgs.end(), commonArgv.begin(), commonArgv.end());
+    std::string command = buildCommand(cliArgs);
+    runProcessCapture(command, cliOutput);
+    CLI = parseKv(cliOutput);
   }
 
-  // 5) Security keywords (native)
+  // 5) Security keywords (use bash script)
   Kv SEC;
   if (BASE_REF == "EMPTY") SEC = makeDefaultSecurityKv();
   else {
-    SecurityResults s = analyzeSecurity(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace, false);
-    std::ostringstream ss;
-    ss << "SECURITY_KEYWORDS=" << s.securityKeywordsCommits << "\n";
-    ss << "SECURITY_PATTERNS=" << s.securityPatternsDiff << "\n";
-    ss << "CVE_PATTERNS=" << s.cvePatterns << "\n";
-    ss << "MEMORY_SAFETY_ISSUES=" << s.memorySafetyIssues << "\n";
-    ss << "CRASH_FIXES=" << s.crashFixes << "\n";
-    ss << "WEIGHT_COMMITS=1\nWEIGHT_DIFF_SEC=1\nWEIGHT_CVE=3\nWEIGHT_MEMORY=2\nWEIGHT_CRASH=1\n";
-    SEC = parseKv(ss.str());
+    std::string secOutput;
+    std::vector<std::string> secArgs = {"dev-bin/security-keyword-analyzer.sh"};
+    secArgs.insert(secArgs.end(), commonArgv.begin(), commonArgv.end());
+    std::string command = buildCommand(secArgs);
+    runProcessCapture(command, secOutput);
+    SEC = parseKv(secOutput);
   }
 
-  // 6) General keyword analysis (native)
+  // 6) General keyword analysis (use bash script)
   Kv KW;
   if (BASE_REF == "EMPTY") KW = makeDefaultKeywordKv();
   else {
-    KeywordResults k = analyzeKeywords(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace);
-    std::ostringstream ss;
-    ss << "HAS_CLI_BREAKING=" << (k.hasCliBreaking ? "true" : "false") << "\n";
-    ss << "HAS_API_BREAKING=" << (k.hasApiBreaking ? "true" : "false") << "\n";
-    ss << "HAS_GENERAL_BREAKING=" << (k.hasGeneralBreaking ? "true" : "false") << "\n";
-    ss << "TOTAL_SECURITY=" << k.totalSecurity << "\n";
-    ss << "REMOVED_OPTIONS_KEYWORDS=" << k.removedOptionsKeywords << "\n";
-    KW = parseKv(ss.str());
+    std::string kwOutput;
+    std::vector<std::string> kwArgs = {"dev-bin/keyword-analyzer.sh"};
+    kwArgs.insert(kwArgs.end(), commonArgv.begin(), commonArgv.end());
+    std::string command = buildCommand(kwArgs);
+    runProcessCapture(command, kwOutput);
+    KW = parseKv(kwOutput);
   }
 
   // 7) Bonus calculation
