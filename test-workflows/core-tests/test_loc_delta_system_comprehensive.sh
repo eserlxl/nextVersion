@@ -68,7 +68,7 @@ extract_json_value() {
 # shellcheck disable=SC2317
 create_simple_test_env() {
     local test_name="$1"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir"

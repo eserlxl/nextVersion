@@ -1,6 +1,6 @@
 # Versioning Algorithm Implementation
 
-This document explains how the vglog-filter versioning system implements its mathematical algorithm for version calculation.
+This document explains how the next-version versioning system implements its mathematical algorithm for version calculation.
 
 ## Core Algorithm Overview
 

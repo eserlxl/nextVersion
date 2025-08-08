@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Keyword analyzer for vglog-filter
+# Keyword analyzer for next-version
 # Analyzes keywords in git diffs and commit messages
 
 set -Eeuo pipefail

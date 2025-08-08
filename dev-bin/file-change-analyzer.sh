@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# File change analyzer for vglog-filter
+# File change analyzer for next-version
 # Analyzes file changes in git diffs
 
 set -Eeuo pipefail

@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Version calculator for vglog-filter
+# Version calculator for next-version
 # Calculates version bumps based on semantic analysis
 
 set -Eeuo pipefail

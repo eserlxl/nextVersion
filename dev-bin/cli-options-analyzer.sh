@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# CLI options analyzer for vglog-filter
+# CLI options analyzer for next-version
 # Analyzes CLI/API breaking changes in git diffs
 
 set -Eeuo pipefail

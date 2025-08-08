@@ -172,7 +172,7 @@ test_help_text() {
     output=$("$SCRIPT_PATH" --help 2>/dev/null)
     
     # Check for basic help text structure
-    if echo "$output" | grep -q "Semantic Version Analyzer v2 for vglog-filter"; then
+    if echo "$output" | grep -q "Semantic Version Analyzer v2 for next-version"; then
         log_success "Help text includes version 2 reference"
     else
         log_error "Help text missing version 2 reference"

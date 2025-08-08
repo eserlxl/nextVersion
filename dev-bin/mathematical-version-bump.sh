@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Mathematical version bump for vglog-filter
+# Mathematical version bump for next-version
 # Performs mathematical version bumping with git operations
 
 set -Eeuo pipefail
@@ -148,7 +148,7 @@ parse_args() {
 # ------------------------------ help ------------------------------------------
 show_help() {
   cat << 'EOF'
-Mathematical Version Bumper for vglog-filter
+Mathematical Version Bumper for next-version
 
 Usage: ./dev-bin/mathematical-version-bump.sh [options]
 

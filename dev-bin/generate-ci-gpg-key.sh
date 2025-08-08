@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# CI GPG key generator for vglog-filter
+# CI GPG key generator for next-version
 # Generates GPG keys for CI/CD signing
 
 set -Eeuo pipefail
@@ -29,8 +29,8 @@ ok()   { colorize "${c_grn}";  printf '[✓] %s\n' "$*"; colorize "${c_rst}"; }
 warn() { colorize "${c_ylw}";  printf '[!] %s\n' "$*"; colorize "${c_rst}"; }
 
 # ---------- defaults ----------
-NAME="vglog-filter CI Bot"
-EMAIL="ci@vglog-filter.local"
+NAME="next-version CI Bot"
+EMAIL="ci@next-version.local"
 COMMENT="Automated CI signing key"
 EXPIRE="2y"
 ALGO="ed25519"     # ed25519 | rsa4096

@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Version validator for vglog-filter
+# Version validator for next-version
 # Handles version format validation and related checks
 
 set -Eeuo pipefail

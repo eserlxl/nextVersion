@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Git operations for vglog-filter
+# Git operations for next-version
 # Handles git commits, tags, and push operations
 
 set -Eeuo pipefail

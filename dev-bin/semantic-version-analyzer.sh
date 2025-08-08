@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Semantic version analyzer for vglog-filter
+# Semantic version analyzer for next-version
 # Analyzes semantic changes for version bumping
 
 set -Eeuo pipefail
@@ -23,7 +23,7 @@ init_colors
 # ----------------------------- help / ui --------------------------------------
 show_help() {
   cat << 'EOF'
-Semantic Version Analyzer v2 for vglog-filter
+Semantic Version Analyzer v2 for next-version
 
 Usage: semantic-version-analyzer [options]
 

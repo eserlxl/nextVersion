@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Reference resolver for vglog-filter
+# Reference resolver for next-version
 # Resolves git references and calculates commit counts
 
 set -Eeuo pipefail

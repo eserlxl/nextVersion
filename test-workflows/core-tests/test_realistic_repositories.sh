@@ -60,7 +60,7 @@ log_warning() {
 # Function to create an empty repository (no commits)
 create_empty_repo() {
     local test_name="${1:-empty}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1
@@ -76,7 +76,7 @@ create_empty_repo() {
 # Function to create a single-commit repository
 create_single_commit_repo() {
     local test_name="${1:-single}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1
@@ -102,7 +102,7 @@ create_single_commit_repo() {
 # Function to create a repository with breaking changes
 create_breaking_changes_repo() {
     local test_name="${1:-breaking}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1
@@ -158,7 +158,7 @@ EOF
 # Function to create a repository with security fixes
 create_security_fixes_repo() {
     local test_name="${1:-security}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1
@@ -219,7 +219,7 @@ EOF
 # Function to create a repository with CLI changes
 create_cli_changes_repo() {
     local test_name="${1:-cli}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1
@@ -323,7 +323,7 @@ EOF
 # Function to create a repository with substantial history
 create_substantial_history_repo() {
     local test_name="${1:-substantial}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     mkdir -p "$temp_dir"
     cd "$temp_dir" || exit 1

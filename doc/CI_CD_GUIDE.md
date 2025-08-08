@@ -1,6 +1,6 @@
 # CI/CD and Testing Guide
 
-This guide provides comprehensive information about the Continuous Integration and Continuous Deployment (CI/CD) infrastructure for `vglog-filter`, including GitHub Actions workflows, testing procedures, and quality assurance processes. It aims to give developers a clear understanding of how code changes are validated and maintained.
+This guide provides comprehensive information about the Continuous Integration and Continuous Deployment (CI/CD) infrastructure for `next-version`, including GitHub Actions workflows, testing procedures, and quality assurance processes. It aims to give developers a clear understanding of how code changes are validated and maintained.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ This guide provides comprehensive information about the Continuous Integration a
 
 ## Overview
 
-The `vglog-filter` project leverages a robust CI/CD pipeline built on GitHub Actions to ensure high code quality, reliability, and cross-platform compatibility. This automated pipeline is triggered by code pushes and pull requests, performing a series of checks including:
+The `next-version` project leverages a robust CI/CD pipeline built on GitHub Actions to ensure high code quality, reliability, and cross-platform compatibility. This automated pipeline is triggered by code pushes and pull requests, performing a series of checks including:
 
 -   **Automated Builds**: Compiling the project across various configurations and operating systems.
 -   **Extensive Testing**: Running unit, integration, and workflow tests to validate functionality.
@@ -124,7 +124,7 @@ These workflows focus on static analysis, memory safety, and security.
 These workflows ensure the project performs well and is compatible across different environments.
 
 #### 8. Performance Benchmark (`performance-benchmark.yml`)
--   **Purpose**: Measures and tracks the performance of `vglog-filter` to verify optimizations and prevent performance regressions.
+-   **Purpose**: Measures and tracks the performance of `next-version` to verify optimizations and prevent performance regressions.
 -   **Triggers**: Pushes to `main`, pull requests, or a daily schedule.
 -   **Key Features**:
     -   Runs automated performance benchmarks against various log sizes and patterns.
@@ -134,7 +134,7 @@ These workflows ensure the project performs well and is compatible across differ
     -   Validates optimization flags and build configurations.
 
 #### 9. Cross-Platform Test (`cross-platform.yml`)
--   **Purpose**: Ensures `vglog-filter` builds and runs correctly on multiple Linux distributions.
+-   **Purpose**: Ensures `next-version` builds and runs correctly on multiple Linux distributions.
 -   **Key Features**:
     -   Tests compatibility with Ubuntu (latest LTS).
     -   Verifies functionality on Arch Linux.
@@ -180,7 +180,7 @@ These workflows automate routine maintenance tasks.
 
 ## Build Configurations
 
-The CI/CD pipeline rigorously tests `vglog-filter` across various build configurations to ensure robustness and optimal performance under different scenarios. These configurations are primarily controlled via CMake build types and custom flags.
+The CI/CD pipeline rigorously tests `next-version` across various build configurations to ensure robustness and optimal performance under different scenarios. These configurations are primarily controlled via CMake build types and custom flags.
 
 ### Basic Configurations
 
@@ -248,7 +248,7 @@ The project uses a custom build script (`build.sh`) that provides a unified inte
 
 ## Testing Procedures
 
-`vglog-filter` employs a multi-layered testing strategy, combining automated and manual testing to ensure reliability.
+`next-version` employs a multi-layered testing strategy, combining automated and manual testing to ensure reliability.
 
 ### Unit Testing
 
@@ -334,7 +334,7 @@ Workflow tests are located in the `test-workflows/` directory and test the compl
 
 ### Memory Safety Testing
 
-Memory safety is a critical concern for `vglog-filter`, and multiple testing approaches are employed:
+Memory safety is a critical concern for `next-version`, and multiple testing approaches are employed:
 
 **Memory Sanitizer (MSan):**
 -   Detects uninitialized memory usage
@@ -375,7 +375,7 @@ Automated tests are integrated into the CI/CD pipeline and run on every code cha
 
 1.  **Build Verification**: Confirms that all specified build configurations complete successfully without compilation errors.
 2.  **Binary Validation**: Verifies critical characteristics of the compiled binaries, such as the presence of debug symbols or specific optimization flags.
-3.  **Functionality Testing**: Executes a suite of tests to ensure the core features of `vglog-filter` work as expected with various inputs.
+3.  **Functionality Testing**: Executes a suite of tests to ensure the core features of `next-version` work as expected with various inputs.
 4.  **Test Suite Execution**: When a build configuration includes tests, the comprehensive test suite (unit, integration, workflow tests) is automatically run.
 5.  **Cross-Platform Testing**: Ensures compatibility and correct behavior across different Linux distributions.
 
@@ -390,11 +390,11 @@ While automated tests cover most scenarios, manual testing can be performed loca
 
 # Example: Verify debug builds by attaching a debugger
 ./build.sh debug
-gdb build/bin/vglog-filter # Then run your program within gdb
+gdb build/bin/next-version # Then run your program within gdb
 
 # Example: Test performance builds and verify optimizations
 ./build.sh performance
-# Use tools like `objdump -d build/bin/vglog-filter | grep -i "-O3"` to verify optimizations
+# Use tools like `objdump -d build/bin/next-version | grep -i "-O3"` to verify optimizations
 
 # Example: Run smoke tests
 ./test/smoke_test.sh
@@ -420,7 +420,7 @@ Beyond functional testing, several quality checks are integrated:
 
 ## Quality Assurance
 
-Quality Assurance (QA) for `vglog-filter` is an ongoing process, integrated throughout the development lifecycle.
+Quality Assurance (QA) for `next-version` is an ongoing process, integrated throughout the development lifecycle.
 
 ### Code Quality
 -   **Static Analysis**: Automated tools continuously analyze the codebase for potential issues, ensuring high code quality from the outset.
@@ -468,7 +468,7 @@ This section outlines the typical development workflow, emphasizing how CI/CD in
 
 ### Release Process
 
-`vglog-filter` follows an automated release process:
+`next-version` follows an automated release process:
 
 1.  **Version Bump**: The `version-bump.yml` workflow automatically updates the project's version based on conventional commit messages in the `main` branch.
 2.  **Tagging**: A new Git tag corresponding to the new version is automatically created.
@@ -486,7 +486,7 @@ This section outlines the typical development workflow, emphasizing how CI/CD in
 
 ## Local Development Setup
 
-Setting up a local development environment for `vglog-filter` involves several steps to ensure you can build, test, and contribute effectively.
+Setting up a local development environment for `next-version` involves several steps to ensure you can build, test, and contribute effectively.
 
 ### Prerequisites
 
@@ -518,8 +518,8 @@ sudo dnf install cmake git
 
 ```sh
 # Clone the repository
-git clone https://github.com/eserlxl/vglog-filter.git
-cd vglog-filter
+git clone https://github.com/eserlxl/next-version.git
+cd next-version
 
 # Configure git user (if not already set)
 git config user.name "Your Name"
@@ -612,14 +612,14 @@ shellcheck *.sh test/*.sh test-workflows/*.sh
 ./build.sh debug
 
 # Run with GDB
-gdb build/bin/vglog-filter
+gdb build/bin/next-version
 
 # Run with Valgrind (if available)
-valgrind --leak-check=full build/bin/vglog-filter
+valgrind --leak-check=full build/bin/next-version
 
 # Run with AddressSanitizer
 ./build.sh debug
-ASAN_OPTIONS=detect_leaks=1 build/bin/vglog-filter
+ASAN_OPTIONS=detect_leaks=1 build/bin/next-version
 ```
 
 **Performance Analysis:**
@@ -628,11 +628,11 @@ ASAN_OPTIONS=detect_leaks=1 build/bin/vglog-filter
 ./build.sh performance
 
 # Profile with perf (if available)
-perf record build/bin/vglog-filter
+perf record build/bin/next-version
 perf report
 
 # Check binary optimizations
-objdump -d build/bin/vglog-filter | grep -i "-O3"
+objdump -d build/bin/next-version | grep -i "-O3"
 ```
 
 [↑ Back to top](#ci/cd-and-testing-guide)
@@ -692,7 +692,7 @@ cmake --version
 ./test-workflows/simple_msan_test.sh
 
 # Check for memory leaks
-valgrind --leak-check=full build/bin/vglog-filter
+valgrind --leak-check=full build/bin/next-version
 
 # Run memory-specific tests
 ./test/run_unit_tests.sh --memory
@@ -705,19 +705,19 @@ valgrind --leak-check=full build/bin/vglog-filter
 ```sh
 # Verify optimization flags
 ./build.sh performance
-objdump -d build/bin/vglog-filter | grep -i "-O3"
+objdump -d build/bin/next-version | grep -i "-O3"
 
 # Run performance benchmarks
 ./build.sh performance tests
 
 # Profile with perf
-perf record build/bin/vglog-filter
+perf record build/bin/next-version
 perf report
 ```
 
 ### Seeking Support
 -   **Documentation**: Always refer to the relevant documentation (e.g., [Build Guide](BUILD.md), [Developer Guide](DEVELOPER_GUIDE.md)) first.
--   **GitHub Issues**: If you identify a bug in the CI/CD setup or the project itself, please [open an issue](https://github.com/eserlxl/vglog-filter/issues) on the GitHub repository.
+-   **GitHub Issues**: If you identify a bug in the CI/CD setup or the project itself, please [open an issue](https://github.com/eserlxl/next-version/issues) on the GitHub repository.
 -   **GitHub Discussions**: For general questions, discussions, or seeking advice, utilize GitHub Discussions.
 -   **Contributing Guidelines**: When contributing fixes or new features, ensure you follow the [Contributing Guidelines](.github/CONTRIBUTING.md).
 

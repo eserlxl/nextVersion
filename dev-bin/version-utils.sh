@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Version utilities for vglog-filter
+# Version utilities for next-version
 # Common functions used across version management scripts
 
 set -Eeuo pipefail

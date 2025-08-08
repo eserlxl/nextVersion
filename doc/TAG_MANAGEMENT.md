@@ -1,6 +1,6 @@
 # Git Tag Management Guide
 
-This guide provides comprehensive instructions and best practices for managing Git tags within the `vglog-filter` project. Proper tag management is crucial for maintaining a clean repository, accurately tracking releases, and ensuring consistency with our semantic versioning strategy.
+This guide provides comprehensive instructions and best practices for managing Git tags within the `next-version` project. Proper tag management is crucial for maintaining a clean repository, accurately tracking releases, and ensuring consistency with our semantic versioning strategy.
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@ This guide provides comprehensive instructions and best practices for managing G
 
 ## Overview of Tag Management
 
-In `vglog-filter`, Git tags are primarily used to mark official releases and significant milestones. Our approach emphasizes automation and consistency to avoid common issues such as:
+In `next-version`, Git tags are primarily used to mark official releases and significant milestones. Our approach emphasizes automation and consistency to avoid common issues such as:
 
 -   **Tag Proliferation**: Preventing an excessive number of tags for minor changes.
 -   **Inconsistent Formats**: Ensuring all release tags follow a standardized naming convention.
@@ -67,7 +67,7 @@ The project uses the advanced LOC-based delta system with mathematical bonus cal
 
 ## Automated Tag Cleanup
 
-To prevent the accumulation of old or unnecessary tags, `vglog-filter` utilizes an automated tag cleanup workflow.
+To prevent the accumulation of old or unnecessary tags, `next-version` utilizes an automated tag cleanup workflow.
 
 ### GitHub Actions Workflow (`tag-cleanup.yml`)
 
@@ -157,7 +157,7 @@ The `tag-manager` script supports numerous environment variables for fine-graine
 -   **`REMOTE`**: Remote name for push operations (default: `origin`)
 -   **`TAG_GLOB`**: Glob pattern for release tags (default: `v[0-9]*.[0-9]*.[0-9]*`)
 -   **`TAG_SIGN`**: Create signed tags if set to `1` (requires GPG, default: `0`)
--   **`TAG_MSG_PREFIX`**: Message prefix for tag annotations (default: `vglog-filter`)
+-   **`TAG_MSG_PREFIX`**: Message prefix for tag annotations (default: `next-version`)
 
 #### Safety and Confirmation
 -   **`ASSUME_YES`**: Skip confirmations for non-interactive use (default: `0`)

@@ -96,11 +96,11 @@ test_basic_functionality() {
     # Note: exit_code is captured but not used in this test
     # local exit_code=$?
     
-    if [[ "$output" == *"Semantic Version Analyzer v2 for vglog-filter"* ]]; then
+    if [[ "$output" == *"Semantic Version Analyzer v2 for next-version"* ]]; then
         log_success "Help output"
     else
         log_error "Help output"
-        printf "Expected: Semantic Version Analyzer v2 for vglog-filter\n"
+        printf "Expected: Semantic Version Analyzer v2 for next-version\n"
         printf "Got: %s\n" "$output"
     fi
     

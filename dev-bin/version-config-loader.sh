@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Version config loader for vglog-filter
+# Version config loader for next-version
 # Loads versioning configuration from YAML files
 
 set -Eeuo pipefail

@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Tag manager for vglog-filter
+# Tag manager for next-version
 # Manages git tags for versioning
 
 set -Eeuo pipefail
@@ -51,7 +51,7 @@ PROTECT_GLOB="${PROTECT_GLOB:-}"
 FIRST_PARENT="${FIRST_PARENT:-0}"
 FETCH_BEFORE_CLEANUP="${FETCH_BEFORE_CLEANUP:-1}"
 PROTECT_CURRENT="${PROTECT_CURRENT:-1}"
-TAG_MSG_PREFIX="${TAG_MSG_PREFIX:-vglog-filter}"
+TAG_MSG_PREFIX="${TAG_MSG_PREFIX:-next-version}"
 
 # ---- small log helpers --------------------------------------------------------------------------
 # die(), warn(), info() functions are now sourced from version-utils.sh
@@ -108,7 +108,7 @@ EOS
 # ---- UI -----------------------------------------------------------------------------------------
 show_help() {
   cat <<EOF
-Tag Manager for vglog-filter
+Tag Manager for next-version
 
 Usage: $PROG [command] [options]
 

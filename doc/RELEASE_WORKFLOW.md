@@ -1,6 +1,6 @@
 # Release Workflow Guide
 
-This guide outlines the automated and manual processes for creating new releases of `vglog-filter`, leveraging semantic versioning and GitHub Actions. It ensures a consistent and transparent release cycle.
+This guide outlines the automated and manual processes for creating new releases of `next-version`, leveraging semantic versioning and GitHub Actions. It ensures a consistent and transparent release cycle.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ This guide outlines the automated and manual processes for creating new releases
 
 ## Overview of the Release Process
 
-`vglog-filter` employs a release process primarily driven by [Semantic Versioning (SemVer)](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/). New releases are typically automated via GitHub Actions based on the type of changes merged into the `main` branch. This ensures that version bumps (MAJOR, MINOR, PATCH) accurately reflect the nature of the changes, and release notes are automatically generated.
+`next-version` employs a release process primarily driven by [Semantic Versioning (SemVer)](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/). New releases are typically automated via GitHub Actions based on the type of changes merged into the `main` branch. This ensures that version bumps (MAJOR, MINOR, PATCH) accurately reflect the nature of the changes, and release notes are automatically generated.
 
 Key components of the release process include:
 -   **`semantic-version-analyzer`**: A utility script (`./dev-bin/semantic-version-analyzer.sh`) that analyzes commit history to suggest the next semantic version bump using the advanced LOC-based delta system.
@@ -201,11 +201,11 @@ cat VERSION
 git tag --sort=-version:refname | head -5
 
 # Check the release on GitHub
-# Visit: https://github.com/eserlxl/vglog-filter/releases
+# Visit: https://github.com/eserlxl/next-version/releases
 
 # Test the new version locally
 ./build.sh
-./build/bin/vglog-filter --version
+./build/bin/next-version --version
 
 # Run comprehensive tests
 ./run_tests.sh

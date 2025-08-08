@@ -1,6 +1,6 @@
 # Versioning Strategy
 
-This document details the versioning strategy employed by `vglog-filter`, which adheres to [Semantic Versioning (SemVer)](https://semver.org/) principles with an advanced LOC-based delta system. It covers how versions are structured, stored, and how changes are automatically and manually managed to ensure a clear and consistent release history.
+This document details the versioning strategy employed by `next-version`, which adheres to [Semantic Versioning (SemVer)](https://semver.org/) principles with an advanced LOC-based delta system. It covers how versions are structured, stored, and how changes are automatically and manually managed to ensure a clear and consistent release history.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This document details the versioning strategy employed by `vglog-filter`, which 
 
 ## Semantic Versioning Overview
 
-`vglog-filter` strictly follows the [Semantic Versioning 2.0.0](https://semver.org/) specification, using the `MAJOR.MINOR.PATCH` format:
+`next-version` strictly follows the [Semantic Versioning 2.0.0](https://semver.org/) specification, using the `MAJOR.MINOR.PATCH` format:
 
 -   **MAJOR Version (X.0.0)**: Incremented for incompatible API changes. This signifies that users might need to adapt their code or usage patterns when upgrading.
 -   **MINOR Version (0.Y.0)**: Incremented for adding new functionality in a backward-compatible manner. Existing usage should continue to work without modification.
@@ -37,7 +37,7 @@ This document details the versioning strategy employed by `vglog-filter`, which 
 
 ## New Versioning System
 
-`vglog-filter` implements an advanced versioning system that **always increases only the last identifier (patch)** with a delta calculated based on the magnitude of changes. This system prevents version number inflation while maintaining semantic meaning.
+`next-version` implements an advanced versioning system that **always increases only the last identifier (patch)** with a delta calculated based on the magnitude of changes. This system prevents version number inflation while maintaining semantic meaning.
 
 ### Core Principles
 
@@ -144,25 +144,25 @@ For more details on the LOC-based delta system, see [LOC Delta System Documentat
 
 ## Version Storage and Display
 
-The current official version of `vglog-filter` is stored in a plain text file named `VERSION` located at the project root. This file is the single source of truth for the project's version.
+The current official version of `next-version` is stored in a plain text file named `VERSION` located at the project root. This file is the single source of truth for the project's version.
 
 ### Displaying the Current Version
 
-Users can retrieve the current version of the `vglog-filter` executable at runtime using the `--version` or `-V` command-line flags:
+Users can retrieve the current version of the `next-version` executable at runtime using the `--version` or `-V` command-line flags:
 
 ```bash
-vglog-filter --version
-# Expected Output: vglog-filter version 10.5.12
+next-version --version
+# Expected Output: next-version version 10.5.12
 ```
 
 ### Version Resolution Order
 
-The `vglog-filter` executable attempts to read its version from several predefined locations, in a specific order of preference, to ensure it can find the `VERSION` file in various deployment scenarios:
+The `next-version` executable attempts to read its version from several predefined locations, in a specific order of preference, to ensure it can find the `VERSION` file in various deployment scenarios:
 
 1.  `./VERSION`: Relative to the executable's current working directory (common during local development or when running from the build output directory).
-2.  `../VERSION`: Relative to the executable, assuming it's in a `bin/` subdirectory within a build folder (e.g., `build/bin/vglog-filter`).
-3.  `/usr/share/vglog-filter/VERSION`: A standard path for system-wide installations on Linux.
-4.  `/usr/local/share/vglog-filter/VERSION`: A common path for local user installations.
+2.  `../VERSION`: Relative to the executable, assuming it's in a `bin/` subdirectory within a build folder (e.g., `build/bin/next-version`).
+3.  `/usr/share/next-version/VERSION`: A standard path for system-wide installations on Linux.
+4.  `/usr/local/share/next-version/VERSION`: A common path for local user installations.
 
 If the `VERSION` file is not found or accessible in any of these locations, the version will be displayed as "unknown".
 
@@ -170,7 +170,7 @@ If the `VERSION` file is not found or accessible in any of these locations, the 
 
 ## Automated Semantic Version Bumping
 
-`vglog-filter` employs an automated system for version bumping, tightly integrated with [Conventional Commits](https://www.conventionalcommits.org/) and GitHub Actions. This system analyzes actual code changes and commit messages to determine the appropriate semantic version increment.
+`next-version` employs an automated system for version bumping, tightly integrated with [Conventional Commits](https://www.conventionalcommits.org/) and GitHub Actions. This system analyzes actual code changes and commit messages to determine the appropriate semantic version increment.
 
 ### Pure Mathematical Version Detection
 
@@ -262,7 +262,7 @@ The current system includes 7 comprehensive bonus categories:
 
 ## Manual Version Management
 
-While automated versioning is the primary method, `vglog-filter` provides options for manual control over version bumps and releases, typically via the GitHub Actions interface.
+While automated versioning is the primary method, `next-version` provides options for manual control over version bumps and releases, typically via the GitHub Actions interface.
 
 ### Manually Triggering a Version Bump
 
@@ -363,7 +363,7 @@ This automated process ensures that releases are consistent, well-documented, an
 
 ## Version History
 
-`vglog-filter` maintains a clear version history, accessible through Git tags and GitHub Releases.
+`next-version` maintains a clear version history, accessible through Git tags and GitHub Releases.
 
 ### Recent Releases
 
@@ -377,7 +377,7 @@ git tag --sort=-version:refname
 git log --oneline --tags --decorate --max-count=10
 ```
 
-For a more user-friendly view, refer to the [GitHub Releases page](https://github.com/eserlxl/vglog-filter/releases) of the repository.
+For a more user-friendly view, refer to the [GitHub Releases page](https://github.com/eserlxl/next-version/releases) of the repository.
 
 ### Version Evolution
 
@@ -413,7 +413,7 @@ If you encounter problems related to versioning, consider the following troubles
 
 ### Common Issues
 
-1.  **Version not detected or displayed as "unknown"**: Ensure the `VERSION` file exists in one of the expected locations and has read permissions. Verify the `vglog-filter` executable is correctly built and linked.
+1.  **Version not detected or displayed as "unknown"**: Ensure the `VERSION` file exists in one of the expected locations and has read permissions. Verify the `next-version` executable is correctly built and linked.
 2.  **Automatic release not triggered**: Check if your commit messages adhere to [Conventional Commits](https://www.conventionalcommits.org/) and if the changes meet the [automatic release detection thresholds](#automatic-release-detection-thresholds). Review the GitHub Actions workflow logs for any errors.
 3.  **Incorrect version bump suggested/applied**: Manually run `semantic-version-analyzer --verbose` to understand why a particular bump was suggested. If you believe it's incorrect, you can manually trigger the workflow and override the bump type.
 4.  **Tag conflicts or messy tag history**: Use the `tag-manager` script to list and clean up old or conflicting tags. Ensure you are not manually creating tags that conflict with the automated process.
@@ -427,6 +427,6 @@ If you encounter problems related to versioning, consider the following troubles
 -   **`semantic-version-analyzer` Output**: Use the verbose output of this tool to understand the analysis of your changes.
 -   **Project Documentation**: Refer to the [FAQ](FAQ.md), [Developer Guide](DEVELOPER_GUIDE.md), [Release Workflow Guide](RELEASE_WORKFLOW.md), and [Git Tag Management Guide](TAG_MANAGEMENT.md) for more context.
 -   **Version Algorithm**: See [VERSIONING_ALGORITHM.md](VERSIONING_ALGORITHM.md) for detailed technical implementation.
--   **GitHub Issues**: If you suspect a bug in the versioning tooling or the workflow itself, please [open an issue](https://github.com/eserlxl/vglog-filter/issues) on the GitHub repository.
+-   **GitHub Issues**: If you suspect a bug in the versioning tooling or the workflow itself, please [open an issue](https://github.com/eserlxl/next-version/issues) on the GitHub repository.
 
 [↑ Back to top](#versioning-strategy)

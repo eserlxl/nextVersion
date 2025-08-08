@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Test helper script for vglog-filter tests
+# Test helper script for next-version tests
 # Provides utilities for creating temporary test environments
 
 set -Euo pipefail
@@ -49,7 +49,7 @@ log_test_result() {
 # Function to create a temporary test environment
 create_temp_test_env() {
     local test_name="${1:-default}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     # Validate test name
     if [[ -z "$test_name" ]]; then
@@ -111,7 +111,7 @@ create_temp_test_env() {
 # Function to create a realistic test repository with substantial history
 create_realistic_test_repo() {
     local test_name="${1:-realistic}"
-    local temp_dir="/tmp/vglog-filter-test-${test_name}-$$"
+    local temp_dir="/tmp/next-version-test-${test_name}-$$"
     
     # Validate test name
     if [[ -z "$test_name" ]]; then

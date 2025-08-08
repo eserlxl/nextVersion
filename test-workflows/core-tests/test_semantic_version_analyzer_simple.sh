@@ -17,7 +17,7 @@ echo "Testing semantic version analyzer v2 modular architecture..."
 
 # Test help output
 echo "Testing help output..."
-if "$SCRIPT_PATH" --help | grep -q "Semantic Version Analyzer v2 for vglog-filter"; then
+if "$SCRIPT_PATH" --help | grep -q "Semantic Version Analyzer v2 for next-version"; then
     echo "✅ PASS: Help output shows v2 architecture"
 else
     echo "❌ FAIL: Help output"
