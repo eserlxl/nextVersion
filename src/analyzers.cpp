@@ -252,35 +252,70 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false);
   std::istringstream iss(diff);
   std::string line;
-  std::set<std::string> removedLong, addedLong;
+  std::set<std::string> removedLongFromStruct, addedLongFromStruct;
+  std::set<std::string> removedLongManual, addedLongManual;
   std::regex longOpt(R"(--[A-Za-z0-9][A-Za-z0-9\-]*)");
   std::regex protoRemoved(R"(^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([^;]*\)\s*;\s*$)");
   std::regex shortOpt(R"(^-[^+].*[^-]-[A-Za-z](\s|$))");
   // Detect case labels like bash analyzer: collect removed and added case labels and compare
   std::set<std::string> removedCases, addedCases;
   std::regex caseLabelRe(R"(case\s+([^:\s]+)\s*:)");
+  // Enhanced CLI patterns (heuristic signals)
+  std::regex getoptCall(R"((getopt_long|getopt)\s*\()");
+  std::regex argcArgvAdded(R"(^\+.*\b(argc|argv)\b)");
+  std::regex helpUsageAdded(R"(^\+.*\b(usage|help|option|argument)\b)");
+  int enhancedCount = 0;
+  
+  auto isCommentLine = [](const std::string &ln) -> bool {
+    // minus or plus, optional spaces, then // or /*
+    size_t i = 0; if (ln.empty()) return false; char s = ln[0]; if (s!='-' && s!='+') return false; i = 1; while (i < ln.size() && std::isspace(static_cast<unsigned char>(ln[i]))) ++i; if (i+1 < ln.size() && ln[i]=='/' && (ln[i+1]=='/' || ln[i+1]=='*')) return true; return false;
+  };
+  auto hasQuotedLongOpt = [](const std::string &ln) -> bool {
+    // crude: if line contains a quote and also --, treat as quoted long opt (skip)
+    return (ln.find('"') != std::string::npos) && (ln.find("--") != std::string::npos);
+  };
+
   while (std::getline(iss, line)) {
     if (line.rfind("+++",0)==0 || line.rfind("---",0)==0 || line.rfind("@@",0)==0) continue;
     if (!line.empty() && line[0]=='-') {
-      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) removedLong.insert((*it)[0]);
+      // Struct-based long options and short option removals
+      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+        removedLongFromStruct.insert((*it)[0]);
+      }
       if (std::regex_search(line, protoRemoved)) r.apiBreaking = true;
       if (std::regex_search(line, shortOpt)) r.removedShortCount++;
+      // Manual long option detection on diff lines excluding obvious comments/quoted strings
+      if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
+        for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+          removedLongManual.insert((*it)[0]);
+        }
+      }
       std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { removedCases.insert(m[1].str()); }
     } else if (!line.empty() && line[0]=='+') {
-      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) addedLong.insert((*it)[0]);
+      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+        addedLongFromStruct.insert((*it)[0]);
+      }
+      if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
+        for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+          addedLongManual.insert((*it)[0]);
+        }
+      }
       std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { addedCases.insert(m[1].str()); }
+      if (std::regex_search(line, getoptCall) || std::regex_search(line, argcArgvAdded) || std::regex_search(line, helpUsageAdded)) {
+        ++enhancedCount;
+      }
     }
   }
   // Compute missing cases: present in removed but not re-added
   bool breakingByCases = false;
   for (const auto &c : removedCases) { if (addedCases.find(c) == addedCases.end()) { breakingByCases = true; break; } }
-  r.removedLongCount = static_cast<int>(removedLong.size());
-  r.addedLongCount = static_cast<int>(addedLong.size());
-  r.manualRemovedLongCount = r.removedLongCount;
-  r.manualAddedLongCount = r.addedLongCount;
+  r.removedLongCount = static_cast<int>(removedLongFromStruct.size());
+  r.addedLongCount = static_cast<int>(addedLongFromStruct.size());
+  r.manualRemovedLongCount = static_cast<int>(removedLongManual.size());
+  r.manualAddedLongCount = static_cast<int>(addedLongManual.size());
   // Align with bash: breaking CLI based on removed switch-case labels only (more accurate)
   r.breakingCliChanges = breakingByCases;
-  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0);
+  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0 || enhancedCount>0);
   r.cliChanges = r.breakingCliChanges || r.manualCliChanges || (r.addedLongCount>0);
   return r;
 }
