@@ -22,6 +22,11 @@ int baseDeltaFor(const std::string &bumpType, int loc, const ConfigValues &cfg);
 int computeTotalBonusWithMultiplier(int baseBonus, int loc, const std::string &bumpType, const ConfigValues &cfg);
 std::string bumpVersion(const std::string &current, const std::string &bumpType, int loc, int bonus, const ConfigValues &cfg, int mainMod=1000);
 
+// Convert C++ analysis results to key-value format matching bash script outputs
+Kv convertCliResultsToKv(const CliResults &results);
+Kv convertSecurityResultsToKv(const SecurityResults &results);
+Kv convertKeywordResultsToKv(const KeywordResults &results);
+
 }
 
 

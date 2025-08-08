@@ -22,10 +22,6 @@
 #include "next_version/suggestion_engine.h"
 #include "next_version/git_ops.h"
 
-#ifndef DEV_BIN_DIR
-#define DEV_BIN_DIR "."
-#endif
-
 int main(int argc, char **argv) {
   using namespace nv;
   const Options opts = parseArgs(argc, argv);
@@ -35,15 +31,6 @@ int main(int argc, char **argv) {
   std::string BASE_REF, TARGET_REF;
   if (ref.emptyRepo) { BASE_REF = "EMPTY"; TARGET_REF = "HEAD"; }
   else { BASE_REF = ref.baseRef; TARGET_REF = ref.targetRef; }
-
-  // Build common argv (use resolved BASE_REF/TARGET_REF)
-  std::vector<std::string> commonArgv;
-  if (!BASE_REF.empty()) { commonArgv.push_back("--base"); commonArgv.push_back(BASE_REF); }
-  if (!TARGET_REF.empty()) { commonArgv.push_back("--target"); commonArgv.push_back(TARGET_REF); }
-  if (!opts.repoRoot.empty()) { commonArgv.push_back("--repo-root"); commonArgv.push_back(opts.repoRoot); }
-  if (!opts.onlyPaths.empty()) { commonArgv.push_back("--only-paths"); commonArgv.push_back(opts.onlyPaths); }
-  if (opts.ignoreWhitespace) commonArgv.push_back("--ignore-whitespace");
-  commonArgv.push_back("--machine");
 
   // 3) Analyze file changes
   Kv fileKv;
@@ -64,40 +51,28 @@ int main(int argc, char **argv) {
     fileKv = parseKv(ss.str());
   }
 
-  // 4) Analyze CLI options (use bash script)
+  // 4) Analyze CLI options (use native C++ implementation)
   Kv CLI;
   if (BASE_REF == "EMPTY") CLI = makeDefaultCliKv();
   else {
-    std::string cliOutput;
-    std::vector<std::string> cliArgs = {std::string(DEV_BIN_DIR) + "/cli-options-analyzer.sh"};
-    cliArgs.insert(cliArgs.end(), commonArgv.begin(), commonArgv.end());
-    std::string command = buildCommand(cliArgs);
-    runProcessCapture(command, cliOutput);
-    CLI = parseKv(cliOutput);
+    CliResults cliResults = analyzeCliOptions(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace);
+    CLI = convertCliResultsToKv(cliResults);
   }
 
-  // 5) Security keywords (use bash script)
+  // 5) Security keywords (use native C++ implementation)
   Kv SEC;
   if (BASE_REF == "EMPTY") SEC = makeDefaultSecurityKv();
   else {
-    std::string secOutput;
-    std::vector<std::string> secArgs = {std::string(DEV_BIN_DIR) + "/security-keyword-analyzer.sh"};
-    secArgs.insert(secArgs.end(), commonArgv.begin(), commonArgv.end());
-    std::string command = buildCommand(secArgs);
-    runProcessCapture(command, secOutput);
-    SEC = parseKv(secOutput);
+    SecurityResults secResults = analyzeSecurity(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace, false);
+    SEC = convertSecurityResultsToKv(secResults);
   }
 
-  // 6) General keyword analysis (use bash script)
+  // 6) General keyword analysis (use native C++ implementation)
   Kv KW;
   if (BASE_REF == "EMPTY") KW = makeDefaultKeywordKv();
   else {
-    std::string kwOutput;
-    std::vector<std::string> kwArgs = {std::string(DEV_BIN_DIR) + "/keyword-analyzer.sh"};
-    kwArgs.insert(kwArgs.end(), commonArgv.begin(), commonArgv.end());
-    std::string command = buildCommand(kwArgs);
-    runProcessCapture(command, kwOutput);
-    KW = parseKv(kwOutput);
+    KeywordResults kwResults = analyzeKeywords(opts.repoRoot, BASE_REF, TARGET_REF, opts.onlyPaths, opts.ignoreWhitespace);
+    KW = convertKeywordResultsToKv(kwResults);
   }
 
   // 7) Bonus calculation

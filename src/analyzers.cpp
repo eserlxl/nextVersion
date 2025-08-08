@@ -169,34 +169,34 @@ ConfigValues loadConfigValues(const std::string &projectRoot) {
   
   // Parse bonuses - handle both old flat structure and new nested structure
   // Try new nested structure first, fall back to old flat structure
-  if (auto v = findNum("bonuses.breaking_changes","cli_breaking")) cfg.bonusBreakingCli = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","breaking_cli")) cfg.bonusBreakingCli = static_cast<int>(*v);
+  if (auto v1 = findNum("bonuses.breaking_changes","cli_breaking")) cfg.bonusBreakingCli = static_cast<int>(*v1);
+  else if (auto v2 = findNum("bonuses","breaking_cli")) cfg.bonusBreakingCli = static_cast<int>(*v2);
   
-  if (auto v = findNum("bonuses.breaking_changes","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v);
+  if (auto v3 = findNum("bonuses.breaking_changes","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v3);
+  else if (auto v4 = findNum("bonuses","api_breaking")) cfg.bonusApiBreaking = static_cast<int>(*v4);
   
-  if (auto v = findNum("bonuses.breaking_changes","removed_features")) cfg.bonusRemovedOption = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","removed_option")) cfg.bonusRemovedOption = static_cast<int>(*v);
+  if (auto v5 = findNum("bonuses.breaking_changes","removed_features")) cfg.bonusRemovedOption = static_cast<int>(*v5);
+  else if (auto v6 = findNum("bonuses","removed_option")) cfg.bonusRemovedOption = static_cast<int>(*v6);
   
-  if (auto v = findNum("bonuses.features","new_cli_command")) cfg.bonusCliChanges = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","cli_changes")) cfg.bonusCliChanges = static_cast<int>(*v);
+  if (auto v7 = findNum("bonuses.features","new_cli_command")) cfg.bonusCliChanges = static_cast<int>(*v7);
+  else if (auto v8 = findNum("bonuses","cli_changes")) cfg.bonusCliChanges = static_cast<int>(*v8);
   
-  if (auto v = findNum("bonuses.features","new_config_option")) cfg.bonusManualCli = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","manual_cli")) cfg.bonusManualCli = static_cast<int>(*v);
+  if (auto v9 = findNum("bonuses.features","new_config_option")) cfg.bonusManualCli = static_cast<int>(*v9);
+  else if (auto v10 = findNum("bonuses","manual_cli")) cfg.bonusManualCli = static_cast<int>(*v10);
   
-  if (auto v = findNum("bonuses.features","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses.code_quality","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","new_source")) cfg.bonusNewSource = static_cast<int>(*v);
+  if (auto v11 = findNum("bonuses.features","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v11);
+  else if (auto v12 = findNum("bonuses.code_quality","new_source_file")) cfg.bonusNewSource = static_cast<int>(*v12);
+  else if (auto v13 = findNum("bonuses","new_source")) cfg.bonusNewSource = static_cast<int>(*v13);
   
-  if (auto v = findNum("bonuses.code_quality","new_test_suite")) cfg.bonusNewTest = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","new_test")) cfg.bonusNewTest = static_cast<int>(*v);
+  if (auto v14 = findNum("bonuses.code_quality","new_test_suite")) cfg.bonusNewTest = static_cast<int>(*v14);
+  else if (auto v15 = findNum("bonuses","new_test")) cfg.bonusNewTest = static_cast<int>(*v15);
   
-  if (auto v = findNum("bonuses.user_experience","user_docs")) cfg.bonusNewDoc = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","new_doc")) cfg.bonusNewDoc = static_cast<int>(*v);
+  if (auto v16 = findNum("bonuses.user_experience","user_docs")) cfg.bonusNewDoc = static_cast<int>(*v16);
+  else if (auto v17 = findNum("bonuses","new_doc")) cfg.bonusNewDoc = static_cast<int>(*v17);
   
   // Security bonus - try multiple possible locations in the new structure
-  if (auto v = findNum("bonuses.security_stability","security_vuln")) cfg.bonusSecurity = static_cast<int>(*v);
-  else if (auto v = findNum("bonuses","security")) cfg.bonusSecurity = static_cast<int>(*v);
+  if (auto v18 = findNum("bonuses.security_stability","security_vuln")) cfg.bonusSecurity = static_cast<int>(*v18);
+  else if (auto v19 = findNum("bonuses","security")) cfg.bonusSecurity = static_cast<int>(*v19);
   
   // Parse bonus multiplier cap
   {
@@ -303,6 +303,88 @@ std::string bumpVersion(const std::string &current, const std::string &bumpType,
   long long newX = static_cast<long long>(maj) + dx;
   std::ostringstream out; out << newX << '.' << newY << '.' << newZ;
   return out.str();
+}
+
+// Convert C++ analysis results to key-value format matching bash script outputs
+Kv convertCliResultsToKv(const CliResults &results) {
+  Kv kv;
+  kv["CLI_CHANGES"] = results.cliChanges ? "true" : "false";
+  kv["BREAKING_CLI_CHANGES"] = results.breakingCliChanges ? "true" : "false";
+  kv["API_BREAKING"] = results.apiBreaking ? "true" : "false";
+  kv["MANUAL_CLI_CHANGES"] = results.manualCliChanges ? "true" : "false";
+  kv["MANUAL_ADDED_LONG_COUNT"] = std::to_string(results.manualAddedLongCount);
+  kv["MANUAL_REMOVED_LONG_COUNT"] = std::to_string(results.manualRemovedLongCount);
+  kv["REMOVED_SHORT_COUNT"] = std::to_string(results.removedShortCount);
+  kv["ADDED_SHORT_COUNT"] = "0"; // Not implemented in C++ version yet
+  kv["REMOVED_LONG_COUNT"] = std::to_string(results.removedLongCount);
+  kv["ADDED_LONG_COUNT"] = std::to_string(results.addedLongCount);
+  kv["GETOPT_CHANGES"] = "0"; // Not implemented in C++ version yet
+  kv["ARG_PARSING_CHANGES"] = "0"; // Not implemented in C++ version yet
+  kv["HELP_TEXT_CHANGES"] = "0"; // Not implemented in C++ version yet
+  kv["MAIN_SIGNATURE_CHANGES"] = "0"; // Not implemented in C++ version yet
+  kv["ENHANCED_CLI_PATTERNS"] = "0"; // Not implemented in C++ version yet
+  return kv;
+}
+
+Kv convertSecurityResultsToKv(const SecurityResults &results) {
+  Kv kv;
+  kv["SECURITY_KEYWORDS"] = std::to_string(results.securityKeywordsCommits);
+  kv["SECURITY_PATTERNS"] = std::to_string(results.securityPatternsDiff);
+  kv["CVE_PATTERNS"] = std::to_string(results.cvePatterns);
+  kv["MEMORY_SAFETY_ISSUES"] = std::to_string(results.memorySafetyIssues);
+  kv["CRASH_FIXES"] = std::to_string(results.crashFixes);
+  
+  // Calculate weighted total security score (matching bash script logic)
+  int totalSecurityScore = results.securityKeywordsCommits * 1 +  // W_COMMITS = 1
+                          results.securityPatternsDiff * 1 +      // W_DIFF_SEC = 1
+                          results.cvePatterns * 3 +               // W_CVE = 3
+                          results.memorySafetyIssues * 2 +        // W_MEM = 2
+                          results.crashFixes * 1;                 // W_CRASH = 1
+  
+  kv["TOTAL_SECURITY_SCORE"] = std::to_string(totalSecurityScore);
+  
+  // Risk level calculation (matching bash script logic)
+  std::string risk = "none";
+  if (totalSecurityScore >= 15) risk = "high";
+  else if (totalSecurityScore >= 5) risk = "medium";
+  else if (totalSecurityScore >= 1) risk = "low";
+  
+  kv["RISK"] = risk;
+  kv["WEIGHT_COMMITS"] = "1";
+  kv["WEIGHT_DIFF_SEC"] = "1";
+  kv["WEIGHT_CVE"] = "3";
+  kv["WEIGHT_MEMORY"] = "2";
+  kv["WEIGHT_CRASH"] = "1";
+  kv["ENGINE"] = "pcre"; // C++ uses std::regex which is PCRE-like
+  return kv;
+}
+
+Kv convertKeywordResultsToKv(const KeywordResults &results) {
+  Kv kv;
+  kv["CLI_BREAKING_KEYWORDS"] = "0"; // Not tracked separately in C++ version
+  kv["API_BREAKING_KEYWORDS"] = "0"; // Not tracked separately in C++ version
+  kv["COMMIT_CLI_BREAKING"] = "0"; // Not tracked separately in C++ version
+  kv["COMMIT_API_BREAKING"] = "0"; // Not tracked separately in C++ version
+  kv["COMMIT_GENERAL_BREAKING"] = "0"; // Not tracked separately in C++ version
+  kv["TOTAL_CLI_BREAKING"] = results.hasCliBreaking ? "1" : "0";
+  kv["TOTAL_API_BREAKING"] = results.hasApiBreaking ? "1" : "0";
+  kv["TOTAL_GENERAL_BREAKING"] = results.hasGeneralBreaking ? "1" : "0";
+  kv["NEW_FEATURE_KEYWORDS"] = "0"; // Not implemented in C++ version yet
+  kv["COMMIT_NEW_FEATURE"] = "0"; // Not implemented in C++ version yet
+  kv["TOTAL_NEW_FEATURES"] = "0"; // Not implemented in C++ version yet
+  kv["SECURITY_KEYWORDS"] = "0"; // Not tracked separately in C++ version
+  kv["COMMIT_SECURITY"] = "0"; // Not tracked separately in C++ version
+  kv["TOTAL_SECURITY"] = std::to_string(results.totalSecurity);
+  kv["REMOVED_OPTIONS_KEYWORDS"] = std::to_string(results.removedOptionsKeywords);
+  kv["ADDED_OPTIONS_KEYWORDS"] = "0"; // Not implemented in C++ version yet
+  kv["HAS_CLI_BREAKING"] = results.hasCliBreaking ? "true" : "false";
+  kv["HAS_API_BREAKING"] = results.hasApiBreaking ? "true" : "false";
+  kv["HAS_GENERAL_BREAKING"] = results.hasGeneralBreaking ? "true" : "false";
+  kv["HAS_NEW_FEATURES"] = "false"; // Not implemented in C++ version yet
+  kv["HAS_SECURITY"] = (results.totalSecurity > 0) ? "true" : "false";
+  kv["HAS_REMOVED_OPTIONS"] = (results.removedOptionsKeywords > 0) ? "true" : "false";
+  kv["HAS_ADDED_OPTIONS"] = "false"; // Not implemented in C++ version yet
+  return kv;
 }
 
 }
