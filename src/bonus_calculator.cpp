@@ -26,9 +26,10 @@ int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv
     TOTAL_BONUS += cfg.bonusApiBreaking;
   }
 
+  // Align with shell: sum security signals from both analyzers rather than taking max
   const int securityKeywords = intOrDefault(SEC.count("SECURITY_KEYWORDS") ? SEC.at("SECURITY_KEYWORDS") : "", 0);
   const int keywordSecurity = intOrDefault(KW.count("TOTAL_SECURITY") ? KW.at("TOTAL_SECURITY") : "", 0);
-  const int totalSecurity = std::max(securityKeywords, keywordSecurity);
+  const int totalSecurity = securityKeywords + keywordSecurity;
   if (totalSecurity > 0) {
     TOTAL_BONUS += totalSecurity * cfg.bonusSecurity;
   }

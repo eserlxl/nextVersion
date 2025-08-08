@@ -267,7 +267,13 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   // Enhanced CLI patterns (heuristic signals)
   std::regex getoptCall(R"((getopt_long|getopt)\s*\()");
   std::regex argcArgvAdded(R"(^\+.*\b(argc|argv)\b)");
-  std::regex helpUsageAdded(R"(^\+.*\b(usage|help|option|argument)\b)");
+  // Make help/usage pattern case-insensitive to align with bash analyzer (-i)
+  std::regex helpUsageAdded(R"(^\+.*\b(usage|help|option|argument)\b)", std::regex::icase);
+  // Additional enhanced CLI patterns to mirror bash analyzer heuristics
+  std::regex shortOptionAdded(R"(^\+[^/#!].*-[A-Za-z](\s|$))");
+  std::regex longOptionAdded(R"(^\+[^/#!].*--[A-Za-z0-9\-]+)");
+  std::regex argcCheckAdded(R"(^\+.*\bargc\s*[<>=!])");
+  std::regex argvAccessAdded(R"(^\+.*\bargv\[)");
   int enhancedCount = 0;
   
   auto isCommentLine = [](const std::string &ln) -> bool {
@@ -288,6 +294,10 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
       }
       if (std::regex_search(line, protoRemoved)) r.apiBreaking = true;
       if (std::regex_search(line, shortOpt)) r.removedShortCount++;
+      // Treat getopt call presence on removed lines as a CLI parsing change (align with bash)
+      if (std::regex_search(line, getoptCall)) {
+        ++enhancedCount;
+      }
       // Manual long option detection on diff lines excluding obvious comments/quoted strings
       if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
         for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
@@ -305,7 +315,13 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
         }
       }
       std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { addedCases.insert(m[1].str()); }
-      if (std::regex_search(line, getoptCall) || std::regex_search(line, argcArgvAdded) || std::regex_search(line, helpUsageAdded)) {
+      if (std::regex_search(line, getoptCall)
+          || std::regex_search(line, argcArgvAdded)
+          || std::regex_search(line, helpUsageAdded)
+          || std::regex_search(line, shortOptionAdded)
+          || std::regex_search(line, longOptionAdded)
+          || std::regex_search(line, argcCheckAdded)
+          || std::regex_search(line, argvAccessAdded)) {
         ++enhancedCount;
       }
     }
@@ -320,7 +336,12 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   // Align with bash: breaking CLI based on removed switch-case labels only (more accurate)
   r.breakingCliChanges = breakingByCases;
   r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0 || enhancedCount>0);
-  r.cliChanges = r.breakingCliChanges || r.manualCliChanges || (r.addedLongCount>0);
+  // Align CLI change flag with bash: treat any option set change or short removals as CLI changes
+  r.cliChanges = r.breakingCliChanges
+              || r.manualCliChanges
+              || (r.addedLongCount>0)
+              || (r.removedLongCount>0)
+              || (r.removedShortCount>0);
   return r;
 }
 
