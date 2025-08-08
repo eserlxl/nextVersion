@@ -304,7 +304,7 @@ note "Computing diffs…"
 SRC_DIFF=$(git -c color.ui=false diff "${DIFF_FLAGS[@]}" "$BASE_REF".."$TARGET_REF" -- "${CHANGED_FILES[@]}" || true)
 CPP_DIFF=$(git -c color.ui=false diff "${DIFF_FLAGS[@]}" "$BASE_REF".."$TARGET_REF" -- "${PATHSPEC[@]}" || true)
 
-# Header-only diff subset for API analysis
+# Header-only diff subset (kept for reference), but API prototype removals should be checked across the entire diff
 HDR_DIFF=$(printf '%s' "$SRC_DIFF" | grep -E '^\+|^-|^diff --git|^index|^@@|/.*\.(h|hh|hpp)$' -n --color=never | sed -n 'p' || true)
 
 # --- extract option sets -----------------------------------------------------
@@ -356,8 +356,8 @@ missing_cases=$(comm -23 <(printf '%s\n' "$removed_cases") <(printf '%s\n' "$add
 breaking_cli_changes=false
 [[ -n "$missing_cases" ]] && breaking_cli_changes=true
 
-# Header API change hint (removed prototypes)
-removed_prototypes=$(printf '%s' "$HDR_DIFF" | count_removed_prototypes || printf '0')
+# API change hint (removed prototypes) across the entire relevant diff (align with C++ analyzer)
+removed_prototypes=$(printf '%s' "$SRC_DIFF" | count_removed_prototypes || printf '0')
 api_breaking=false
 (( removed_prototypes > 0 )) && api_breaking=true
 
@@ -408,6 +408,10 @@ fi
 if [[ -n "$long_after" && "$long_after" != "$long_before" ]]; then
   cli_changes=true
   [[ -n "$removed_long_list" ]] && breaking_cli_changes=true
+fi
+# Align with C++: treat manual CLI pattern changes as CLI changes
+if $manual_cli_changes; then
+  cli_changes=true
 fi
 
 # Use a more robust method for the arithmetic expression

@@ -248,9 +248,41 @@ KeywordResults analyzeKeywords(const std::string &repoRoot, const std::string &b
 }
 
 CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace) {
-  CliResults r; std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false); std::istringstream iss(diff); std::string line; std::set<std::string> removedLong, addedLong; std::regex longOpt(R"(--[A-Za-z0-9][A-Za-z0-9\-]*)"); std::regex protoRemoved(R"(^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([^;]*\)\s*;\s*$)"); std::regex shortOpt(R"(^-[^+].*[^-]-[A-Za-z](\s|$))");
-  while (std::getline(iss, line)) { if (line.rfind("+++",0)==0 || line.rfind("---",0)==0 || line.rfind("@@",0)==0) continue; if (!line.empty() && line[0]=='-') { for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) removedLong.insert((*it)[0]); if (std::regex_search(line, protoRemoved)) r.apiBreaking = true; if (std::regex_search(line, shortOpt)) r.removedShortCount++; } else if (!line.empty() && line[0]=='+') { for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) addedLong.insert((*it)[0]); } }
-  r.removedLongCount = static_cast<int>(removedLong.size()); r.addedLongCount = static_cast<int>(addedLong.size()); r.manualRemovedLongCount = r.removedLongCount; r.manualAddedLongCount = r.addedLongCount; r.breakingCliChanges = (r.removedLongCount>0) || (r.removedShortCount>0); r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0); r.cliChanges = r.breakingCliChanges || r.manualCliChanges || (r.addedLongCount>0); return r;
+  CliResults r;
+  std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false);
+  std::istringstream iss(diff);
+  std::string line;
+  std::set<std::string> removedLong, addedLong;
+  std::regex longOpt(R"(--[A-Za-z0-9][A-Za-z0-9\-]*)");
+  std::regex protoRemoved(R"(^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([^;]*\)\s*;\s*$)");
+  std::regex shortOpt(R"(^-[^+].*[^-]-[A-Za-z](\s|$))");
+  // Detect case labels like bash analyzer: collect removed and added case labels and compare
+  std::set<std::string> removedCases, addedCases;
+  std::regex caseLabelRe(R"(case\s+([^:\s]+)\s*:)");
+  while (std::getline(iss, line)) {
+    if (line.rfind("+++",0)==0 || line.rfind("---",0)==0 || line.rfind("@@",0)==0) continue;
+    if (!line.empty() && line[0]=='-') {
+      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) removedLong.insert((*it)[0]);
+      if (std::regex_search(line, protoRemoved)) r.apiBreaking = true;
+      if (std::regex_search(line, shortOpt)) r.removedShortCount++;
+      std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { removedCases.insert(m[1].str()); }
+    } else if (!line.empty() && line[0]=='+') {
+      for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) addedLong.insert((*it)[0]);
+      std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { addedCases.insert(m[1].str()); }
+    }
+  }
+  // Compute missing cases: present in removed but not re-added
+  bool breakingByCases = false;
+  for (const auto &c : removedCases) { if (addedCases.find(c) == addedCases.end()) { breakingByCases = true; break; } }
+  r.removedLongCount = static_cast<int>(removedLong.size());
+  r.addedLongCount = static_cast<int>(addedLong.size());
+  r.manualRemovedLongCount = r.removedLongCount;
+  r.manualAddedLongCount = r.addedLongCount;
+  // Align with bash: breaking CLI based on removed switch-case labels only (more accurate)
+  r.breakingCliChanges = breakingByCases;
+  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0);
+  r.cliChanges = r.breakingCliChanges || r.manualCliChanges || (r.addedLongCount>0);
+  return r;
 }
 
 SecurityResults analyzeSecurity(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace, bool addedOnly) {

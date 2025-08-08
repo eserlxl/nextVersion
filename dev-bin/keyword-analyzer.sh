@@ -217,14 +217,8 @@ $NO_MERGES && log_opts+=(--no-merges)
 COMMIT_MESSAGES="$(git "${git_config[@]}" log "${log_opts[@]}" "$BASE_REF..$TARGET_REF" 2>/dev/null || true)"
 
 # ------------------------- patterns ------------------------------------------
-# Accept optional leading diff marker and whitespace, then common comment starters.
-# This tolerates: '+ // TOKEN', '-# TOKEN', '   /* TOKEN', etc.
-comment_pat_for() {
-    local token="$1"
-    printf '(^|[[:space:]])[+-]?[[:space:]]*(//|/\\*|#|--)[[:space:]]*%s' "$token"
-}
-
-# Tokens (customize here if needed)
+# Upgrade: scan keywords ANYWHERE in the diff (align with C++ analyzer)
+# Keep tokens configurable
 readonly TOKEN_CLI_BREAKING='CLI[- ]?BREAKING'
 readonly TOKEN_API_BREAKING='API[- ]?BREAKING'
 readonly TOKEN_NEW_FEATURE='NEW[- ]?FEATURE'
@@ -232,12 +226,14 @@ readonly TOKEN_SECURITY='SECURITY'
 readonly TOKEN_REMOVED_OPT='REMOVED[[:space:]]+OPTION(S)?'
 readonly TOKEN_ADDED_OPT='ADDED[[:space:]]+OPTION(S)?'
 
-PAT_CLI_BREAKING_CODE="$(comment_pat_for "$TOKEN_CLI_BREAKING")"
-PAT_API_BREAKING_CODE="$(comment_pat_for "$TOKEN_API_BREAKING")"
-PAT_NEW_FEATURE_CODE="$(comment_pat_for "$TOKEN_NEW_FEATURE")"
-PAT_SECURITY_CODE="$(comment_pat_for "$TOKEN_SECURITY")"
-PAT_REMOVED_OPT_CODE="$(comment_pat_for "$TOKEN_REMOVED_OPT")"
-PAT_ADDED_OPT_CODE="$(comment_pat_for "$TOKEN_ADDED_OPT")"
+# For diff scanning, use plain tokens for BREAKING/feature/option keywords.
+# Keep SECURITY restricted to comment contexts to align with C++ analyzer behavior.
+PAT_CLI_BREAKING_CODE="$TOKEN_CLI_BREAKING"
+PAT_API_BREAKING_CODE="$TOKEN_API_BREAKING"
+PAT_NEW_FEATURE_CODE="$TOKEN_NEW_FEATURE"
+PAT_SECURITY_CODE="$(printf '(^|[[:space:]])[+-]?[[:space:]]*(//|/\\*|#|--)\s*%s' "$TOKEN_SECURITY")"
+PAT_REMOVED_OPT_CODE="$TOKEN_REMOVED_OPT"
+PAT_ADDED_OPT_CODE="$TOKEN_ADDED_OPT"
 
 # Commit message patterns (looser)
 readonly PAT_CLI_BREAKING_COMMIT='(CLI[- ]?BREAKING|BREAKING[^[:alnum:]]+.*CLI)'

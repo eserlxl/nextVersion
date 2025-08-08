@@ -28,7 +28,7 @@ int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv
 
   const int securityKeywords = intOrDefault(SEC.count("SECURITY_KEYWORDS") ? SEC.at("SECURITY_KEYWORDS") : "", 0);
   const int keywordSecurity = intOrDefault(KW.count("TOTAL_SECURITY") ? KW.at("TOTAL_SECURITY") : "", 0);
-  const int totalSecurity = securityKeywords + keywordSecurity;
+  const int totalSecurity = std::max(securityKeywords, keywordSecurity);
   if (totalSecurity > 0) {
     TOTAL_BONUS += totalSecurity * cfg.bonusSecurity;
   }
@@ -57,6 +57,7 @@ int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv
   if (totalRemoved > 0) {
     TOTAL_BONUS += cfg.bonusRemovedOption;
   }
+  // manual CLI bonus is already accounted above via CLI flags
 
   return TOTAL_BONUS;
 }

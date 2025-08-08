@@ -381,10 +381,10 @@ main() {
 
   # Breaking via keywords > CLI analyzers
   if [[ "${KW[HAS_CLI_BREAKING]:-false}" == "true" || "${CLI[BREAKING_CLI_CHANGES]:-false}" == "true" ]]; then
-    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_BREAKING_CLI_BONUS]}" 2) ))
+    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_BREAKING_CLI_BONUS]}" 4) ))
   fi
   if [[ "${KW[HAS_API_BREAKING]:-false}" == "true" || "${CLI[API_BREAKING]:-false}" == "true" ]]; then
-    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_API_BREAKING_BONUS]}" 3) ))
+    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_API_BREAKING_BONUS]}" 5) ))
   fi
   if [[ "${KW[HAS_GENERAL_BREAKING]:-false}" == "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_API_BREAKING_BONUS]}" 3) ))
@@ -397,7 +397,7 @@ main() {
   keyword_security=$(int_or_default "${KW[TOTAL_SECURITY]}" 0)
   local total_security=$(( security_keywords + keyword_security ))
   if (( total_security > 0 )); then
-    TOTAL_BONUS=$(( TOTAL_BONUS + total_security * $(int_or_default "${CFG[VERSION_SECURITY_BONUS]}" 2) ))
+    TOTAL_BONUS=$(( TOTAL_BONUS + total_security * $(int_or_default "${CFG[VERSION_SECURITY_BONUS]}" 5) ))
   fi
 
   # Feature additions
