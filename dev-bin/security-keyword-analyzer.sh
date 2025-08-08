@@ -245,8 +245,16 @@ analyze_security_keywords() {
     local commits_text
     commits_text="$(git -c color.ui=false "${log_args[@]}" "$base_ref..$target_ref" 2>/dev/null || true)"
 
+    # Count security-related keywords in commit subjects+bodies. Use a robust
+    # ERE pattern for commit scanning to avoid edge-cases with PCRE/newlines,
+    # aligning behavior with the C++ analyzer that scans commits broadly.
+    # This complements (and is separately reported from) diff-based signals.
     local security_keywords=0
-    [[ -n "$commits_text" ]] && security_keywords="$(printf '%s' "$commits_text" | count_occurrences "$SEC_REGEX" "$GREP_ENGINE")"
+    if [[ -n "$commits_text" ]]; then
+        # Commit keyword pattern (matches SECURITY, VULNERABILITY/IES, CVE-YYYY-NNNN)
+        local COMMIT_SEC_REGEX='(SECURITY|VULNERABILIT(Y|IES)|CVE[- ]?[0-9]{4}-[0-9]+)'
+        security_keywords="$(printf '%s' "$commits_text" | grep -Eio "$COMMIT_SEC_REGEX" 2>/dev/null | wc -l | tr -d ' ' || printf '0')"
+    fi
     security_keywords="$(is_uint "$security_keywords" && printf '%s' "$security_keywords" || printf '0')"
     
     # Diff scan (with options)

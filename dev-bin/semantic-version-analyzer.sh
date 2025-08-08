@@ -407,6 +407,14 @@ main() {
   if [[ "${CLI[MANUAL_CLI_CHANGES]:-false}" == "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_MANUAL_CLI_BONUS]}" 1) ))
   fi
+  # Treat help/usage text additions as user documentation improvements
+  if (( $(int_or_default "${CLI[HELP_TEXT_CHANGES]}" 0) > 0 )); then
+    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_NEW_DOC_BONUS]}" 1) ))
+  fi
+  # Minor nudge for enhanced CLI patterns detected (kept small to avoid overcount)
+  if (( $(int_or_default "${CLI[ENHANCED_CLI_PATTERNS]}" 0) > 0 )); then
+    TOTAL_BONUS=$(( TOTAL_BONUS + 1 ))
+  fi
   if (( $(int_or_default "${FILE[NEW_SOURCE_FILES]}" 0) > 0 )); then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_NEW_SOURCE_BONUS]}" 1) ))
   fi
