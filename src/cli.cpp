@@ -72,6 +72,8 @@ Options parseArgs(int argc, char **argv) {
     else if (arg == "--target") opts.targetRef = needValue(arg.c_str());
     else if (arg == "--repo-root") opts.repoRoot = needValue(arg.c_str());
     else if (arg == "--no-merge-base") opts.noMergeBase = true;
+    else if (arg == "--tag-match") opts.tagMatch = needValue(arg.c_str());
+    else if (arg == "--first-parent") opts.firstParent = true;
     else if (arg == "--only-paths") opts.onlyPaths = needValue(arg.c_str());
     else if (arg == "--ignore-whitespace") opts.ignoreWhitespace = true;
     else if (arg == "--verbose") opts.verbose = true;

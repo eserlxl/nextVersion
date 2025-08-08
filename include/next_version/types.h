@@ -22,6 +22,8 @@ struct Options {
   std::string targetRef;
   std::string repoRoot;
   bool noMergeBase {false};
+  std::string tagMatch {"*"};
+  bool firstParent {false};
   std::string onlyPaths;
   bool ignoreWhitespace {false};
   bool verbose {false};

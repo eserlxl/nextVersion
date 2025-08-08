@@ -25,7 +25,7 @@ RefResolution resolveRefsNative(const Options &opts) {
   rr.hasCommits = gitHasCommits(opts.repoRoot);
   if (!rr.hasCommits) { rr.emptyRepo = true; return rr; }
 
-  // Step 1: choose initial base ref
+  // Step 1: choose initial base ref (mirror bash ref-resolver.sh)
   if (!opts.baseRef.empty()) rr.baseRef = opts.baseRef;
   else if (!opts.sinceCommit.empty()) rr.baseRef = opts.sinceCommit;
   else if (!opts.sinceTag.empty()) rr.baseRef = opts.sinceTag;
@@ -33,7 +33,8 @@ RefResolution resolveRefsNative(const Options &opts) {
     std::string ref = gitRevListBeforeDate(opts.sinceDate, opts.repoRoot);
     if (!ref.empty()) rr.baseRef = ref; else { std::string first = gitFirstCommit(opts.repoRoot); if (!first.empty()) rr.baseRef = first; else rr.emptyRepo = true; }
   } else {
-    std::string lastTag = gitDescribeLastTag("*", opts.repoRoot);
+    // Default to last tag (match pattern), fallback to HEAD~1, then first commit
+    std::string lastTag = gitDescribeLastTag(opts.tagMatch.empty()?"*":opts.tagMatch, opts.repoRoot);
     if (!lastTag.empty()) rr.baseRef = lastTag; else { std::string parent = gitParentHead(opts.repoRoot); if (!parent.empty()) rr.baseRef = parent; else { std::string first = gitFirstCommit(opts.repoRoot); if (!first.empty()) { rr.baseRef = first; rr.singleCommitRepo = true; } else rr.emptyRepo = true; } }
   }
   if (rr.emptyRepo) return rr;
@@ -47,7 +48,7 @@ RefResolution resolveRefsNative(const Options &opts) {
   rr.targetRef = rr.targetRef.empty() ? std::string("HEAD") : rr.targetRef;
   const std::string targetSha = resolveSha(rr.targetRef);
 
-  // Step 2: compute merge-base for disjoint branches unless disabled
+  // Step 2: compute merge-base for disjoint branches unless disabled (bash parity)
   if (!opts.noMergeBase && !rr.requestedBaseSha.empty() && !targetSha.empty()) {
     std::string effective; runGitCapture({"merge-base", rr.requestedBaseSha, targetSha}, opts.repoRoot, effective);
     rr.effectiveBaseSha = trim(effective);
@@ -56,9 +57,12 @@ RefResolution resolveRefsNative(const Options &opts) {
     }
   }
 
-  // Step 3: count commits in range
+  // Step 3: count commits in range (support --first-parent like bash)
   if (!rr.baseRef.empty() && !targetSha.empty()) {
-    std::string count; runGitCapture({"rev-list","--count", rr.baseRef + ".." + targetSha}, opts.repoRoot, count);
+    std::vector<std::string> args = {"rev-list","--count"};
+    if (opts.firstParent) args.push_back("--first-parent");
+    args.push_back(rr.baseRef + ".." + targetSha);
+    std::string count; runGitCapture(args, opts.repoRoot, count);
     rr.commitCount = std::max(0, std::stoi(count.empty()?"0":trim(count)));
   }
   return rr;
