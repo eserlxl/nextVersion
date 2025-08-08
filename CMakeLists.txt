@@ -8,10 +8,12 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Read version from file before project declaration (with safe fallback)
-set(NEXT_VERSION_VERSION_STRING "0.1.0")
 if (EXISTS "${CMAKE_SOURCE_DIR}/VERSION")
   file(READ "${CMAKE_SOURCE_DIR}/VERSION" _NEXT_VERSION_VERSION_STRING_RAW)
   string(STRIP "${_NEXT_VERSION_VERSION_STRING_RAW}" NEXT_VERSION_VERSION_STRING)
+else()
+  message(FATAL_ERROR "VERSION file not found in ${CMAKE_SOURCE_DIR}")
+  exit(1)
 endif()
 
 # ---- Project -----------------------------------------------------------------
