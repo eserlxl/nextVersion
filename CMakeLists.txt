@@ -1,18 +1,21 @@
 # Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This file is part of next-version and is licensed under
+# This file is part of nextVersion and is licensed under
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 
 cmake_minimum_required(VERSION 3.16)
 
-# Read version from file before project declaration
-file(READ "${CMAKE_SOURCE_DIR}/VERSION" NEXT-VERSION_VERSION_STRING)
-string(STRIP "${NEXT-VERSION_VERSION_STRING}" NEXT-VERSION_VERSION_STRING)
+# Read version from file before project declaration (with safe fallback)
+set(NEXT_VERSION_VERSION_STRING "0.1.0")
+if (EXISTS "${CMAKE_SOURCE_DIR}/VERSION")
+  file(READ "${CMAKE_SOURCE_DIR}/VERSION" _NEXT_VERSION_VERSION_STRING_RAW)
+  string(STRIP "${_NEXT_VERSION_VERSION_STRING_RAW}" NEXT_VERSION_VERSION_STRING)
+endif()
 
 # ---- Project -----------------------------------------------------------------
-project(next-version VERSION ${NEXT-VERSION_VERSION_STRING}
+project(next-version VERSION ${NEXT_VERSION_VERSION_STRING}
   DESCRIPTION "Automated semantic versioning system for Git projects, with smart CLI tooling and CI/CD integration."
   LANGUAGES CXX)
 
@@ -37,7 +40,7 @@ option(ENABLE_NATIVE_OPTIMIZATION "Use -march=native/-mtune=native in performanc
 option(ENABLE_SANITIZERS          "Enable Address/Undefined sanitizers in debug"     OFF)
 
 # Backward compatibility with a previous non-standard option name
-if(DEFINED BUILD_TESTS AND NOT DEFINED BUILD_TESTING)
+if(DEFINED BUILD_TESTS)
   set(BUILD_TESTING "${BUILD_TESTS}")
 endif()
 
@@ -54,7 +57,7 @@ target_include_directories(project_options INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 target_compile_definitions(project_options INTERFACE
-    NEXT-VERSION_VERSION="${NEXT-VERSION_VERSION_STRING}"
+    NEXT_VERSION_VERSION="${NEXT_VERSION_VERSION_STRING}"
 )
 
 # project_warnings: warning levels per compiler
@@ -116,7 +119,17 @@ endif()
 
 # ---- Library ---------------------------------------------------------------
 add_library(next-version-lib
-  src/options.cpp
+  src/lib_placeholder.cpp
+  src/git_helpers.cpp
+  src/analyzers.cpp
+  src/defaults.cpp
+  src/cli.cpp
+  src/bonus_calculator.cpp
+  src/version_reader.cpp
+  src/output_formatter.cpp
+  src/suggestion_engine.cpp
+  src/git_ops.cpp
+  src/semver.cpp
 )
 target_link_libraries(next-version-lib PUBLIC project_options project_warnings)
 target_compile_features(next-version-lib PUBLIC cxx_std_20)
@@ -124,6 +137,9 @@ target_compile_features(next-version-lib PUBLIC cxx_std_20)
 # ---- Main executable ---------------------------------------------------------
 add_executable(next-version src/main.cpp)
 target_link_libraries(next-version PRIVATE next-version-lib)
+target_compile_definitions(next-version PRIVATE 
+  DEV_BIN_DIR="${CMAKE_SOURCE_DIR}/dev-bin"
+)
 
 # ---- IPO/LTO (only when meaningful) -----------------------------------------
 include(CheckIPOSupported)
