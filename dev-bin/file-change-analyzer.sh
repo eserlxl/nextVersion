@@ -292,16 +292,16 @@ analyze_file_changes() {
 
         case "${status:0:1}" in
             A)
-                ((added++))
+                added=$((added + 1))
                 case "$(classify_path "$file")" in
-                    30) ((new_src++)) ;;
-                    10) ((new_tst++)) ;;
-                    20) ((new_doc++)) ;;
+                    30) new_src=$((new_src + 1)) ;;
+                    10) new_tst=$((new_tst + 1)) ;;
+                    20) new_doc=$((new_doc + 1)) ;;
                 esac
                 ;;
-            M|T|R|C) ((modified++)) ;; # typechange/rename/copy as modification
-            D)       ((deleted++)) ;;
-            *)       ((modified++)) ;; # treat unknown as modification
+            M|T|R|C) modified=$((modified + 1)) ;; # typechange/rename/copy as modification
+            D)       deleted=$((deleted + 1)) ;;
+            *)       modified=$((modified + 1)) ;; # treat unknown as modification
         esac
     done < <(git "${git_cmd_args[@]}" 2>/dev/null)
 
@@ -310,7 +310,9 @@ analyze_file_changes() {
     [[ ${#NEG_PATH_ARGS[@]} -gt 0 ]] && numstat_cmd_args+=("${NEG_PATH_ARGS[@]}")
     [[ ${#PATH_ARGS[@]} -gt 0 ]] && numstat_cmd_args+=(-- "${PATH_ARGS[@]}")
     
-    read -r ins dels < <(sum_numstat git "${numstat_cmd_args[@]}")
+    local numstat_output
+    numstat_output=$(sum_numstat git "${numstat_cmd_args[@]}")
+    IFS=$'\t' read -r ins dels <<< "$numstat_output"
 
     print_results "$added" "$modified" "$deleted" "$new_src" "$new_tst" "$new_doc" "$ins" "$dels"
 
