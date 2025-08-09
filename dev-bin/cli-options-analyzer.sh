@@ -211,9 +211,12 @@ scan_manual_long_opts() {
   awk -v s="$sign" '
     $0 ~ ("^" s) {
       line=$0
-      # skip obvious comments and quoted strings (naive)
+      # Skip diff headers and hunk lines to avoid false positives like "--- a/file"
+      if (line ~ /^(\+\+\+|---|@@)/) next
+      # Skip obvious comments and quoted strings (naive)
       if (line ~ /(^[+-]\s*\/\/)|(^[+-]\s*\/\*)|(^[+-].*["'\''].*--)/) next
-      if (match(line, /--([A-Za-z0-9-]+)/, m)) print "--" m[1]
+      # Require at least one alphanumeric after -- to avoid matching sequences like "---"
+      if (match(line, /--([A-Za-z0-9][A-Za-z0-9-]*)/, m)) print "--" m[1]
     }
   ' | LC_ALL=C sort -u
 }
