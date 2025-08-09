@@ -86,12 +86,20 @@ static bool isIgnoredBinaryOrBuildPath(const std::string &path) {
   return false;
 }
 
+static bool containsPathSegment(const std::string &path, const std::string &segment) {
+  // Match segment at start: "segment/…"
+  if (path.rfind(segment + "/", 0) == 0) return true;
+  // Match segment in middle: "/segment/"
+  if (path.find("/" + segment + "/") != std::string::npos) return true;
+  return false;
+}
+
 static int classifyPath(const std::string &path) {
   if (isIgnoredBinaryOrBuildPath(path)) return 0;
   // tests
   {
-    static const std::vector<std::string> markers = {"/test/","/tests/","/unittests/","/it/","/e2e/"};
-    for (const auto &m : markers) if (path.find(m) != std::string::npos) return 10;
+    static const std::vector<std::string> markers = {"test","tests","unittests","it","e2e"};
+    for (const auto &seg : markers) if (containsPathSegment(path, seg)) return 10;
     static const std::vector<std::string> testExts = {"_test.c","_test.cc","_test.cpp","_test.cxx",
       ".test.c", ".test.cc", ".test.cpp", ".test.cxx", ".spec.c", ".spec.cc", ".spec.cpp", ".spec.cxx",
       ".test.py", ".test.js", ".test.ts", ".spec.js", ".spec.ts"};
@@ -99,8 +107,8 @@ static int classifyPath(const std::string &path) {
   }
   // source
   {
-    static const std::vector<std::string> srcMarkers = {"/src/","/source/","/app/","/lib/","/include/"};
-    for (const auto &m : srcMarkers) if (path.find(m) != std::string::npos) return 30;
+    static const std::vector<std::string> srcMarkers = {"src","source","app","lib","include"};
+    for (const auto &seg : srcMarkers) if (containsPathSegment(path, seg)) return 30;
     static const std::vector<std::string> srcExts = { ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".inl",
       ".go", ".rs", ".java", ".cs", ".m", ".mm", ".swift", ".kt", ".ts", ".tsx", ".js", ".jsx", ".sh", ".py", ".rb", ".php", ".pl", ".lua", ".sql",
       ".cmake", ".yml", ".yaml" };
@@ -110,8 +118,8 @@ static int classifyPath(const std::string &path) {
   }
   // docs
   {
-    static const std::vector<std::string> docMarkers = {"/doc/","/docs/","/documentation/","/examples/"};
-    for (const auto &m : docMarkers) if (path.find(m) != std::string::npos) return 20;
+    static const std::vector<std::string> docMarkers = {"doc","docs","documentation","examples"};
+    for (const auto &seg : docMarkers) if (containsPathSegment(path, seg)) return 20;
     static const std::vector<std::string> docExts = { ".md", ".markdown", ".mkd", ".rst", ".adoc", ".txt" };
     for (const auto &e : docExts) if (endsWith(path, e)) return 20;
   }
