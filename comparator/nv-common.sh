@@ -7,6 +7,7 @@
 # See the LICENSE file in the project root for details.
 #
 # nv-common: shared helpers for comparator generators and comparator
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 

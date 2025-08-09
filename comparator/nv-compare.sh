@@ -7,6 +7,7 @@
 # See the LICENSE file in the project root for details.
 #
 # nv-compare: compare analyzer vs next-version for repo(s)
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 trap 'echo "[ERROR] line $LINENO: $BASH_COMMAND" >&2' ERR

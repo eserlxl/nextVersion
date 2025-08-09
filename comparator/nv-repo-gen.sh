@@ -7,6 +7,7 @@
 # See the LICENSE file in the project root for details.
 #
 # nv-repo-gen: generate random C++ repositories for fuzz testing
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 trap 'echo "[ERROR] line $LINENO: $BASH_COMMAND" >&2' ERR

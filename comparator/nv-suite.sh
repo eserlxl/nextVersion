@@ -8,6 +8,7 @@
 #
 # nv-suite: end-to-end fuzzer for next-version
 # Generates repos, compares analyzer vs binary, and summarizes results
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 trap 'echo "[ERROR] line $LINENO: $BASH_COMMAND" >&2' ERR
