@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Generator module: generate_cpp (orchestrator)
+# Generates a C++ project with a variety of features.
 
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -22,12 +22,11 @@ generate_cpp() {
   write_cpp_main_min
 
   # Always-on baseline
-  add_macro_maze
-  add_chaotic_header
+  # Delegate header content to header generator (idempotent if CMake already written)
+  generate_cpp_headers "$level"
   add_cpp_noise_unit
   add_template_stress
   add_deadcode_garden
-  add_random_namespace_header
   add_feature_files_bulk
   add_perf_code
   add_test
