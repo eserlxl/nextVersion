@@ -411,7 +411,7 @@ done < <(printf '%s' "$SRC_DIFF" | sed -n '/^-/p')
 # Count additions on '+' lines from full diff
 while IFS= read -r ln; do
   [[ "$ln" =~ ^\+ ]] || continue
-  if [[ "$ln" =~ $help_usage_added_re ]]; then
+  if [[ "${ln,,}" =~ $help_usage_added_re ]]; then
     help_text_changes=$(( ${help_text_changes:-0} + 1 ))
   fi
   if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
@@ -433,7 +433,7 @@ done < <(printf '%s' "$SRC_DIFF" | sed -n '/^\+/p')
 # Added lines: increment help/usage and enhanced patterns at most once per line
 while IFS= read -r ln; do
   [[ "$ln" =~ ^\+ ]] || continue
-  if [[ "$ln" =~ $help_usage_added_re ]]; then
+  if [[ "${ln,,}" =~ $help_usage_added_re ]]; then
     help_text_changes=$(( ${help_text_changes:-0} + 1 ))
   fi
   if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
