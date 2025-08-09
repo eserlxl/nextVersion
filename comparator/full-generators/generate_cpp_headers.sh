@@ -12,16 +12,13 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 source "${SCRIPT_DIR}/../nv-common.sh"
+source "${SCRIPT_DIR}/generate_cmake.sh"
 
 # Levels: low | medium | high | insane
-# Generators are implemented in modules under `comparator/generators/*.sh`.
+# Generators are implemented in modules under `comparator/modules/*.sh`.
 generate_cpp_headers() {
   local level="${1:-medium}"
 
-  # Write header-only CMake skeleton only if not already present
-  if [[ ! -f CMakeLists.txt ]]; then
-    write_cmake_header_only_skel
-  fi
 
   # Always-on baseline (pure header content)
   add_macro_maze
@@ -50,6 +47,12 @@ generate_cpp_headers() {
       return 2
       ;;
   esac
+
+  # Write CMakeLists at the end, after headers are created
+  if [[ ! -f CMakeLists.txt ]]; then
+    write_cmakelists_headers
+  fi
+  stage_cmakelists_in_repo
 }
 
 

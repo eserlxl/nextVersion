@@ -12,13 +12,13 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 source "${SCRIPT_DIR}/../nv-common.sh"
+source "${SCRIPT_DIR}/generate_cmake.sh"
 
 # Levels: low | medium | high | insane
-# Generators are implemented in modules under `comparator/generators/*.sh`.
+# Generators are implemented in modules under `comparator/modules/*.sh`.
 generate_cpp() {
   local level="${1:-medium}"
 
-  write_cmake_skel
   write_cpp_main_min
 
   # Always-on baseline
@@ -67,6 +67,10 @@ generate_cpp() {
       return 2
       ;;
   esac
+
+  # Write CMakeLists at the end, after repo contents are created
+  write_cmakelists_cpp
+  stage_cmakelists_in_repo
 }
 
 

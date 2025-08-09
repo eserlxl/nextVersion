@@ -93,8 +93,8 @@ maybe_tag() {
 }
 
 # Source modular generator scripts if present; these override in-file versions.
-if [[ -d "${SCRIPT_DIR}/generators" ]]; then
-  for _genmod in "${SCRIPT_DIR}/generators/"*.sh; do
+if [[ -d "${SCRIPT_DIR}/modules" ]]; then
+  for _genmod in "${SCRIPT_DIR}/modules/"*.sh; do
     [[ -e "${_genmod}" ]] || continue
     # shellcheck disable=SC1090
     source "${_genmod}"
