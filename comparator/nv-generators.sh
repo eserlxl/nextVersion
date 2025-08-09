@@ -7,24 +7,61 @@
 # See the LICENSE file in the project root for details.
 #
 # nv-generators: content generators for random repositories
+
 set -Eeuo pipefail
 IFS=$'\n\t'
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=nv-common.sh
 source "${SCRIPT_DIR}/nv-common.sh"
 
+# ---- tiny utils (auxiliary, non-breaking) ----
+_whence()  { command -v -- "$1" >/dev/null 2>&1; }
+_jitter()  { sleep "0.$((RANDOM%7))" 2>/dev/null || true; }
+# 1 in N chance helper (defaults to N=2)
+_one_in()  { local n="${1:-2}"; (( n<1 )) && n=1; (( RANDOM % n == 0 )); }
+_rpick()   { if (($#>0)); then rand_pick "$@"; else printf '%s' "a"; fi }
+
 # ---- content helpers ----
-whitespace_nudge() { sed -E 's/[[:space:]]+/ /g' -i "$1" 2>/dev/null || true; }
+# Introduce controlled whitespace noise, or normalize, randomly.
+# Uses /tmp for temp files per project rules.
+whitespace_nudge() {
+  local f=${1:?file}
+  if (( $(rand_bool 33) )); then
+    sed -E -i 's/[[:space:]]+/ /g' "$f" || true
+  else
+    local tmp
+    tmp="$(mktemp /tmp/nvws.XXXXXX 2>/dev/null || echo /tmp/nvws.$$)"
+    awk '{
+      if (NR % 3 == 0) { gsub(/ /, "  "); }
+      if (NR % 5 == 0) { $0=$0"\t"; }
+      print
+    }' "$f" > "$tmp" 2>/dev/null && mv "$tmp" "$f" || true
+  fi
+}
 touch_version()    { printf "%s\n" "${1:-1.0.0}" > VERSION; }
 
 append_doc() {
   mkdir -p doc
-  local paras; paras="$(c_range 1 3)"
+  local paras; paras="$(c_range 2 5)"
+  local bullets; bullets="$(c_range 2 7)"
+  local code_lines; code_lines="$(c_lines 5)"
   {
-    printf "# %s\n\n" "$(rand_word)"
+    printf "# %s %s\n\n" "$(rand_word | tr '[:lower:]' '[:upper:]')" "$(rand_word)"
+    printf "_Auto-generated %s doc._\n\n" "$(rand_word)"
+    printf "## Overview\n\n"
+    printf "%s %s %s %s.\n\n" "$(rand_word)" "$(rand_word)" "$(rand_word)" "$(rand_word)"
+    printf "## Features\n\n"
     local i
+    for ((i=0;i<bullets;i++)); do
+      printf "- %s %s %s\n" "$(rand_word)" "$(rand_word)" "$(rand_word)"
+    done
+    printf "\n## Example\n\n\`\`\`cpp\n"
+    for ((i=0;i<code_lines;i++)); do
+      printf "int f%d(int x){ return (x*x) + %d; }\n" "$i" "$((RANDOM%97))"
+    done
+    printf "\`\`\`\n\n## Details\n\n"
     for ((i=0;i<paras;i++)); do
-      local words; words="$(c_lines 20)"
+      local words; words="$(c_lines 30)"
       tr -dc 'a-z \n' < /dev/urandom | tr -s ' ' | head -c $((words*5)) | sed 's/$/\n/' 
       echo
     done
@@ -34,15 +71,23 @@ append_doc() {
 rename_random_file() {
   local f; f="$(git ls-files | shuf -n 1 2>/dev/null || true)"; [[ -n "$f" ]] || return 0
   local dir base new; dir="$(dirname -- "$f")"; base="$(basename -- "$f")"
-  if [[ "$dir" == "." ]]; then new="renamed_$(rand_word)_${base}"; else new="${dir}/renamed_$(rand_word)_${base}"; fi
-  [[ -e "$new" ]] && { [[ "$dir" == "." ]] && new="renamed_$(rand_word)_${RANDOM}_${base}" || new="${dir}/renamed_$(rand_word)_${RANDOM}_${base}"; }
-  git mv "$f" "$new" >/dev/null 2>&1 || true
+  local stamp; stamp="$(date +%s)$RANDOM"
+  if [[ "$dir" == "." ]]; then new="renamed_${stamp}_$(rand_word)_${base}"; else new="${dir}/renamed_${stamp}_$(rand_word)_${base}"; fi
+  [[ -e "$new" ]] && new="${new}.${RANDOM}"
+  git mv -k "$f" "$new" >/dev/null 2>&1 || true
 }
 delete_random_file(){ local f; f="$(git ls-files | shuf -n 1 2>/dev/null || true)"; [[ -n "$f" ]] || return 0; git rm -q "$f" || true; }
 
 maybe_tag() {
+  # 30% chance; richer semver: MAJOR.MINOR.PATCH[-pre.N]+build.meta
   if (( $(rand_bool "$(c_prob 30)") )); then
-    local ver="${RANDOM%4}.$((RANDOM%10)).$((RANDOM%10))"
+    local maj min pat pre build
+    maj=$((RANDOM%4 + 0))
+    min=$((RANDOM%20))
+    pat=$((RANDOM%50))
+    if (( $(rand_bool 50) )); then pre="-alpha.$((RANDOM%10))"; fi
+    if (( $(rand_bool 33) )); then build="+meta.$((RANDOM%100)).$((RANDOM%1000))"; fi
+    local ver="${maj}.${min}.${pat}${pre:-}${build:-}"
     (( $(rand_bool 60) )) && git_tag_light "$ver" || git_tag_annot "$ver"
   fi
 }
@@ -56,20 +101,44 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(NV_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option(NV_LTO "Enable link-time optimization" OFF)
+
+if(MSVC)
+  add_compile_options(/W4 /permissive-)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wduplicated-cond -Wduplicated-branches -Wnull-dereference -Wdouble-promotion)
+  if(NV_WARNINGS_AS_ERRORS)
+    add_compile_options(-Werror)
+  endif()
+  if(NV_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
+    if(ipo_ok)
+      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+    endif()
+  endif()
+endif()
+
 file(GLOB_RECURSE NV_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE NV_TESTS   CONFIGURE_DEPENDS "test/*.cpp")
-file(GLOB_RECURSE NV_HEADERS CONFIGURE_DEPENDS "include/*.h")
+file(GLOB_RECURSE NV_HEADERS CONFIGURE_DEPENDS "include/*.h" "include/*.hpp")
 
 add_library(nvlib STATIC ${NV_SOURCES} ${NV_HEADERS})
 target_include_directories(nvlib PUBLIC include)
+if(NOT MSVC)
+  target_compile_definitions(nvlib PRIVATE NV_BUILD_UNIX=1)
+endif()
 
 add_executable(nvmain src/main.cpp)
 target_link_libraries(nvmain PRIVATE nvlib)
 
+enable_testing()
 foreach(t ${NV_TESTS})
   get_filename_component(_n "${t}" NAME_WE)
   add_executable(${_n} "${t}")
   target_link_libraries(${_n} PRIVATE nvlib)
+  add_test(NAME ${_n} COMMAND ${_n})
 endforeach()
 EOF
 }
@@ -77,39 +146,73 @@ EOF
 # ---- main.cpp (complex) ----
 write_cpp_main_min() {
   mkdir -p src include
-  local lines; lines="$(c_lines 120)"
+  local lines; lines="$(c_lines 160)"
   cat > src/main.cpp <<EOF
-#include <bits/stdc++.h>
-using namespace std;
-constexpr uint64_t rotl(uint64_t x, int s){ return (x<<s)|(x>>(64-s)); }
-constexpr uint64_t junk_seed(uint64_t x){ return rotl((x^0x9e3779b97f4a7c15ULL)*0xbf58476d1ce4e5b9ULL, 27); }
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <numeric>
+#include <random>
+#include <string>
+#include <thread>
+#include <vector>
+
+namespace nv {
+constexpr std::uint64_t rotl(std::uint64_t x, int s) noexcept { return (x<<s)|(x>>(64-s)); }
+constexpr std::uint64_t junk_seed(std::uint64_t x) noexcept {
+  return rotl((x^0x9e3779b97f4a7c15ULL)*0xbf58476d1ce4e5b9ULL, 27);
+}
 template<class T> concept Arithmetic = std::is_arithmetic_v<T>;
-template<Arithmetic T> T wobbly(T x){ for(int i=0;i<3;i++) x = (x+static_cast<T>(i*7)) ^ (x>>1); return x; }
+template<Arithmetic T>
+constexpr T wobbly(T x) noexcept {
+  for (int i=0;i<3;i++) x = (x+static_cast<T>(i*7)) ^ (x>>1);
+  return x;
+}
+}
+
 #ifndef NV_NOISE_SCALE
 #define NV_NOISE_SCALE(x) ((x)*1337 + ((x)>>3) - ((x)<<1))
 #endif
-int main(){
+
+static std::atomic<std::uint64_t> g_counter{0};
+
+int main() {
+  using namespace std;
   ios::sync_with_stdio(false); cin.tie(nullptr);
+
   volatile long long sentinel = 0;
-  for(int outer=0; outer<${lines}; ++outer){
-    long long a = NV_NOISE_SCALE(outer) ^ junk_seed(outer);
-    a = wobbly<long long>(a);
-    int k=outer%7; if(k==3) goto SKIP_BLOCK;
-    for(int inner=0; inner< (outer%13); ++inner){
-      a += (inner*outer) ^ rotl(inner+31, (outer%19)+1);
-      if((inner&3)==1) continue;
+  for (int outer=0; outer<${lines}; ++outer) {
+    long long a = NV_NOISE_SCALE(outer) ^ static_cast<long long>(nv::junk_seed(static_cast<unsigned>(outer)));
+    a = nv::wobbly<long long>(a);
+    if ((outer%7)==3) { // mixed control flow
+      continue;
+    }
+    for (int inner=0; inner<(outer%13); ++inner) {
+      a += (inner*outer) ^ static_cast<int>(nv::rotl(static_cast<unsigned>(inner+31), (outer%19)+1));
+      if((inner&3)==1) { g_counter.fetch_add(static_cast<unsigned>(a), std::memory_order_relaxed); continue; }
       sentinel ^= (a ^ inner);
     }
-SKIP_BLOCK:
-    if((outer%11)==0){
-      auto f = [outer](long long z){ return (z ^ (outer*outer)) + (z>>2); };
+    if ((outer%11)==0) {
+      auto f = [outer](long long z){ return (z ^ static_cast<long long>(outer*outer)) + (z>>2); };
       sentinel += f(a);
     }
   }
-  vector<int> v(512); iota(v.begin(), v.end(), 1);
+
+  vector<int> v(1024); iota(v.begin(), v.end(), 1);
   auto res = accumulate(v.begin(), v.end(), 0LL, [](long long s, int x){ return s + (x*x) - ((x&1)?x:0); });
-  cout << "ok " << (sentinel ^ res) << "\\n";
-  return static_cast<int>((sentinel ^ res) & 0xFF);
+
+  // tiny parallel fragment
+  thread t1([]{ for(int i=0;i<1000;i++) g_counter.fetch_add(1, std::memory_order_relaxed); });
+  thread t2([]{ for(int i=0;i<1000;i++) g_counter.fetch_add(2, std::memory_order_relaxed); });
+  t1.join(); t2.join();
+
+  cout << "ok " << (sentinel ^ res ^ static_cast<long long>(g_counter.load())) << "\\n";
+  return static_cast<int>((sentinel ^ res ^ static_cast<long long>(g_counter.load())) & 0xFF);
 }
 EOF
 }
@@ -132,6 +235,7 @@ add_macro_maze() {
 #ifndef NV_NOISE_SCALE
 #define NV_NOISE_SCALE(x) ((x)*1337 + ((x)>>5) - ((x)<<2) + 42)
 #endif
+#define NV_IF(c,a,b) ((c)?(a):(b))
 EOF
 }
 
@@ -151,36 +255,43 @@ constexpr auto call(F&& f, A&&... a) noexcept(noexcept(f(std::forward<A>(a)...))
     if constexpr(noexcept(f(std::forward<A>(a)...))) return f(std::forward<A>(a)...);
     else return f(std::forward<A>(a)...);
 }
+
+template<class T>
+concept SmallTrivial = std::is_trivial_v<T> && sizeof(T) <= 8;
 }
 EOF
 }
 
 add_cpp_noise_unit() {
-  mkdir -p src
+  mkdir -p src include
   local f="src/noise_$(rand_word).cpp"
-  local loops; loops="$(c_range 80 300)"
+  local loops; loops="$(c_range 120 360)"
+  local maze="maze_$(rand_word).h"
+  echo '#pragma once' > "include/${maze}"
   cat > "$f" <<EOF
 #include <vector>
 #include <numeric>
 #include <cstdint>
-#include "maze_$(rand_word).h"
-static uint64_t twiddle(uint64_t x){
+#include <algorithm>
+#include <array>
+#include "${maze}"
+static std::uint64_t twiddle(std::uint64_t x){
+  #pragma GCC ivdep
   for(int i=0;i<7;i++) x = (x*0x9e3779b97f4a7c15ULL) ^ (x>>((i%5)+1));
   return x ^ (x<<1);
 }
 int noise_${RANDOM}(){
-  volatile uint64_t s=0;
+  volatile std::uint64_t s=0;
   for(int i=0;i<$loops;i++){
-    uint64_t a = twiddle(i*1337ull + (i<<3));
+    std::uint64_t a = twiddle(static_cast<std::uint64_t>(i*1337u + (i<<3)));
     for(int j=0;j<(i%9);++j){
-      a ^= (j*0xABCDEFu) + (a>>3);
+      a ^= static_cast<std::uint64_t>(j*0xABCDEFu) + (a>>3);
       if((j&2)==0) continue;
-      s += a ^ (i*j);
+      s += a ^ static_cast<std::uint64_t>(i*j);
     }
   }
-  std::vector<int> v(1024);
-  std::iota(v.begin(), v.end(), 1);
-  return (int)((std::accumulate(v.begin(), v.end(), 0) ^ s) & 0x7FFFFFFF);
+  std::array<int,1024> arr{}; std::iota(arr.begin(), arr.end(), 1);
+  return static_cast<int>((std::accumulate(arr.begin(), arr.end(), 0) ^ s) & 0x7FFFFFFF);
 }
 EOF
 }
@@ -193,10 +304,12 @@ add_template_stress() {
 #pragma once
 #include <array>
 #include <utility>
+#include <cstddef>
 template<std::size_t N>
 struct Fib { static constexpr unsigned long long value = Fib<N-1>::value + Fib<N-2>::value; };
 template<> struct Fib<1>{ static constexpr unsigned long long value = 1; };
 template<> struct Fib<0>{ static constexpr unsigned long long value = 0; };
+
 template<std::size_t N>
 constexpr auto make_seq(){
   std::array<unsigned long long,N> a{};
@@ -205,14 +318,15 @@ constexpr auto make_seq(){
 }
 EOF
   cat > "$f" <<'EOF'
-#include "meta_placeholder.h"
 #include <numeric>
 #include <vector>
+#include <cstdint>
+#include "meta_placeholder.h"
 static int meta_probe(){
-  constexpr auto seq = make_seq<128>();
+  constexpr auto seq = make_seq<192>();
   unsigned long long s=0;
   for(auto x:seq) s += (x*x) - (x>>1);
-  return (int)(s & 0x7FFFFFFF);
+  return static_cast<int>(s & 0x7FFFFFFF);
 }
 EOF
   sed -i "s/meta_placeholder.h/$(basename "$h")/" "$f"
@@ -221,15 +335,16 @@ EOF
 add_deadcode_garden() {
   mkdir -p src
   local f="src/dead_$(rand_word).cpp"
-  local blocks; blocks="$(c_range 15 60)"
+  local blocks; blocks="$(c_range 20 80)"
   {
     echo '#include <cstdint>'
+    echo '#include <utility>'
     echo "int dead_${RANDOM}(){"
-    echo "  volatile uint64_t z=0;"
+    echo "  volatile std::uint64_t z=0;"
     for ((i=0;i<blocks;i++)); do
-      echo "  if(((${RANDOM}%1024)==-1)){ z+=${RANDOM}ull; } else { z^=${RANDOM}ull; }"
+      echo "  if (__builtin_expect(((${RANDOM}%1024)==-1),0)) { z+=${RANDOM}ull; } else { z^=${RANDOM}ull; }"
     done
-    echo "  return (int)(z & 0x7FFFFFFF);"
+    echo "  return static_cast<int>(z & 0x7FFFFFFF);"
     echo "}"
   } > "$f"
 }
@@ -237,12 +352,12 @@ add_deadcode_garden() {
 add_random_namespace_header() {
   mkdir -p include
   local h="include/ns_$(rand_word).h"
-  local n; n="$(c_range 3 12)"
+  local n; n="$(c_range 4 12)"
   {
     echo '#pragma once'
     for ((i=0;i<n;i++)); do
       local ns; ns="$(rand_word)"
-      echo "namespace $ns { inline int v$i(){ int s=0; for(int k=0;k<${RANDOM}%50;k++) s+=k*k; return s; } }"
+      echo "namespace $ns { inline int v$i(){ int s=0; for(int k=0;k<${RANDOM}%60;k++) s+=k*k - (k&1); return s; } }"
     done
   } > "$h"
 }
@@ -251,11 +366,18 @@ add_random_namespace_header() {
 add_feature_file_once() {
   mkdir -p src include
   local fname="feature_$(rand_word)"
-  local fns; fns="$(c_range 1 4)"
-  echo "#pragma once" > "include/${fname}.h"
+  local fns; fns="$(c_range 2 6)"
   {
+    echo "#pragma once"
     local j; for ((j=0;j<fns;j++)); do
-      printf "int %s_fn%d(){return %d;}\n" "${fname}" "$j" "$(rand_int 0 99)"
+      printf "int %s_fn%d();\n" "${fname}" "$j"
+    done
+  } > "include/${fname}.h"
+  {
+    echo "#include <cstdlib>"
+    echo "#include \"${fname}.h\""
+    local j; for ((j=0;j<fns;j++)); do
+      printf "int %s_fn%d(){ return %d + std::rand()%7; }\n" "${fname}" "$j" "$(rand_int 0 199)"
     done
   } > "src/${fname}.cpp"
 }
@@ -276,11 +398,12 @@ EOF
 
 add_test() {
   mkdir -p test
-  local assertions; assertions="$(c_range 1 20)"
+  local assertions; assertions="$(c_range 3 25)"
   {
     echo '#include <cassert>'
+    echo '#include <cstdint>'
     echo 'int main(){'
-    local i; for ((i=0;i<assertions;i++)); do echo "  assert(${RANDOM}%3==${RANDOM}%3);"; done
+    local i; for ((i=0;i<assertions;i++)); do echo "  assert( (static_cast<std::uint32_t>(${RANDOM}%5)) == (static_cast<std::uint32_t>(${RANDOM}%5)) );"; done
     echo '  return 0;'
     echo '}'
   } > "test/test_$(rand_word).cpp"
@@ -292,9 +415,9 @@ add_security_fix() {
   {
     echo '#include <cstring>'
     echo '#include <cstddef>'
-    echo 'void copy_safe(char* d,const char* s,size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]='\''\''; } }'
+    echo 'void copy_safe(char* d,const char* s,std::size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]=0; } }'
     local i=0; while (( i < lines )); do
-      echo "void shim_$i(char* d,const char* s,size_t n){ copy_safe(d,s,n); }"; ((++i))
+      echo "void shim_$i(char* d,const char* s,std::size_t n){ copy_safe(d,s,n); }"; ((++i))
     done
   } > "src/sec_$(rand_word).cpp"
 }
@@ -303,6 +426,189 @@ breaking_api_change() {
   mkdir -p include src
   echo "#pragma once" > include/api.h
   local overloads; overloads="$(c_range 1 5)"
-  { local i; for ((i=0;i<overloads;i++)); do echo "int api_v2_$i();"; done; } >> include/api.h
+  {
+    echo "#ifdef NV_API_V1_DEPRECATED"
+    echo "// v1 deprecated"
+    echo "#endif"
+    local i; for ((i=0;i<overloads;i++)); do echo "int api_v2_$i();"; done
+  } >> include/api.h
   { local i; for ((i=0;i<overloads;i++)); do echo "int api_v2_$i(){ return $((i+2)); }"; done; } > src/api.cpp
+}
+
+# ---- extra complexity units (merged, not yet wired) ----
+add_ranges_unit() {
+  mkdir -p src
+  local f="src/ranges_$(rand_word).cpp"
+  cat > "$f" <<'EOF'
+#include <vector>
+#include <ranges>
+#include <numeric>
+#include <cstdint>
+int ranges_probe(){
+  std::vector<int> v(500); std::iota(v.begin(), v.end(), 1);
+  auto rng = v | std::views::filter([](int x){ return (x&1)==0; })
+               | std::views::transform([](int x){ return x*x - (x>>1); });
+  long long s = 0;
+  for (int x : rng) s += x;
+  return static_cast<int>(s & 0x7FFFFFFF);
+}
+EOF
+}
+
+add_filesystem_unit() {
+  mkdir -p src
+  local f="src/fs_$(rand_word).cpp"
+  cat > "$f" <<'EOF'
+#include <filesystem>
+#include <string>
+#include <cstdint>
+int fs_probe(){
+  namespace fs = std::filesystem;
+  auto p = fs::path("doc") / "README.md";
+  // Query only; do not create/modify FS.
+  auto ok = fs::exists(p);
+  return ok ? 1 : 0;
+}
+EOF
+}
+
+add_optional_variant_unit() {
+  mkdir -p src
+  local f="src/optvar_$(rand_word).cpp"
+  cat > "$f" <<'EOF'
+#include <variant>
+#include <optional>
+#include <string>
+#include <cstdint>
+static int visit_it(const std::variant<int,std::string>& v){
+  return std::visit([](auto&& x)->int{
+    using T=std::decay_t<decltype(x)>;
+    if constexpr(std::is_same_v<T,int>) return x*2;
+    else return static_cast<int>(x.size());
+  }, v);
+}
+int optvar_probe(){
+  std::optional<std::variant<int,std::string>> ov;
+  if ((sizeof(void*)%2)==0) ov = std::variant<int,std::string>{42};
+  else ov = std::variant<int,std::string>{std::string("x")};
+  return visit_it(*ov);
+}
+EOF
+}
+
+add_threading_unit() {
+  mkdir -p src
+  local f="src/thread_$(rand_word).cpp"
+  cat > "$f" <<'EOF'
+#include <thread>
+#include <atomic>
+#include <vector>
+#include <cstdint>
+static std::atomic<int> acc{0};
+int thread_probe(){
+  std::vector<std::thread> ts;
+  for(int i=0;i<4;i++){
+    ts.emplace_back([]{ for(int k=0;k<1000;k++) acc.fetch_add(1, std::memory_order_relaxed); });
+  }
+  for(auto& t:ts) t.join();
+  return acc.load(std::memory_order_relaxed);
+}
+EOF
+}
+
+add_concepts_unit() {
+  mkdir -p src include
+  local h="include/concepts_$(rand_word).h"
+  local f="src/concepts_$(rand_word).cpp"
+  cat > "$h" <<'EOF'
+#pragma once
+#include <type_traits>
+template<class T>
+concept TinyTrivial = std::is_trivial_v<T> && (sizeof(T) <= 8);
+
+template<TinyTrivial T>
+constexpr T add3(T x){ return static_cast<T>(x + T{3}); }
+EOF
+  cat > "$f" <<EOF
+#include "$(basename "$h")"
+#include <cstdint>
+int concepts_probe(){
+  return static_cast<int>(add3<std::uint8_t>(5));
+}
+EOF
+}
+
+add_header_only_lib() {
+  mkdir -p include src
+  local h="include/hol_${RANDOM}.hpp"
+  local f="src/hol_${RANDOM}.cpp"
+  cat > "$h" <<'EOF'
+#pragma once
+#include <cstdint>
+namespace hol {
+template<class T> constexpr T mix(T a, T b){ return (a^b) + (a>>1); }
+inline int call(int x){ return mix(x, 17); }
+}
+EOF
+  cat > "$f" <<EOF
+#include "$(basename "$h")"
+int hol_probe(){ return hol::call(5); }
+EOF
+}
+
+# ---- orchestrator (optional) ----
+# Levels: low | medium | high | insane
+generate_cpp_bundle() {
+  local level="${1:-medium}"
+
+  write_cmake_skel
+  write_cpp_main_min
+
+  # Always-on baseline
+  add_macro_maze
+  add_chaotic_header
+  add_cpp_noise_unit
+  add_template_stress
+  add_deadcode_garden
+  add_random_namespace_header
+  add_feature_files_bulk
+  add_perf_code
+  add_test
+  add_security_fix
+  breaking_api_change
+  add_ranges_unit
+  add_optional_variant_unit
+  add_header_only_lib
+
+  case "$level" in
+    low)
+      ;;
+    medium)
+      add_threading_unit
+      add_filesystem_unit
+      ;;
+    high)
+      add_threading_unit
+      add_filesystem_unit
+      # duplicate some generators for volume
+      add_cpp_noise_unit
+      add_template_stress
+      add_perf_code
+      add_test
+      ;;
+    insane)
+      add_threading_unit
+      add_filesystem_unit
+      # spray many units
+      for _ in {1..3}; do add_cpp_noise_unit; done
+      for _ in {1..2}; do add_template_stress; done
+      for _ in {1..2}; do add_deadcode_garden; done
+      for _ in {1..3}; do add_perf_code; done
+      for _ in {1..3}; do add_test; done
+      ;;
+    *)
+      echo "[nv-generators] Unknown level '$level' (use low|medium|high|insane)" >&2
+      return 2
+      ;;
+  esac
 }
