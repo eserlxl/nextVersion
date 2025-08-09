@@ -45,13 +45,22 @@ main() {
   local gen_args=(--count "$COUNT" --complexity "$COMPLEXITY")
   [[ -n "$SEED" ]] && gen_args+=(--seed "$SEED")
   [[ -n "$PARENT_TMP" ]] && gen_args+=(--keep-repos-under "$PARENT_TMP")
-  $KEEP && gen_args+=(--no-cleanup)
+  # Always prevent generator self-cleanup; handle cleanup here after compare
+  gen_args+=(--no-cleanup)
   $QUIET && gen_args+=(--quiet)
-  # Generate and capture repo list
-  mapfile -t repos < <("$GEN" "${gen_args[@]}")
+  # Generate and capture repo list, filtering out non-path log lines.
+  # Accept only absolute paths to avoid feeding logs to the comparator.
+  mapfile -t repos < <("$GEN" "${gen_args[@]}" | grep -E '^/')
   # Compare
   if $QUIET; then printf '%s\n' "${repos[@]}" | "$CMP" --quiet
   else printf '%s\n' "${repos[@]}" | "$CMP"
+  fi
+
+  # Post-compare cleanup if not keeping repos
+  if ! $KEEP; then
+    for r in "${repos[@]}"; do
+      [[ -n "$r" && -d "$r" ]] && rm -rf -- "$r"
+    done
   fi
 }
 main
