@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 source "${SCRIPT_DIR}/nv-common.sh"
 
 QUIET=false
+declare -a ARGS=()
 usage() {
   cat <<EOF
 nv-compare: compare analyzer vs next-version for repo(s)
@@ -56,7 +57,7 @@ compare_one() {
 
 main() {
   local repos=()
-  if ((${#ARGS[@]:-0})); then
+  if ((${#ARGS[@]})); then
     repos=("${ARGS[@]}")
   else
     mapfile -t repos
