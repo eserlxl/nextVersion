@@ -26,8 +26,8 @@ else
 fi
 
 info() { printf "%s[INFO]%s %s\n" "$BLUE" "$NC" "$*"; }
-pass() { printf "%s[PASS]%s %s\n" "$GREEN" "$NC" "$*"; ((tests_passed++)); }
-fail() { printf "%s[FAIL]%s %s\n" "$RED"   "$NC" "$*"; ((tests_failed++)); }
+pass() { printf "%s[PASS]%s %s\n" "$GREEN" "$NC" "$*"; ((++tests_passed)); }
+fail() { printf "%s[FAIL]%s %s\n" "$RED"   "$NC" "$*"; ((++tests_failed)); }
 warn() { printf "%s[WARN]%s %s\n" "$YELLOW" "$NC" "$*"; }
 
 tests_passed=0
