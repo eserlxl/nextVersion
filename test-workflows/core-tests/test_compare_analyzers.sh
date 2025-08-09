@@ -62,7 +62,7 @@ Usage: $(basename "$0") [options]
 
 Options:
   --count N               Number of repos to generate (default: 10)
-  --no-cleanup            Do not delete generated repos on exit (prints their paths)
+  --no-cleanup            Do not delete generated repos on exit (prints paths)
   --keep-repos-under DIR  Create repos under DIR instead of system tmp
   --quiet                 Reduce log noise
   --seed N                Fixed seed number for deterministic repository generation
