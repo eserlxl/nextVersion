@@ -363,9 +363,10 @@ compare_outputs_for_repo() {
   $QUIET || info "Analyzing repo: $repo_dir"
 
   local out_a out_b
+  # Use JSON output to avoid formatting drift and ensure zero exit codes
   set +e
-  out_a="$("$ANALYZER_SH" --repo-root "$repo_dir" 2>/dev/null)"
-  out_b="$("$NEXT_VERSION_BIN" --repo-root "$repo_dir" 2>/dev/null)"
+  out_a="$("$ANALYZER_SH" --repo-root "$repo_dir" --json 2>/dev/null)" || true
+  out_b="$("$NEXT_VERSION_BIN" --repo-root "$repo_dir" --json 2>/dev/null)" || true
   set -e
 
   printf "%s\n" "$out_a" > "$tmp_a"
