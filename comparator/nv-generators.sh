@@ -612,3 +612,13 @@ generate_cpp_bundle() {
       ;;
   esac
 }
+
+# ---- load external generator modules (extracted) ----
+# Source modular generator scripts if present; these override in-file versions.
+if [[ -d "${SCRIPT_DIR}/generators" ]]; then
+  for _genmod in "${SCRIPT_DIR}/generators/"*.sh; do
+    [[ -e "${_genmod}" ]] || continue
+    # shellcheck disable=SC1090
+    source "${_genmod}"
+  done
+fi
