@@ -92,68 +92,18 @@ maybe_tag() {
   fi
 }
 
-# ---- orchestrator (optional) ----
-# Levels: low | medium | high | insane
-# Generators are implemented in modules under `comparator/generators/*.sh`.
-generate_cpp_bundle() {
-  local level="${1:-medium}"
-
-  write_cmake_skel
-  write_cpp_main_min
-
-  # Always-on baseline
-  add_macro_maze
-  add_chaotic_header
-  add_cpp_noise_unit
-  add_template_stress
-  add_deadcode_garden
-  add_random_namespace_header
-  add_feature_files_bulk
-  add_perf_code
-  add_test
-  add_security_fix
-  breaking_api_change
-  add_ranges_unit
-  add_optional_variant_unit
-  add_header_only_lib
-
-  case "$level" in
-    low)
-      ;;
-    medium)
-      add_threading_unit
-      add_filesystem_unit
-      ;;
-    high)
-      add_threading_unit
-      add_filesystem_unit
-      # duplicate some generators for volume
-      add_cpp_noise_unit
-      add_template_stress
-      add_perf_code
-      add_test
-      ;;
-    insane)
-      add_threading_unit
-      add_filesystem_unit
-      # spray many units
-      for _ in {1..3}; do add_cpp_noise_unit; done
-      for _ in {1..2}; do add_template_stress; done
-      for _ in {1..2}; do add_deadcode_garden; done
-      for _ in {1..3}; do add_perf_code; done
-      for _ in {1..3}; do add_test; done
-      ;;
-    *)
-      echo "[nv-generators] Unknown level '$level' (use low|medium|high|insane)" >&2
-      return 2
-      ;;
-  esac
-}
-
-# ---- load external generator modules (extracted) ----
 # Source modular generator scripts if present; these override in-file versions.
 if [[ -d "${SCRIPT_DIR}/generators" ]]; then
   for _genmod in "${SCRIPT_DIR}/generators/"*.sh; do
+    [[ -e "${_genmod}" ]] || continue
+    # shellcheck disable=SC1090
+    source "${_genmod}"
+  done
+fi
+
+# Also source complete file generator scripts (orchestrators) if present
+if [[ -d "${SCRIPT_DIR}/full-generators" ]]; then
+  for _genmod in "${SCRIPT_DIR}/full-generators/"*.sh; do
     [[ -e "${_genmod}" ]] || continue
     # shellcheck disable=SC1090
     source "${_genmod}"
