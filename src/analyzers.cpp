@@ -236,16 +236,20 @@ static int countRegex(const std::string &text, const std::regex &re) { int cnt=0
 
 KeywordResults analyzeKeywords(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace) {
   KeywordResults res; std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false); std::string logs = getCommitMessages(repoRoot, baseRef, targetRef, false);
+  // Code and commit patterns for breaking changes (align with shell analyzer)
   std::regex cliBreakCode(R"(CLI[\- ]?BREAKING)", std::regex::icase);
   std::regex apiBreakCode(R"(API[\- ]?BREAKING)", std::regex::icase);
+  // In commit messages also accept "BREAKING: ... CLI" and "BREAKING: ... API"
+  std::regex cliBreakCommit(R"(BREAKING[^A-Za-z0-9]+.*CLI)", std::regex::icase);
+  std::regex apiBreakCommit(R"(BREAKING[^A-Za-z0-9]+.*API)", std::regex::icase);
   std::regex generalBreakCommit(R"(BREAKING\s+CHANGE|BREAKING[^A-Za-z0-9]+.*(CHANGE|MAJOR))", std::regex::icase);
   // Match bash version's comment pattern: (^|[[:space:]])[+-]?[[:space:]]*(//|/\\*|#|--)[[:space:]]*SECURITY
   std::regex securityCode(R"((^|\s)[+-]?\s*(//|/\*|#|--)\s*SECURITY)", std::regex::icase);
   std::regex removedOptCode(R"(REMOVED\s+OPTION(S)?)", std::regex::icase);
   // Match bash version's commit pattern: (SECURITY|VULNERABILIT(Y|IES)|CVE[- ]?[0-9]{4}-[0-9]+)
   std::regex secOrCve(R"(SECURITY|VULNERABILIT(Y|IES)|CVE[- ]?[0-9]{4}-[0-9]+)", std::regex::icase);
-  int cli_breaking = countRegex(diff, cliBreakCode) + countRegex(logs, cliBreakCode);
-  int api_breaking = countRegex(diff, apiBreakCode) + countRegex(logs, apiBreakCode);
+  int cli_breaking = countRegex(diff, cliBreakCode) + countRegex(logs, cliBreakCode) + countRegex(logs, cliBreakCommit);
+  int api_breaking = countRegex(diff, apiBreakCode) + countRegex(logs, apiBreakCode) + countRegex(logs, apiBreakCommit);
   int general_break = countRegex(logs, generalBreakCommit);
   int security_total = countRegex(diff, securityCode) + countRegex(logs, secOrCve);
   res.hasCliBreaking = (cli_breaking>0); res.hasApiBreaking = (api_breaking>0); res.hasGeneralBreaking = (general_break>0); res.totalSecurity = security_total; res.removedOptionsKeywords = countRegex(diff, removedOptCode); return res;
@@ -253,8 +257,13 @@ KeywordResults analyzeKeywords(const std::string &repoRoot, const std::string &b
 
 CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace) {
   CliResults r;
+  // Full diff for general signals
   std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false);
+  // Restrict help text and CLI pattern heuristics to C/C++ sources/headers to align with bash CPP_DIFF
+  const std::string cppGlobs = "*.c,*.cc,*.cpp,*.cxx,*.h,*.hh,*.hpp";
+  std::string cppDiff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, cppGlobs, false);
   std::istringstream iss(diff);
+  std::istringstream cppIss(cppDiff);
   std::string line;
   std::set<std::string> removedLongFromStruct, addedLongFromStruct;
   std::set<std::string> removedLongManual, addedLongManual;
@@ -274,7 +283,9 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   std::regex longOptionAdded(R"(^\+[^/#!].*--[A-Za-z0-9\-]+)");
   std::regex argcCheckAdded(R"(^\+.*\bargc\s*[<>=!])");
   std::regex argvAccessAdded(R"(^\+.*\bargv\[)");
+  std::regex mainSignatureAdded(R"(^\+[^/]*\bint\s+main\s*\()");
   int enhancedCount = 0;
+  int helpTextChangesCount = 0;
   
   auto isCommentLine = [](const std::string &ln) -> bool {
     // minus or plus, optional spaces, then // or /*
@@ -309,20 +320,56 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
       for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
         addedLongFromStruct.insert((*it)[0]);
       }
-      if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
+       if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
         for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
           addedLongManual.insert((*it)[0]);
         }
       }
       std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { addedCases.insert(m[1].str()); }
-      if (std::regex_search(line, getoptCall)
+       if (std::regex_search(line, helpUsageAdded)) {
+         ++helpTextChangesCount;
+       }
+       if (std::regex_search(line, getoptCall)
           || std::regex_search(line, argcArgvAdded)
-          || std::regex_search(line, helpUsageAdded)
           || std::regex_search(line, shortOptionAdded)
           || std::regex_search(line, longOptionAdded)
           || std::regex_search(line, argcCheckAdded)
-          || std::regex_search(line, argvAccessAdded)) {
+           || std::regex_search(line, argvAccessAdded)
+           || std::regex_search(line, mainSignatureAdded)) {
         ++enhancedCount;
+      }
+    }
+  }
+
+  // Second pass on C/C++-only diff for help text and enhanced CLI patterns (parity with bash CPP_DIFF)
+  while (std::getline(cppIss, line)) {
+    if (line.rfind("+++",0)==0 || line.rfind("---",0)==0 || line.rfind("@@",0)==0) continue;
+    if (!line.empty() && line[0]=='+') {
+      if (std::regex_search(line, helpUsageAdded)) {
+        ++helpTextChangesCount;
+      }
+      if (std::regex_search(line, getoptCall)
+          || std::regex_search(line, argcArgvAdded)
+          || std::regex_search(line, shortOptionAdded)
+          || std::regex_search(line, longOptionAdded)
+          || std::regex_search(line, argcCheckAdded)
+          || std::regex_search(line, argvAccessAdded)
+          || std::regex_search(line, mainSignatureAdded)) {
+        ++enhancedCount;
+      }
+      // Manual long option detection only on C/C++ lines to reduce false positives
+      if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
+        for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+          addedLongManual.insert((*it)[0]);
+        }
+      }
+    } else if (!line.empty() && line[0]=='-') {
+      // Removed side for manual long options and short option removals
+      if (std::regex_search(line, shortOpt)) r.removedShortCount++;
+      if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
+        for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
+          removedLongManual.insert((*it)[0]);
+        }
       }
     }
   }
@@ -335,7 +382,15 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   r.manualAddedLongCount = static_cast<int>(addedLongManual.size());
   // Align with bash: breaking CLI based on removed switch-case labels only (more accurate)
   r.breakingCliChanges = breakingByCases;
-  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0 || enhancedCount>0);
+  // If switch-case label analysis indicates removed options but struct/manual
+  // extraction did not detect specific removed options, synthesize a minimal
+  // removed-long signal to align with shell analyzer's removed-option bonus.
+  if (breakingByCases && r.removedLongCount == 0 && r.manualRemovedLongCount == 0 && r.removedShortCount == 0) {
+    r.removedLongCount = 1;
+  }
+  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0 || enhancedCount>0 || helpTextChangesCount>0);
+  r.helpTextChanges = helpTextChangesCount;
+  r.enhancedCliPatterns = enhancedCount;
   // Align CLI change flag with bash: treat any option set change or short removals as CLI changes
   r.cliChanges = r.breakingCliChanges
               || r.manualCliChanges
@@ -412,9 +467,9 @@ Kv convertCliResultsToKv(const CliResults &results) {
   kv["ADDED_LONG_COUNT"] = std::to_string(results.addedLongCount);
   kv["GETOPT_CHANGES"] = "0"; // Not implemented in C++ version yet
   kv["ARG_PARSING_CHANGES"] = "0"; // Not implemented in C++ version yet
-  kv["HELP_TEXT_CHANGES"] = "0"; // Not implemented in C++ version yet
+  kv["HELP_TEXT_CHANGES"] = std::to_string(results.helpTextChanges);
   kv["MAIN_SIGNATURE_CHANGES"] = "0"; // Not implemented in C++ version yet
-  kv["ENHANCED_CLI_PATTERNS"] = "0"; // Not implemented in C++ version yet
+  kv["ENHANCED_CLI_PATTERNS"] = std::to_string(results.enhancedCliPatterns);
   return kv;
 }
 

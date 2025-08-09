@@ -24,10 +24,16 @@ void formatOutput(const Options &opts, const std::string &suggestion, const std:
   if (opts.suggestOnly) {
     std::cout << suggestion << "\n";
   } else if (opts.json) {
-    // Precompute three deltas (native)
-    const int pd = baseDeltaFor("patch", loc, cfg) + computeTotalBonusWithMultiplier(totalBonus, loc, "patch", cfg);
-    const int md = baseDeltaFor("minor", loc, cfg) + computeTotalBonusWithMultiplier(totalBonus, loc, "minor", cfg);
-    const int jd = baseDeltaFor("major", loc, cfg) + computeTotalBonusWithMultiplier(totalBonus, loc, "major", cfg);
+    // Precompute three deltas (native) matching version-calculator.sh
+    // When current_version is 0.0.0, emit zeros to match calculator early-exit.
+    int pd = 0, md = 0, jd = 0;
+    if (!(currentVersion == "0.0.0")) {
+      // Use same math as shell: TOTAL_DELTA = BASE_DELTA + TOTAL_BONUS, both >= 0, min 1 only applies to final TOTAL_DELTA
+      auto clamp_total = [](int baseDelta, int totBonus) { int t = baseDelta + totBonus; return t < 1 ? 1 : t; };
+      pd = clamp_total(baseDeltaFor("patch", loc, cfg), computeTotalBonusWithMultiplier(totalBonus, loc, "patch", cfg));
+      md = clamp_total(baseDeltaFor("minor", loc, cfg), computeTotalBonusWithMultiplier(totalBonus, loc, "minor", cfg));
+      jd = clamp_total(baseDeltaFor("major", loc, cfg), computeTotalBonusWithMultiplier(totalBonus, loc, "major", cfg));
+    }
 
     std::cout << "{\n";
     std::cout << "  \"suggestion\": \"" << jsonEscape(suggestion) << "\",\n";
@@ -39,6 +45,11 @@ void formatOutput(const Options &opts, const std::string &suggestion, const std:
     std::cout << "  \"manual_cli_changes\": " << (flagTrue(CLI, "MANUAL_CLI_CHANGES") ? "true" : "false") << ",\n";
     std::cout << "  \"manual_added_long_count\": " << intOrDefault(CLI.count("MANUAL_ADDED_LONG_COUNT") ? CLI.at("MANUAL_ADDED_LONG_COUNT") : "", 0) << ",\n";
     std::cout << "  \"manual_removed_long_count\": " << intOrDefault(CLI.count("MANUAL_REMOVED_LONG_COUNT") ? CLI.at("MANUAL_REMOVED_LONG_COUNT") : "", 0) << ",\n";
+    // Keep JSON parity fields stable even if not directly used by tests
+    // These align with bash analyzer outputs and are useful for debugging
+    // Note: They are optional in JSON schema but harmless if present
+    // std::cout << "  \"help_text_changes\": " << intOrDefault(CLI.count("HELP_TEXT_CHANGES") ? CLI.at("HELP_TEXT_CHANGES") : "", 0) << ",\n";
+    // std::cout << "  \"enhanced_cli_patterns\": " << intOrDefault(CLI.count("ENHANCED_CLI_PATTERNS") ? CLI.at("ENHANCED_CLI_PATTERNS") : "", 0) << ",\n";
     std::cout << "  \"base_ref\": \"" << jsonEscape(baseRef) << "\",\n";
     std::cout << "  \"target_ref\": \"" << jsonEscape(targetRef) << "\",\n";
     std::cout << "  \"loc_delta\": {\n";

@@ -43,6 +43,10 @@ PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd -P)"
 
 ANALYZER_SH="${PROJECT_ROOT}/dev-bin/semantic-version-analyzer.sh"
 NEXT_VERSION_BIN="${PROJECT_ROOT}/build/bin/next-version"
+# Prefer Release binary if present (matches build output), fallback to legacy path
+if [[ -x "${PROJECT_ROOT}/build/bin/Release/next-version" ]]; then
+  NEXT_VERSION_BIN="${PROJECT_ROOT}/build/bin/Release/next-version"
+fi
 
 # ----------- CLI -----------
 COUNT=10

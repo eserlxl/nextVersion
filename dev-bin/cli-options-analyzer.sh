@@ -351,56 +351,131 @@ read -r removed_long_count  added_long_count  < <(set_diff_counts "$long_before_
 removed_long_count=$(printf '%s' "$removed_long_count" | tr -d ' ')
 added_long_count=$(printf '%s' "$added_long_count" | tr -d ' ')
 
-# --- raw diff heuristics -----------------------------------------------------
+# --- raw diff heuristics (ported from C++ logic) ------------------------------
 
-removed_cases=$(printf '%s' "$SRC_DIFF" | scan_case_labels '-')
-added_cases=$(  printf '%s' "$SRC_DIFF" | scan_case_labels '+')
-missing_cases=$(comm -23 <(printf '%s\n' "$removed_cases") <(printf '%s\n' "$added_cases") || true)
+# Port C++ regex contexts to bash
+long_opt_re='--[A-Za-z0-9][A-Za-z0-9\-]*'
+proto_removed_re='^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([^;]*\)\s*;\s*$'
+short_opt_removed_re='^-[^+].*[^-]-[A-Za-z](\s|$)'
+case_label_re='case[[:space:]]+([^:[:space:]]+)[[:space:]]*:'
+getopt_call_re='(getopt_long|getopt)[[:space:]]*\('
+argc_argv_added_re='^\+.*\b(argc|argv)\b'
+help_usage_added_re='^\+.*\b(usage|help|option|argument)\b'
+short_option_added_re='^\+[^/#!].*-[A-Za-z](\s|$)'
+long_option_added_re='^\+[^/#!].*--[A-Za-z0-9\-]+'
+argc_check_added_re='^\+.*\bargc[[:space:]]*[<>=!]'
+argv_access_added_re='^\+.*\bargv\['
+main_signature_added_re='^\+[^/]*\bint[[:space:]]+main[[:space:]]*\('
+
+is_comment_line() {
+  local ln="$1"
+  [[ "$ln" =~ ^[+-][[:space:]]*(//|/\*) ]]
+}
+
+has_quoted_long_opt() {
+  local ln="$1"
+  [[ "$ln" == *"\""* && "$ln" == *"--"* ]]
+}
+
+removed_cases=$(printf '%s' "$SRC_DIFF" | grep -E "^-" -a | grep -Eo "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
+added_cases=$(printf '%s' "$SRC_DIFF" | grep -E "^\+" -a | grep -Eo "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
+missing_cases=$(comm -23 <(printf '%s\n' $removed_cases | sed '/^$/d') <(printf '%s\n' $added_cases | sed '/^$/d') || true)
 breaking_cli_changes=false
 [[ -n "$missing_cases" ]] && breaking_cli_changes=true
 
-# API change hint (removed prototypes) across the entire relevant diff (align with C++ analyzer)
+# Count removals on '-' lines from full diff
+removed_struct_long=""
+added_struct_long=""
+while IFS= read -r ln; do
+  [[ "$ln" =~ ^- ]] || continue
+  # struct-based long options removed
+  while read -r tok; do
+    [[ -n "$tok" ]] && removed_struct_long=$(printf '%s\n%s' "$removed_struct_long" "$tok")
+  done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  # prototype removal => API breaking
+  if [[ "$ln" =~ $proto_removed_re ]]; then
+    api_breaking=true
+  fi
+  # short option removals
+  if [[ "$ln" =~ $short_opt_removed_re ]]; then
+    removed_short_count=$(( ${removed_short_count:-0} + 1 ))
+  fi
+  # manual long option removals (skip comment/quoted)
+  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+    while read -r tok; do
+      [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
+    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  fi
+done < <(printf '%s' "$SRC_DIFF" | sed -n '/^-/p')
+
+# Count additions on '+' lines from full diff
+while IFS= read -r ln; do
+  [[ "$ln" =~ ^\+ ]] || continue
+  if [[ "$ln" =~ $help_usage_added_re ]]; then
+    help_text_changes=$(( ${help_text_changes:-0} + 1 ))
+  fi
+  if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
+    enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
+  fi
+  # struct long option adds
+  while read -r tok; do
+    [[ -n "$tok" ]] && added_struct_long=$(printf '%s\n%s' "$added_struct_long" "$tok")
+  done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  # manual long option adds (skip comment/quoted)
+  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+    while read -r tok; do
+      [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
+    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  fi
+done < <(printf '%s' "$SRC_DIFF" | sed -n '/^\+/p')
+
+# Second pass on C/C++-only diff to mirror C++ behavior
+# Added lines: increment help/usage and enhanced patterns at most once per line
+while IFS= read -r ln; do
+  [[ "$ln" =~ ^\+ ]] || continue
+  if [[ "$ln" =~ $help_usage_added_re ]]; then
+    help_text_changes=$(( ${help_text_changes:-0} + 1 ))
+  fi
+  if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
+    enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
+  fi
+  # manual long option adds (skip comment/quoted)
+  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+    while read -r tok; do
+      [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
+    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  fi
+done < <(printf '%s' "$CPP_DIFF" | sed -n '/^\+/p')
+
+# Removed lines in C/C++-only diff: short options and manual long option removals
+while IFS= read -r ln; do
+  [[ "$ln" =~ ^- ]] || continue
+  if [[ "$ln" =~ $short_opt_removed_re ]]; then
+    removed_short_count=$(( ${removed_short_count:-0} + 1 ))
+  fi
+  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+    while read -r tok; do
+      [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
+    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  fi
+done < <(printf '%s' "$CPP_DIFF" | sed -n '/^-/p')
+
+# Override struct-based long option add/remove counts to mirror C++
+removed_long_count=$(printf '%s\n' "$removed_struct_long" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
+added_long_count=$(printf '%s\n' "$added_struct_long" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
+
+# API change hint across entire diff (fallback)
 removed_prototypes=$(printf '%s' "$SRC_DIFF" | count_removed_prototypes || printf '0')
-api_breaking=false
+api_breaking=${api_breaking:-false}
 (( removed_prototypes > 0 )) && api_breaking=true
 
-# Debug: Show HDR_DIFF content (only in verbose mode)
-$VERBOSE && note "Debug: removed_prototypes count: $removed_prototypes"
-
-# Manual/heuristic long option detection limited to C/C++
-added_long_opts=$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '+')
-removed_long_opts=$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '-')
-manual_added_long_count=$(printf '%s\n' "$added_long_opts" | sed '/^$/d' | wc -l | tr -d ' ' || printf '0')
-manual_removed_long_count=$(printf '%s\n' "$removed_long_opts" | sed '/^$/d' | wc -l | tr -d ' ' || printf '0')
+# Manual/heuristic long option detection limited to C/C++ (keep for consistency)
+added_long_opts=${added_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '+')}
+removed_long_opts=${removed_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '-')}
+manual_added_long_count=$(printf '%s\n' "$added_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
+manual_removed_long_count=$(printf '%s\n' "$removed_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 manual_cli_changes=false
-(( manual_added_long_count > 0 || manual_removed_long_count > 0 )) && manual_cli_changes=true
-
-getopt_changes=$(printf '%s' "$CPP_DIFF" | grep -c -E '(getopt_long|getopt)\s*\(' -a || printf '0')
-arg_parsing_changes=$(printf '%s' "$CPP_DIFF" | grep -c -E '^\+.*\b(argc|argv)\b' -a || printf '0')
-help_text_changes=$(printf '%s' "$CPP_DIFF" | grep -i -c -E '^\+.*\b(usage|help|option|argument)\b' -a || printf '0')
-main_signature_changes=$(printf '%s' "$CPP_DIFF" | grep -c -E '^\+[^/]*\bint[[:space:]]+main[[:space:]]*\(' -a || printf '0')
-
-enhanced_cli_patterns=$(printf '%s' "$CPP_DIFF" | awk '
-  /^\+[^/#!].*-[[:alpha:]]/       {print "short_option_change"}
-  /^\+[^/#!].*--[[:alnum:]-]+/    {print "long_option_change"}
-  /^\+.*\bargc[[:space:]]*[<>=!]/ {print "argc_check_change"}
-  /^\+.*\bargv\[/                 {print "argv_access_change"}
-' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
-
-# Ensure all variables are numeric for arithmetic expression
-getopt_changes=${getopt_changes:-0}
-arg_parsing_changes=${arg_parsing_changes:-0}
-help_text_changes=${help_text_changes:-0}
-main_signature_changes=${main_signature_changes:-0}
-enhanced_cli_patterns=${enhanced_cli_patterns:-0}
-
-# Ensure count variables are numeric for printf statements
-removed_short_count=${removed_short_count:-0}
-added_short_count=${added_short_count:-0}
-removed_long_count=${removed_long_count:-0}
-added_long_count=${added_long_count:-0}
-manual_added_long_count=${manual_added_long_count:-0}
-manual_removed_long_count=${manual_removed_long_count:-0}
+(( manual_added_long_count > 0 || manual_removed_long_count > 0 || ${enhanced_cli_patterns:-0} > 0 || ${help_text_changes:-0} > 0 )) && manual_cli_changes=true
 
 # Composite CLI change flags
 cli_changes=false
@@ -412,9 +487,34 @@ if [[ -n "$long_after" && "$long_after" != "$long_before" ]]; then
   cli_changes=true
   [[ -n "$removed_long_list" ]] && breaking_cli_changes=true
 fi
-# Align with C++: treat manual CLI pattern changes as CLI changes
+# Align with current C++ behavior: manual CLI pattern changes also imply CLI changes
 if $manual_cli_changes; then
   cli_changes=true
+fi
+
+# Also align with C++: any breaking-by-cases implies overall CLI changes
+if $breaking_cli_changes; then
+  cli_changes=true
+fi
+
+# And align with C++: any removed short options in diff imply CLI changes
+rsn=${removed_short_count:-0}
+if [[ "$rsn" =~ ^[0-9]+$ ]] && (( rsn > 0 )); then
+  cli_changes=true
+fi
+
+# Synthesize a minimal removed-option signal when switch/case analysis
+# indicates breaking CLI removals but we didn't detect explicit option removals.
+# This mirrors the C++ analyzer's fallback so the removed-option bonus is applied.
+if $breaking_cli_changes; then
+  rsc=${removed_short_count:-0}
+  rlc=${removed_long_count:-0}
+  mrlc=${manual_removed_long_count:-0}
+  if [[ "$rsc" =~ ^[0-9]+$ ]] && [[ "$rlc" =~ ^[0-9]+$ ]] && [[ "$mrlc" =~ ^[0-9]+$ ]]; then
+    if (( rsc == 0 && rlc == 0 && mrlc == 0 )); then
+      removed_long_count=1
+    fi
+  fi
 fi
 
 # Use a more robust method for the arithmetic expression

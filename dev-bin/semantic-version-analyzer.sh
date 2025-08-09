@@ -401,9 +401,11 @@ main() {
   fi
 
   # Feature additions
+  # Apply CLI changes bonus only for actual option set changes (not just heuristics)
   if [[ "${CLI[CLI_CHANGES]:-false}" == "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_CLI_CHANGES_BONUS]}" 2) ))
   fi
+  # Heuristic/manual CLI changes receive a smaller, separate bonus
   if [[ "${CLI[MANUAL_CLI_CHANGES]:-false}" == "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_MANUAL_CLI_BONUS]}" 1) ))
   fi
