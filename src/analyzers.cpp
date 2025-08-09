@@ -258,10 +258,16 @@ KeywordResults analyzeKeywords(const std::string &repoRoot, const std::string &b
 CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &baseRef, const std::string &targetRef, const std::string &onlyPathsCsv, bool ignoreWhitespace) {
   CliResults r;
   // Full diff for general signals
-  std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, onlyPathsCsv, false);
+  // Parity with bash analyzer: when no path filters are provided, restrict to common C/C++ files by default.
+  // Use recursive glob pathspecs via Git's :(glob) to match **/*.ext like the shell version.
+  const std::string defaultCppGlobPathspec =
+      ":(glob)**/*.c,:(glob)**/*.cc,:(glob)**/*.cpp,:(glob)**/*.cxx,:(glob)**/*.h,:(glob)**/*.hh,:(glob)**/*.hpp";
+  const std::string effectivePaths = onlyPathsCsv.empty() ? defaultCppGlobPathspec : onlyPathsCsv;
+  std::string diff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, effectivePaths, false);
   // Restrict help text and CLI pattern heuristics to C/C++ sources/headers to align with bash CPP_DIFF
-  const std::string cppGlobs = "*.c,*.cc,*.cpp,*.cxx,*.h,*.hh,*.hpp";
-  std::string cppDiff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, cppGlobs, false);
+  // Use the same effective pathspec as above to ensure parity with PATHSPEC handling in shell analyzer
+  const std::string cppPathspec = effectivePaths;
+  std::string cppDiff = getDiffText(repoRoot, baseRef, targetRef, ignoreWhitespace, cppPathspec, false);
   std::istringstream iss(diff);
   std::istringstream cppIss(cppDiff);
   std::string line;

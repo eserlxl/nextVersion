@@ -40,6 +40,14 @@ int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv
   if (flagTrue(CLI, "MANUAL_CLI_CHANGES")) {
     TOTAL_BONUS += cfg.bonusManualCli;
   }
+  // Treat help/usage text additions as user documentation improvements (align with bash)
+  if (intOrDefault(CLI.count("HELP_TEXT_CHANGES") ? CLI.at("HELP_TEXT_CHANGES") : "", 0) > 0) {
+    TOTAL_BONUS += cfg.bonusNewDoc;
+  }
+  // Minor nudge for enhanced CLI patterns (kept small to avoid overcount) -> +1 if any
+  if (intOrDefault(CLI.count("ENHANCED_CLI_PATTERNS") ? CLI.at("ENHANCED_CLI_PATTERNS") : "", 0) > 0) {
+    TOTAL_BONUS += 1;
+  }
   if (intOrDefault(fileKv.count("NEW_SOURCE_FILES") ? fileKv.at("NEW_SOURCE_FILES") : "", 0) > 0) {
     TOTAL_BONUS += cfg.bonusNewSource;
   }

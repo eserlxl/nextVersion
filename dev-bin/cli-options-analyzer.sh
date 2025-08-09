@@ -165,8 +165,8 @@ $IGNORE_WHITESPACE && DIFF_FLAGS+=(-w)
 # Parse short options from getopt()/getopt_long() call sites.
 extract_short_opts() {
   # Concatenate optstrings found in quotes in getopt calls, then uniq.
-  grep -Ea 'getopt(_long)?[[:space:]]*\(' -a \
-  | grep -Eo '"[^"]*"' -a \
+  grep -Eaa -- 'getopt(_long)?[[:space:]]*\(' \
+  | grep -Eao -- '"[^"]*"' \
   | tr -d '"' \
   | LC_ALL=C sort -u \
   | tr -d '\n'
@@ -351,6 +351,23 @@ read -r removed_long_count  added_long_count  < <(set_diff_counts "$long_before_
 removed_long_count=$(printf '%s' "$removed_long_count" | tr -d ' ')
 added_long_count=$(printf '%s' "$added_long_count" | tr -d ' ')
 
+# Initialize pattern counters to avoid unbound variable errors under 'set -u'
+getopt_changes=${getopt_changes:-0}
+arg_parsing_changes=${arg_parsing_changes:-0}
+help_text_changes=${help_text_changes:-0}
+main_signature_changes=${main_signature_changes:-0}
+enhanced_cli_patterns=${enhanced_cli_patterns:-0}
+
+# Normalize numeric counters to plain integers (strip leading zeros/empties)
+removed_short_count=$(( ${removed_short_count:-0} + 0 ))
+added_short_count=$(( ${added_short_count:-0} + 0 ))
+removed_long_count=$(( ${removed_long_count:-0} + 0 ))
+added_long_count=$(( ${added_long_count:-0} + 0 ))
+manual_added_long_count=$(( ${manual_added_long_count:-0} + 0 ))
+manual_removed_long_count=$(( ${manual_removed_long_count:-0} + 0 ))
+help_text_changes=$(( ${help_text_changes:-0} + 0 ))
+enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 0 ))
+
 # --- raw diff heuristics (ported from C++ logic) ------------------------------
 
 # Port C++ regex contexts to bash
@@ -359,13 +376,13 @@ proto_removed_re='^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([
 short_opt_removed_re='^-[^+].*[^-]-[A-Za-z](\s|$)'
 case_label_re='case[[:space:]]+([^:[:space:]]+)[[:space:]]*:'
 getopt_call_re='(getopt_long|getopt)[[:space:]]*\('
-argc_argv_added_re='^\+.*\b(argc|argv)\b'
-help_usage_added_re='^\+.*\b(usage|help|option|argument)\b'
+argc_argv_added_re='(^|[^[:alnum:]_])(argc|argv)([^[:alnum:]_]|$)'
+help_usage_added_re='(^|[^[:alnum:]_])(usage|help|option|argument)([^[:alnum:]_]|$)'
 short_option_added_re='^\+[^/#!].*-[A-Za-z](\s|$)'
 long_option_added_re='^\+[^/#!].*--[A-Za-z0-9\-]+'
-argc_check_added_re='^\+.*\bargc[[:space:]]*[<>=!]'
-argv_access_added_re='^\+.*\bargv\['
-main_signature_added_re='^\+[^/]*\bint[[:space:]]+main[[:space:]]*\('
+argc_check_added_re='^\+.*argc[[:space:]]*[<>=!]'
+argv_access_added_re='^\+.*argv\['
+main_signature_added_re='^\+[^/]*int[[:space:]]+main[[:space:]]*\('
 
 is_comment_line() {
   local ln="$1"
@@ -377,8 +394,8 @@ has_quoted_long_opt() {
   [[ "$ln" == *"\""* && "$ln" == *"--"* ]]
 }
 
-removed_cases=$(printf '%s' "$SRC_DIFF" | grep -E "^-" -a | grep -Eo "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
-added_cases=$(printf '%s' "$SRC_DIFF" | grep -E "^\+" -a | grep -Eo "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
+removed_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^-" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
+added_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^\+" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
 missing_cases=$(comm -23 <(printf '%s\n' $removed_cases | sed '/^$/d') <(printf '%s\n' $added_cases | sed '/^$/d') || true)
 breaking_cli_changes=false
 [[ -n "$missing_cases" ]] && breaking_cli_changes=true
@@ -391,7 +408,7 @@ while IFS= read -r ln; do
   # struct-based long options removed
   while read -r tok; do
     [[ -n "$tok" ]] && removed_struct_long=$(printf '%s\n%s' "$removed_struct_long" "$tok")
-  done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   # prototype removal => API breaking
   if [[ "$ln" =~ $proto_removed_re ]]; then
     api_breaking=true
@@ -404,7 +421,7 @@ while IFS= read -r ln; do
   if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   fi
 done < <(printf '%s' "$SRC_DIFF" | sed -n '/^-/p')
 
@@ -414,18 +431,18 @@ while IFS= read -r ln; do
   if [[ "${ln,,}" =~ $help_usage_added_re ]]; then
     help_text_changes=$(( ${help_text_changes:-0} + 1 ))
   fi
-  if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
+  if [[ "$ln" =~ $getopt_call_re ]] || [[ "${ln,,}" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
     enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
   fi
   # struct long option adds
   while read -r tok; do
     [[ -n "$tok" ]] && added_struct_long=$(printf '%s\n%s' "$added_struct_long" "$tok")
-  done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+  done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   # manual long option adds (skip comment/quoted)
   if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   fi
 done < <(printf '%s' "$SRC_DIFF" | sed -n '/^\+/p')
 
@@ -436,14 +453,14 @@ while IFS= read -r ln; do
   if [[ "${ln,,}" =~ $help_usage_added_re ]]; then
     help_text_changes=$(( ${help_text_changes:-0} + 1 ))
   fi
-  if [[ "$ln" =~ $getopt_call_re ]] || [[ "$ln" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
+  if [[ "$ln" =~ $getopt_call_re ]] || [[ "${ln,,}" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
     enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
   fi
   # manual long option adds (skip comment/quoted)
   if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   fi
 done < <(printf '%s' "$CPP_DIFF" | sed -n '/^\+/p')
 
@@ -456,7 +473,7 @@ while IFS= read -r ln; do
   if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eo "$long_opt_re" -a || true)
+    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   fi
 done < <(printf '%s' "$CPP_DIFF" | sed -n '/^-/p')
 

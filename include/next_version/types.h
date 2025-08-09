@@ -73,15 +73,16 @@ struct ConfigValues {
   int majorBonusThreshold {8};
   int minorBonusThreshold {4};
   int patchBonusThreshold {0};
-  int bonusBreakingCli {2};
-  int bonusApiBreaking {3};
-  int bonusRemovedOption {1};
+  // Defaults aligned with dev-config/versioning.yml for parity with shell analyzer
+  int bonusBreakingCli {4};
+  int bonusApiBreaking {5};
+  int bonusRemovedOption {3};
   int bonusCliChanges {2};
   int bonusManualCli {1};
   int bonusNewSource {1};
   int bonusNewTest {1};
   int bonusNewDoc {1};
-  int bonusSecurity {2};
+  int bonusSecurity {5};
   double bonusMultiplierCap {5.0};
   // Config-driven base deltas (fallbacks mirror shell defaults)
   int baseDeltaPatch {1};
@@ -111,6 +112,8 @@ struct CliResults {
   int addedLongCount {0};
   int manualAddedLongCount {0};
   int manualRemovedLongCount {0};
+  int helpTextChanges {0};
+  int enhancedCliPatterns {0};
 };
 
 struct SecurityResults {
