@@ -143,7 +143,7 @@ git_set_identity() {
 }
 
 git_safe_add() { git add -A >/dev/null; }
-git_commit()   { local m=$1; git commit -q -m "$m" || true; }
+git_commit()   { local m=$1; git commit -q -m "$m" >/dev/null 2>&1 || true; }
 git_tag_light()      { git tag "v$1" >/dev/null 2>&1 || true; }
 git_tag_annotated()  { git tag -a "v$1" -m "release $1" >/dev/null 2>&1 || true; }
 git_new_branch()     { git switch -c "$1" -q >/dev/null 2>&1 || git checkout -b "$1" -q >/dev/null 2>&1; }
@@ -272,7 +272,10 @@ maybe_tag() {
 generate_random_repo() {
   seed_random
   local dir; dir="$(mk_tmp_dir)"
-  $QUIET || info "Generating random repo: $dir"
+  # Print progress to stderr to avoid polluting stdout captured by mapfile
+  if [[ "$QUIET" == "false" ]]; then
+    printf "%s[INFO]%s %s\n" "$BLUE" "$NC" "Generating random repo: $dir" >&2
+  fi
   (
     cd "$dir"
 
@@ -345,7 +348,7 @@ generate_random_repos() {
   local i=0
   while (( i < count )); do
     generate_random_repo
-    ((i++))
+    ((++i))
   done
 }
 
