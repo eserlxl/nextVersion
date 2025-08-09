@@ -54,6 +54,7 @@ CLEANUP=true
 PARENT_TMP=""
 QUIET=false
 SEED=""
+COMPLEXITY=5   # [complexity] default mid
 
 usage() {
   cat <<EOF
@@ -65,8 +66,23 @@ Options:
   --keep-repos-under DIR  Create repos under DIR instead of system tmp
   --quiet                 Reduce log noise
   --seed N                Fixed seed number for deterministic repository generation
+  --complexity L          1..10 or low|med|high (affects files/history/size; default: 5)
   -h, --help              Show this help and exit
 EOF
+}
+
+# [complexity] map aliases and clamp
+normalize_complexity() {
+  local x="${1:-5}"
+  case "$x" in
+    low)  x=2 ;;
+    med|medium) x=5 ;;
+    high) x=8 ;;
+  esac
+  [[ "$x" =~ ^[0-9]+$ ]] || { warn "Invalid complexity '$x', using 5"; x=5; }
+  (( x<1 )) && x=1
+  (( x>10 )) && x=10
+  echo "$x"
 }
 
 while (($#)); do
@@ -76,6 +92,7 @@ while (($#)); do
     --keep-repos-under) PARENT_TMP="${2:-}"; shift 2 ;;
     --quiet) QUIET=true; shift ;;
     --seed) SEED="${2:-}"; USE_FIXED_SEED=1; shift 2 ;;
+    --complexity) COMPLEXITY="$(normalize_complexity "${2:-}")"; shift 2 ;; # [complexity]
     -h|--help) usage; exit 0 ;;
     *) warn "Unknown arg: $1"; usage; exit 2 ;;
   esac
@@ -129,6 +146,32 @@ rand_word() {
   tr -dc 'a-z' < /dev/urandom | head -c "$n" 2>/dev/null || echo "word$RANDOM"
 }
 
+# ----------- [complexity] scaling helpers -----------
+# Soft linear-ish scalers that still keep randomness.
+c_scale()       { # base * (0.6 + 0.1*COMPLEXITY)  (≈1.6x at 10, ≈0.7x at 1)
+  awk -v b="$1" -v c="$COMPLEXITY" 'BEGIN{ printf("%d", (b*(0.6+0.1*c))+0.5) }'
+}
+c_range() { # scale a range bounds with c_scale
+  local base_min=$1 base_max=$2
+  local smin smax
+  smin="$(c_scale "$base_min")"
+  smax="$(c_scale "$base_max")"
+  (( smax < smin )) && smax=$((smin+1))
+  echo "$(rand_int "$smin" "$smax")"
+}
+c_prob() { # increase probability with complexity (base% to ~ base*1.3 at 10)
+  local base="$1"
+  local bump=$(( (COMPLEXITY-5)*6 )) # -30..+30
+  local p=$(( base + bump ))
+  (( p<1 )) && p=1
+  (( p>95 )) && p=95
+  echo "$p"
+}
+c_lines() { # target line count adapted by complexity around a base
+  local base="$1"
+  awk -v b="$base" -v c="$COMPLEXITY" 'BEGIN{ printf("%d", (b*(0.5+0.12*c))+0.5) }'
+}
+
 # ----------- filesystem helpers -----------
 mk_tmp_dir() {
   if [[ -n "$PARENT_TMP" ]]; then
@@ -167,10 +210,20 @@ EOF
 
 write_cpp_main_min() {
   mkdir -p src include
-  cat > src/main.cpp <<'EOF'
-#include <iostream>
-int main(){ std::cout<<"ok\n"; return 0; }
-EOF
+  local lines; lines="$(c_lines 12)"      # [complexity] expand main
+  {
+    echo '#include <iostream>'
+    echo 'int main(){'
+    echo '  std::cout<<"ok\n";'
+    # add some dummy loops to increase length/complexity
+    local i=0
+    while (( i < lines )); do
+      echo "  volatile int a$i = $i; (void)a$i;"
+      ((++i))
+    done
+    echo '  return 0;'
+    echo '}'
+  } > src/main.cpp
 }
 
 touch_version() {
@@ -179,7 +232,15 @@ touch_version() {
 
 append_doc() {
   mkdir -p doc
-  printf "# %s\n\n%s\n" "$(rand_word)" "$(rand_word) $(rand_word) $(rand_word)." >> doc/README.md
+  local paras; paras="$(c_range 1 3)"     # [complexity] more paragraphs
+  {
+    printf "# %s\n\n" "$(rand_word)"
+    local i
+    for ((i=0;i<paras;i++)); do
+      local words; words="$(c_lines 20)"
+      printf "%s\n\n" "$(head -c $((words*6)) </dev/urandom | tr -dc 'a-z \n' | tr -s ' ' | cut -c1-$((words*5)) )"
+    done
+  } >> doc/README.md 2>/dev/null || echo "$(rand_word) $(rand_word)" >> doc/README.md
 }
 
 whitespace_nudge() {
@@ -195,34 +256,79 @@ add_feature_file() {
 
 add_perf_code() {
   mkdir -p src
-  cat > "src/perf_$(rand_word).cpp" <<'EOF'
+  local N; N="$(c_lines 800)"             # [complexity] bigger vectors
+  cat > "src/perf_$(rand_word).cpp" <<EOF
 #include <vector>
 #include <numeric>
-int perf_fn(){ std::vector<int> v(1000,1); return std::accumulate(v.begin(),v.end(),0); }
+int perf_fn_${RANDOM}(){
+  std::vector<int> v(${N},1);
+  return std::accumulate(v.begin(),v.end(),0);
+}
 EOF
 }
 
 add_test() {
   mkdir -p test
-  cat > "test/test_$(rand_word).cpp" <<'EOF'
-#include <cassert>
-int main(){ assert(1); return 0; }
-EOF
+  local assertions; assertions="$(c_range 1 20)"  # [complexity]
+  {
+    echo '#include <cassert>'
+    echo 'int main(){' 
+    local i
+    for ((i=0;i<assertions;i++)); do
+      echo "  assert(${RANDOM}%3==${RANDOM}%3);"
+    done
+    echo '  return 0;'
+    echo '}'
+  } > "test/test_$(rand_word).cpp"
 }
 
 add_security_fix() {
   mkdir -p src
-  cat > src/sec_tmp.cpp <<'EOF'
-#include <cstring>
-void copy_safe(char* d,const char* s,size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]='\0'; } }
-EOF
+  local lines; lines="$(c_lines 25)"      # [complexity]
+  {
+    echo '#include <cstring>'
+    echo '#include <cstddef>'
+    echo 'void copy_safe(char* d,const char* s,size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]='\''\''; } }'
+    local i=0
+    while (( i < lines )); do
+      echo "void shim_$i(char* d,const char* s,size_t n){ copy_safe(d,s,n); }"
+      ((++i))
+    done
+  } > src/sec_$(rand_word).cpp
 }
 
 breaking_api_change() {
   mkdir -p include src
   echo "#pragma once" > include/api.h
-  echo "int api_v2();" >> include/api.h
-  echo "int api_v2(){ return 2; }" > src/api.cpp
+  local overloads; overloads="$(c_range 1 5)"    # [complexity]
+  {
+    local i
+    for ((i=0;i<overloads;i++)); do echo "int api_v2_$i();"; done
+  } >> include/api.h
+  {
+    local i
+    for ((i=0;i<overloads;i++)); do echo "int api_v2_$i(){ return $((i+2)); }"; done
+  } > src/api.cpp
+}
+
+# [complexity] feature file generators
+add_feature_file_once() {
+  mkdir -p src include
+  local fname="feature_$(rand_word)"
+  local fns; fns="$(c_range 1 4)"         # [complexity] multiple funcs per file
+  echo "#pragma once" > "include/${fname}.h"
+  {
+    local j
+    for ((j=0;j<fns;j++)); do
+      printf "int %s_fn%d(){return %d;}\n" "${fname}" "$j" "$(rand_int 0 99)"
+    done
+  } > "src/${fname}.cpp"
+}
+
+add_feature_files_bulk() { # [complexity] add many files at once
+  local n; n="$(c_range 1 5)"
+  local k
+  for ((k=0;k<n;k++)); do add_feature_file_once; done
 }
 
 rename_random_file() {
@@ -262,7 +368,7 @@ delete_random_file() {
 }
 
 maybe_tag() {
-  if (( $(rand_bool 30) )); then
+  if (( $(rand_bool "$(c_prob 30)") )); then  # [complexity] tag more often
     local v_major v_minor v_patch
     v_major="$(rand_int 0 3)"
     v_minor="$(rand_int 0 9)"
@@ -295,15 +401,15 @@ generate_random_repo() {
 
     maybe_tag
 
-    # Random number of commits
-    local n_commits; n_commits="$(rand_int 5 40)"
+    # [complexity] more commits overall
+    local n_commits; n_commits="$(c_range 6 40)"
 
-    # Maybe create a side branch
-    if (( $(rand_bool 40) )); then
+    # [complexity] optional side branch
+    if (( $(rand_bool "$(c_prob 40)") )); then
       git_new_branch "feat/$(rand_word)"
-      add_feature_file
+      add_feature_files_bulk
       git_safe_add
-      git_commit "feat: add initial feature"
+      git_commit "feat: add initial feature pack"
       (( $(rand_bool 50) )) && maybe_tag
       git_switch main
     fi
@@ -315,8 +421,8 @@ generate_random_repo() {
       case "$kind" in
         docs)     append_doc; git_safe_add; git_commit "docs: $(rand_word)";;
         style)    whitespace_nudge "src/main.cpp" || true; git_safe_add; git_commit "style: whitespace tweaks";;
-        feat)     add_feature_file; git_safe_add; git_commit "feat: add $(rand_word)";;
-        refactor) add_feature_file; git_safe_add; git_commit "refactor: restructure $(rand_word)";;
+        feat)     add_feature_files_bulk; git_safe_add; git_commit "feat: add $(rand_word)";;
+        refactor) add_feature_files_bulk; git_safe_add; git_commit "refactor: restructure $(rand_word)";;
         perf)     add_perf_code; git_safe_add; git_commit "perf: optimize $(rand_word)";;
         security) add_security_fix; git_safe_add; git_commit "SECURITY: mitigate $(rand_word)";;
         test)     add_test; git_safe_add; git_commit "test: add unit for $(rand_word)";;
@@ -326,21 +432,27 @@ generate_random_repo() {
         delete)   delete_random_file; git_commit "chore: delete obsolete file(s)";;
       esac
 
-      # Occasionally tag after a commit
-      (( $(rand_bool 20) )) && maybe_tag
+      (( $(rand_bool "$(c_prob 20)") )) && maybe_tag
 
-      # Occasionally branch/merge
-      if (( $(rand_bool 10) )); then
+      # [complexity] branch/merge more frequently and sometimes nested
+      if (( $(rand_bool "$(c_prob 10)") )); then
         local br="exp/$(rand_word)"
         git_new_branch "$br"
-        add_feature_file; git_safe_add; git_commit "feat: experimental $(rand_word)"
+        add_feature_files_bulk; git_safe_add; git_commit "feat: experimental $(rand_word)"
+        if (( $(rand_bool "$(c_prob 40)") )); then
+          local br2="wip/$(rand_word)"
+          git_new_branch "$br2"
+          add_feature_files_bulk; git_safe_add; git_commit "wip: spike $(rand_word)"
+          git_switch "$br"
+          git_merge_ffonly "$br2" || git merge --no-edit -q "$br2" || true
+        fi
         git_switch main
         git_merge_ffonly "$br" || git merge --no-edit -q "$br" || true
       fi
     done
 
     # Final optional tag
-    (( $(rand_bool 50) )) && maybe_tag
+    (( $(rand_bool "$(c_prob 50)") )) && maybe_tag
 
     printf "%s\n" "$dir"
   )
