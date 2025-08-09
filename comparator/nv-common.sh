@@ -6,7 +6,7 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# nv-common: shared helpers for nv-fuzz generators and comparator
+# nv-common: shared helpers for comparator generators and comparator
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -25,7 +25,7 @@ warn() { printf "%s[WARN]%s %s\n" "$YELLOW" "$NC" "$*"; }
 
 # ---------- paths ----------
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd -P)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 
 ANALYZER_SH="${PROJECT_ROOT}/dev-bin/semantic-version-analyzer.sh"
 NEXT_VERSION_BIN="${PROJECT_ROOT}/build/bin/next-version"
