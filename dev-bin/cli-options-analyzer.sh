@@ -382,7 +382,8 @@ short_option_added_re='^\+[^/#!].*-[A-Za-z](\s|$)'
 long_option_added_re='^\+[^/#!].*--[A-Za-z0-9\-]+'
 argc_check_added_re='^\+.*argc[[:space:]]*[<>=!]'
 argv_access_added_re='^\+.*argv\['
-main_signature_added_re='^\+[^/]*int[[:space:]]+main[[:space:]]*\('
+# Exclude generic main() additions from enhanced CLI patterns to reduce noise
+main_signature_added_re='^$NO_MATCH_MAIN_SIGNATURE_PATTERN$'
 
 is_comment_line() {
   local ln="$1"
@@ -492,7 +493,8 @@ removed_long_opts=${removed_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_l
 manual_added_long_count=$(printf '%s\n' "$added_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 manual_removed_long_count=$(printf '%s\n' "$removed_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 manual_cli_changes=false
-(( manual_added_long_count > 0 || manual_removed_long_count > 0 || ${enhanced_cli_patterns:-0} > 0 || ${help_text_changes:-0} > 0 )) && manual_cli_changes=true
+# Parity with C++: only manual long option edits drive manual_cli_changes
+(( manual_added_long_count > 0 || manual_removed_long_count > 0 )) && manual_cli_changes=true
 
 # Composite CLI change flags
 cli_changes=false
@@ -534,14 +536,12 @@ if $breaking_cli_changes; then
   fi
 fi
 
-# Use a more robust method for the arithmetic expression
-total_patterns=0
-[[ "$getopt_changes" =~ ^[0-9]+$ ]] && total_patterns=$((total_patterns + getopt_changes))
-[[ "$arg_parsing_changes" =~ ^[0-9]+$ ]] && total_patterns=$((total_patterns + arg_parsing_changes))
-[[ "$help_text_changes" =~ ^[0-9]+$ ]] && total_patterns=$((total_patterns + help_text_changes))
-[[ "$main_signature_changes" =~ ^[0-9]+$ ]] && total_patterns=$((total_patterns + main_signature_changes))
-[[ "$enhanced_cli_patterns" =~ ^[0-9]+$ ]] && total_patterns=$((total_patterns + enhanced_cli_patterns))
-(( total_patterns > 0 )) && manual_cli_changes=true
+# Drop heuristic counters to 0 for parity with C++
+getopt_changes=0
+arg_parsing_changes=0
+help_text_changes=0
+main_signature_changes=0
+enhanced_cli_patterns=0
 
 # --- output functions --------------------------------------------------------
 

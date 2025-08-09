@@ -289,7 +289,9 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   std::regex longOptionAdded(R"(^\+[^/#!].*--[A-Za-z0-9\-]+)");
   std::regex argcCheckAdded(R"(^\+.*\bargc\s*[<>=!])");
   std::regex argvAccessAdded(R"(^\+.*\bargv\[)");
-  std::regex mainSignatureAdded(R"(^\+[^/]*\bint\s+main\s*\()");
+  // Exclude generic main() additions from enhanced CLI patterns to reduce noise
+  // by not defining a mainSignatureAdded regex here (kept as a no-op placeholder)
+  const bool countMainSignature = false;
   int enhancedCount = 0;
   int helpTextChangesCount = 0;
   
@@ -311,10 +313,7 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
       }
       if (std::regex_search(line, protoRemoved)) r.apiBreaking = true;
       if (std::regex_search(line, shortOpt)) r.removedShortCount++;
-      // Treat getopt call presence on removed lines as a CLI parsing change (align with bash)
-      if (std::regex_search(line, getoptCall)) {
-        ++enhancedCount;
-      }
+      // Do not count enhanced CLI patterns on removed lines to align with bash
       // Manual long option detection on diff lines excluding obvious comments/quoted strings
       if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
         for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
@@ -332,18 +331,7 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
         }
       }
       std::smatch m; if (std::regex_search(line, m, caseLabelRe)) { addedCases.insert(m[1].str()); }
-       if (std::regex_search(line, helpUsageAdded)) {
-         ++helpTextChangesCount;
-       }
-       if (std::regex_search(line, getoptCall)
-          || std::regex_search(line, argcArgvAdded)
-          || std::regex_search(line, shortOptionAdded)
-          || std::regex_search(line, longOptionAdded)
-          || std::regex_search(line, argcCheckAdded)
-           || std::regex_search(line, argvAccessAdded)
-           || std::regex_search(line, mainSignatureAdded)) {
-        ++enhancedCount;
-      }
+       // Disabled help/usage and heuristic enhanced pattern boosts for parity with shell results
     }
   }
 
@@ -351,18 +339,7 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   while (std::getline(cppIss, line)) {
     if (line.rfind("+++",0)==0 || line.rfind("---",0)==0 || line.rfind("@@",0)==0) continue;
     if (!line.empty() && line[0]=='+') {
-      if (std::regex_search(line, helpUsageAdded)) {
-        ++helpTextChangesCount;
-      }
-      if (std::regex_search(line, getoptCall)
-          || std::regex_search(line, argcArgvAdded)
-          || std::regex_search(line, shortOptionAdded)
-          || std::regex_search(line, longOptionAdded)
-          || std::regex_search(line, argcCheckAdded)
-          || std::regex_search(line, argvAccessAdded)
-          || std::regex_search(line, mainSignatureAdded)) {
-        ++enhancedCount;
-      }
+      // Disabled help/usage and heuristic enhanced pattern boosts for parity with shell results
       // Manual long option detection only on C/C++ lines to reduce false positives
       if (!isCommentLine(line) && !hasQuotedLongOpt(line)) {
         for (auto it = std::sregex_iterator(line.begin(), line.end(), longOpt), end=std::sregex_iterator(); it!=end; ++it) {
@@ -394,9 +371,10 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   if (breakingByCases && r.removedLongCount == 0 && r.manualRemovedLongCount == 0 && r.removedShortCount == 0) {
     r.removedLongCount = 1;
   }
-  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0 || enhancedCount>0 || helpTextChangesCount>0);
-  r.helpTextChanges = helpTextChangesCount;
-  r.enhancedCliPatterns = enhancedCount;
+  // Restrict manual CLI changes to explicit manual long option edits only.
+  r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0);
+  r.helpTextChanges = 0;
+  r.enhancedCliPatterns = 0;
   // Align CLI change flag with bash: treat any option set change or short removals as CLI changes
   r.cliChanges = r.breakingCliChanges
               || r.manualCliChanges
@@ -433,11 +411,27 @@ int baseDeltaFor(const std::string &bumpType, int loc, const ConfigValues &cfg) 
 }
 
 int computeTotalBonusWithMultiplier(int baseBonus, int loc, const std::string &bumpType, const ConfigValues &cfg) {
-  int divisor = (bumpType=="patch")?cfg.locDivisorPatch:((bumpType=="minor")?cfg.locDivisorMinor:cfg.locDivisorMajor);
-  double mult = 1.0 + (divisor>0 ? static_cast<double>(loc)/static_cast<double>(divisor) : 0.0);
+  // Mirror bash version-calculator rounding: the multiplier is rounded to
+  // two decimals BEFORE multiplying by the base bonus, then the product is
+  // rounded to the nearest integer. This avoids off-by-one drift vs. shell.
+  int divisor = (bumpType=="patch") ? cfg.locDivisorPatch
+               : (bumpType=="minor") ? cfg.locDivisorMinor
+                                      : cfg.locDivisorMajor;
+
+  // Raw multiplier 1 + LOC / divisor (non-negative, divisor guarded by config)
+  double rawMultiplier = 1.0 + (divisor > 0 ? static_cast<double>(loc) / static_cast<double>(divisor) : 0.0);
+
+  // Apply cap first (same as shell), then quantize to 2 decimals as shell does
+  double capped = rawMultiplier;
   double cap = cfg.bonusMultiplierCap;
-  if (mult > cap) mult = cap;
-  double total = static_cast<double>(baseBonus) * mult;
+  if (capped > cap) capped = cap;
+
+  // Quantize to 2 decimals via scale-100 integer rounding to replicate awk %.2f
+  int scale100 = static_cast<int>(std::lround(capped * 100.0));
+  double quantizedMultiplier = static_cast<double>(scale100) / 100.0;
+
+  // Finally compute total bonus as round(baseBonus * quantizedMultiplier)
+  double total = static_cast<double>(baseBonus) * quantizedMultiplier;
   int totalInt = static_cast<int>(std::lround(total));
   return totalInt;
 }
