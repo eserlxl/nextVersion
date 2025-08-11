@@ -457,9 +457,9 @@ EOF
     print_success "Uninstall script created"
 }
 
-# Function to create release notes
-create_release_notes() {
-    print_status "Creating release notes..."
+# Function to parse and copy release notes from project root
+parse_release_notes() {
+    print_status "Parsing release notes from project root..."
     
     # Try to find release notes for the current version
     RELEASE_NOTES_SOURCE=""
@@ -472,7 +472,8 @@ create_release_notes() {
         RELEASE_NOTES_SOURCE="$PROJECT_ROOT/release-notes/README.md"
         print_status "Using release notes index as fallback"
     else
-        print_warning "No release notes found, creating basic template"
+        print_warning "No release notes found in project root"
+        return 1
     fi
     
     if [[ -n "$RELEASE_NOTES_SOURCE" ]]; then
@@ -514,119 +515,6 @@ nextversion-analyze --help
 EOF
         
         print_success "Release notes copied and updated from project source"
-    else
-        # Create basic release notes if none found
-        cat > "$RELEASE_DIR/RELEASE_NOTES.md" << EOF
-# nextVersion Bash Tools v${CURRENT_VERSION} - Release Notes
-
-## Overview
-This release provides a clean, focused bash-only distribution of the nextVersion semantic versioning tools.
-
-## What's New
-- **Clean Structure**: Reorganized from \`dev-bin/\` and \`dev-config/\` to \`bin/\` and \`config/\`
-- **Professional Layout**: Follows standard bash tool conventions
-- **Easy Installation**: Simple install/uninstall scripts included
-- **Focused Release**: Bash tools only, no C++ dependencies
-
-## Included Tools
-
-### Core Versioning
-- **semantic-version-analyzer.sh** - Main version analysis tool
-- **mathematical-version-bump.sh** - Automated version bumping
-- **version-calculator.sh** - Version calculation utilities
-- **version-calculator-loc.sh** - LOC-based version calculation
-
-### Management Tools
-- **tag-manager.sh** - Git tag management
-- **git-operations.sh** - Git operations utilities
-- **generate-ci-gpg-key.sh** - CI GPG key generation
-
-### Analysis Tools
-- **cli-options-analyzer.sh** - CLI options analysis
-- **security-keyword-analyzer.sh** - Security analysis
-- **keyword-analyzer.sh** - Keyword analysis
-- **file-change-analyzer.sh** - File change analysis
-- **ref-resolver.sh** - Reference resolution
-
-### Utilities
-- **version-utils.sh** - Common version utilities
-- **version-config-loader.sh** - Configuration loading
-- **version-validator.sh** - Version validation
-
-## Installation
-
-\`\`\`bash
-# Extract the release
-tar -xzf ${ARCHIVE_NAME}
-
-# Install to your system
-cd ${RELEASE_NAME}
-./install.sh
-
-# Or install to custom location
-./install.sh -d /usr/local/bin -c /etc/nextVersion
-\`\`\`
-
-## Configuration
-Edit \`~/.config/nextVersion/versioning.yml\` to customize:
-- Bonus points and multipliers
-- Version thresholds
-- LOC divisors
-- Performance patterns
-
-## Quick Start
-\`\`\`bash
-# Analyze your repository
-nextversion-analyze
-
-# Automatically bump version
-nextversion-bump --commit
-
-# Manage tags
-nextversion-tags list
-\`\`\`
-
-## Documentation
-See the \`docs/\` directory for detailed documentation:
-- VERSIONING.md - Versioning strategy and usage
-- RELEASE_WORKFLOW.md - Release process guide
-- TAG_MANAGEMENT.md - Tag management guide
-
-## License
-GNU General Public License v3.0 or later - see LICENSE file for details.
-
-## Support
-For issues and questions, please refer to the project documentation or create an issue in the main repository.
-
----
-
-## 📦 **Release Package Information**
-
-**Package Name**: ${RELEASE_NAME}  
-**Generated On**: $(date)  
-**Package Size**: $(du -sh "$RELEASE_DIR" | cut -f1)  
-**Installation**: Run \`./install.sh\` after extraction
-
-### **Package Contents**
-- \`bin/\` - All bash scripts (executable)
-- \`config/\` - Configuration files
-- \`docs/\` - Essential documentation
-- \`install.sh\` - Installation script
-- \`uninstall.sh\` - Uninstallation script
-
-### **Quick Installation**
-\`\`\`bash
-# Extract and install
-tar -xzf ${ARCHIVE_NAME}
-cd ${RELEASE_NAME}
-./install.sh
-
-# Test installation
-nextversion-analyze --help
-\`\`\`
-EOF
-        
-        print_success "Basic release notes created (no project source found)"
     fi
 }
 
@@ -713,7 +601,7 @@ main() {
     copy_release_files
     create_install_script
     create_uninstall_script
-    create_release_notes
+    parse_release_notes
     
     # Create package
     create_package
