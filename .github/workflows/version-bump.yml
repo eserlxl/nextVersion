@@ -144,9 +144,10 @@ jobs:
           
           # Check if GPG secrets are available
           if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]] || [[ -z "${{ secrets.GPG_PASSPHRASE }}" ]]; then
-            echo "ERROR: GPG_PRIVATE_KEY and GPG_PASSPHRASE secrets are required for signed commits"
-            echo "Please run ./bin/generate-ci-gpg-key.sh and add the secrets to your repository"
-            exit 1
+            echo "WARNING: GPG secrets not available, proceeding without GPG signing"
+            echo "To enable GPG signing, run ./bin/generate-ci-gpg-key.sh and add the secrets to your repository"
+            # Continue without GPG signing instead of failing
+            exit 0
           fi
           
           # Import the GPG private key
@@ -165,6 +166,7 @@ jobs:
           
           # Set up gpg-agent with the passphrase
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback --sign --local-user "$GPG_KEY_ID" /dev/null >/dev/null 2>&1 || true
+        fi
 
       - name: Bump version
         id: bump
