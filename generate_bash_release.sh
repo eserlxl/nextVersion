@@ -179,6 +179,12 @@ copy_release_files() {
     cp "$PROJECT_ROOT/doc/RELEASE_WORKFLOW.md" "$RELEASE_DIR/docs/"
     cp "$PROJECT_ROOT/doc/TAG_MANAGEMENT.md" "$RELEASE_DIR/docs/"
     
+    # Copy release notes if available
+    if [[ -d "$PROJECT_ROOT/release-notes" ]]; then
+        cp -r "$PROJECT_ROOT/release-notes" "$RELEASE_DIR/"
+        print_status "Release notes directory copied"
+    fi
+    
     print_success "Essential files copied"
 }
 
@@ -455,7 +461,62 @@ EOF
 create_release_notes() {
     print_status "Creating release notes..."
     
-    cat > "$RELEASE_DIR/RELEASE_NOTES.md" << EOF
+    # Try to find release notes for the current version
+    RELEASE_NOTES_SOURCE=""
+    
+    # Check for version-specific release notes
+    if [[ -f "$PROJECT_ROOT/release-notes/v${CURRENT_VERSION}.md" ]]; then
+        RELEASE_NOTES_SOURCE="$PROJECT_ROOT/release-notes/v${CURRENT_VERSION}.md"
+        print_status "Found version-specific release notes: v${CURRENT_VERSION}.md"
+    elif [[ -f "$PROJECT_ROOT/release-notes/README.md" ]]; then
+        RELEASE_NOTES_SOURCE="$PROJECT_ROOT/release-notes/README.md"
+        print_status "Using release notes index as fallback"
+    else
+        print_warning "No release notes found, creating basic template"
+    fi
+    
+    if [[ -n "$RELEASE_NOTES_SOURCE" ]]; then
+        # Copy existing release notes
+        cp "$RELEASE_NOTES_SOURCE" "$RELEASE_DIR/RELEASE_NOTES.md"
+        
+        # Update the release notes with current information
+        sed -i "s/Version ${CURRENT_VERSION}/Version ${CURRENT_VERSION} - Release Package/g" "$RELEASE_DIR/RELEASE_NOTES.md"
+        
+        # Add package information at the end
+        cat >> "$RELEASE_DIR/RELEASE_NOTES.md" << EOF
+
+---
+
+## 📦 **Release Package Information**
+
+**Package Name**: ${RELEASE_NAME}  
+**Generated On**: $(date)  
+**Package Size**: $(du -sh "$RELEASE_DIR" | cut -f1)  
+**Installation**: Run \`./install.sh\` after extraction
+
+### **Package Contents**
+- \`bin/\` - All bash scripts (executable)
+- \`config/\` - Configuration files
+- \`docs/\` - Essential documentation
+- \`install.sh\` - Installation script
+- \`uninstall.sh\` - Uninstallation script
+
+### **Quick Installation**
+\`\`\`bash
+# Extract and install
+tar -xzf ${ARCHIVE_NAME}
+cd ${RELEASE_NAME}
+./install.sh
+
+# Test installation
+nextversion-analyze --help
+\`\`\`
+EOF
+        
+        print_success "Release notes copied and updated from project source"
+    else
+        # Create basic release notes if none found
+        cat > "$RELEASE_DIR/RELEASE_NOTES.md" << EOF
 # nextVersion Bash Tools v${CURRENT_VERSION} - Release Notes
 
 ## Overview
@@ -538,11 +599,35 @@ GNU General Public License v3.0 or later - see LICENSE file for details.
 For issues and questions, please refer to the project documentation or create an issue in the main repository.
 
 ---
-Generated on: $(date)
-Version: ${CURRENT_VERSION}
-EOF
 
-    print_success "Release notes created"
+## 📦 **Release Package Information**
+
+**Package Name**: ${RELEASE_NAME}  
+**Generated On**: $(date)  
+**Package Size**: $(du -sh "$RELEASE_DIR" | cut -f1)  
+**Installation**: Run \`./install.sh\` after extraction
+
+### **Package Contents**
+- \`bin/\` - All bash scripts (executable)
+- \`config/\` - Configuration files
+- \`docs/\` - Essential documentation
+- \`install.sh\` - Installation script
+- \`uninstall.sh\` - Uninstallation script
+
+### **Quick Installation**
+\`\`\`bash
+# Extract and install
+tar -xzf ${ARCHIVE_NAME}
+cd ${RELEASE_NAME}
+./install.sh
+
+# Test installation
+nextversion-analyze --help
+\`\`\`
+EOF
+        
+        print_success "Basic release notes created (no project source found)"
+    fi
 }
 
 # Function to create package
