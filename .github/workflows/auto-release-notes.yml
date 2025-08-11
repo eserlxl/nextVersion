@@ -24,4 +24,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
 
+      - name: Generate Local Release Notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json body --jq .body > "release-notes/${GITHUB_REF_NAME}.md"
+
+      - name: Commit and Push Release Notes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "release-notes/${GITHUB_REF_NAME}.md"
+          git commit -m "docs: add release notes for ${GITHUB_REF_NAME}"
+          git push
+
 
