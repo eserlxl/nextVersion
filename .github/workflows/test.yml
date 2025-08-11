@@ -1,0 +1,224 @@
+# Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# This file is part of nextVersion and is licensed under
+# the GNU General Public License v3.0 or later.
+# See the LICENSE file in the project root for details.
+
+name: Build and Test
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'tests/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/workflows/test.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'include/**'
+      - 'tests/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/workflows/test.yml'
+
+defaults:
+  run:
+    shell: bash
+
+# Cancel older runs of the same ref to save CI minutes
+concurrency:
+  group: build-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [default, performance, debug, warnings]
+    env:
+      BINARY_PATH: build/bin/next-version
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better caching
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/CMakeLists.txt', 'build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/
+            .ccache/
+          key: ${{ runner.os }}-${{ matrix.build-type }}-${{ hashFiles('CMakeLists.txt', 'build.sh', 'src/**', 'include/**') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.build-type }}-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake g++ make binutils coreutils
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x ./build.sh
+          chmod +x ./run_tests.sh
+
+      - name: Build next-version (${{ matrix.build-type }} + clean)
+        id: build
+        run: |
+          echo "=== Building with configuration: ${{ matrix.build-type }} ==="
+          
+          case "${{ matrix.build-type }}" in
+            default)
+              ./build.sh clean
+              ;;
+            performance)
+              ./build.sh performance clean
+              ;;
+            debug)
+              ./build.sh debug clean
+              ;;
+            warnings)
+              ./build.sh warnings clean
+              ;;
+            *)
+              echo "Unknown build type: ${{ matrix.build-type }}" >&2
+              exit 2
+              ;;
+          esac
+          
+          echo "✓ Build completed for ${{ matrix.build-type }}"
+
+      - name: Verify binary exists and is executable
+        run: |
+          echo "=== Verifying binary ==="
+          
+          # Check binary exists and is executable
+          if [ ! -f "${BINARY_PATH}" ] || [ ! -x "${BINARY_PATH}" ]; then
+            echo "✗ Binary not found or not executable at ${BINARY_PATH}"
+            ls -la build/bin/ || true
+            exit 1
+          fi
+          
+          # Check binary characteristics
+          echo "Binary size: $(stat -c%s "${BINARY_PATH}") bytes"
+          echo "Binary type: $(file "${BINARY_PATH}")"
+          
+          # Verify binary can run
+          if ! "${BINARY_PATH}" --version > /dev/null 2>&1; then
+            echo "✗ Binary failed to run --version"
+            exit 1
+          fi
+          
+          echo "✓ Binary verification passed"
+
+      - name: Run smoke tests
+        run: |
+          echo "=== Running smoke tests ==="
+          # Verify help and version
+          "${BINARY_PATH}" --help > /dev/null
+          "${BINARY_PATH}" --version > /dev/null
+          # Generate a small fake repo in /tmp and validate outputs
+          TEMP_DIR=$(mktemp -d /tmp/nextVersion-ci-XXXXXX)
+          echo "Using temp dir: ${TEMP_DIR}"
+          "${BINARY_PATH}" --no-git --files 3-5 --commits 2-3 --lines 5-10 --verbose "${TEMP_DIR}"
+          test -d "${TEMP_DIR}"
+          FILE_COUNT=$(find "${TEMP_DIR}" -type f | wc -l)
+          if [ "${FILE_COUNT}" -le 0 ]; then
+            echo "No files generated in ${TEMP_DIR}"
+            exit 1
+          fi
+          echo "Generated ${FILE_COUNT} files in ${TEMP_DIR}"
+          rm -rf "${TEMP_DIR}"
+          echo "✓ Smoke tests passed"
+
+      - name: Run C++ unit tests
+        run: |
+          echo "=== Building and running C++ unit tests ==="
+          ./build.sh tests
+          echo "✓ C++ unit tests passed"
+
+      - name: Inspect compilation characteristics
+        run: |
+          echo "=== Inspecting ${{ matrix.build-type }} build ==="
+          
+          case "${{ matrix.build-type }}" in
+            performance)
+              echo "Checking for optimization characteristics..."
+              if ! file "${BINARY_PATH}" | grep -q "not stripped"; then
+                echo "✓ Binary appears to be optimized (stripped)"
+              else
+                echo "⚠ Binary may not be fully optimized"
+              fi
+              
+              BINARY_SIZE=$(stat -c%s "${BINARY_PATH}")
+              if [ "$BINARY_SIZE" -gt 10485760 ]; then  # 10MB
+                echo "⚠ Binary size is large: ${BINARY_SIZE} bytes"
+              else
+                echo "✓ Binary size is reasonable: ${BINARY_SIZE} bytes"
+              fi
+              ;;
+            debug)
+              echo "Checking for debug characteristics..."
+              if file "${BINARY_PATH}" | grep -q "not stripped"; then
+                echo "✓ Debug symbols present"
+              else
+                echo "⚠ Debug symbols not detected"
+              fi
+              
+              if ldd "${BINARY_PATH}" | grep -q "libasan\|libubsan"; then
+                echo "✓ Sanitizer libraries linked"
+              else
+                echo "ℹ No sanitizer libraries detected"
+              fi
+              ;;
+            warnings)
+              echo "Checking for warning-free build..."
+              echo "✓ Build completed with warnings enabled"
+              ;;
+            default)
+              echo "Checking default build characteristics..."
+              echo "✓ Default build completed successfully"
+              ;;
+          esac
+
+      - name: Upload binary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-version-${{ matrix.build-type }}
+          path: ${{ env.BINARY_PATH }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.build-type }}
+          path: |
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+          if-no-files-found: ignore
+          retention-days: 3

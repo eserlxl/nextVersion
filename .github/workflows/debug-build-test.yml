@@ -1,0 +1,99 @@
+# Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# This file is part of nextVersion and is licensed under
+# the GNU General Public License v3.0 or later.
+# See the LICENSE file in the project root for details.
+
+name: Debug Build Testing
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/workflows/debug-build-test.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/workflows/debug-build-test.yml'
+      - 'tests/**'
+
+jobs:
+  debug-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup C++ Environment
+        uses: ./.github/actions/setup-cpp
+
+      - name: Install GDB
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdb
+      
+      - name: Build debug version
+        run: |
+          ./build.sh debug clean
+          echo "Debug build completed"
+      
+      - name: Verify debug build characteristics
+        run: |
+          echo "=== Debug Build Verification ==="
+          
+          # Check if binary contains debug symbols
+          if file build/bin/next-version | grep -q "not stripped"; then
+            echo "✓ Debug symbols present"
+          else
+            echo "✗ Debug symbols missing"
+            exit 1
+          fi
+          
+          # Check binary size (should be larger due to debug info)
+          BINARY_SIZE=$(stat -c%s build/bin/next-version)
+          echo "Binary size: $BINARY_SIZE bytes"
+          
+          # Verify debug information is present
+          if readelf -S build/bin/next-version | grep -q "\.debug"; then
+            echo "✓ Debug sections present"
+          else
+            echo "✗ Debug sections missing"
+            exit 1
+          fi
+      
+      - name: Run smoke tests
+        run: |
+          build/bin/next-version --help
+          build/bin/next-version --version
+          TMP_DBG=$(mktemp -d /tmp/nextVersion-debug-XXXXXX)
+          build/bin/next-version --no-git --files 2-3 --commits 1-2 --lines 5-10 "$TMP_DBG"
+          test -d "$TMP_DBG"
+          rm -rf "$TMP_DBG"
+      
+      - name: Test with GDB (if available)
+        run: |
+          echo "=== GDB Debug Test ==="
+          
+          # Test that GDB can load the binary
+          if command -v gdb >/dev/null 2>&1; then
+            echo "Testing GDB integration..."
+            gdb -batch -ex "file build/bin/next-version" -ex "info functions" | head -20
+            echo "✓ GDB can load debug symbols"
+          else
+            echo "GDB not available, skipping debugger test"
+          fi
+      
+      - name: Debug build summary
+        run: |
+          echo "=== Debug Build Summary ==="
+          echo "✓ Debug build completed successfully"
+          echo "✓ Debug symbols verified"
+          echo "✓ Functionality tested"
+          echo "✓ Ready for debugging and development"

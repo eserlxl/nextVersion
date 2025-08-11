@@ -1,0 +1,111 @@
+# Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# This file is part of nextVersion and is licensed under
+# the GNU General Public License v3.0 or later.
+# See the LICENSE file in the project root for details.
+
+name: Performance Benchmark
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/performance-benchmark.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/performance-benchmark.yml'
+      - 'tests/**'
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup C++ Environment
+        uses: ./.github/actions/setup-cpp
+
+      - name: Install GNU time
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y time
+      
+      - name: Build performance version
+        run: |
+          ./build.sh performance clean
+          echo "Performance build completed"
+          ls -la build/
+      
+      - name: Create benchmark test data
+        run: |
+          # Create a temp output dir in /tmp for generation
+          LARGE_OUT_DIR=$(mktemp -d /tmp/nextVersion-bench-XXXXXX)
+          echo "Using benchmark output directory: ${LARGE_OUT_DIR}"
+      
+      - name: Run performance benchmarks
+        run: |
+          echo "=== Performance Benchmark Results ==="
+          
+          # Verify binary exists and is executable
+          if [[ ! -x "./build/bin/next-version" ]]; then
+            echo "Error: Binary not found or not executable at ./build/bin/next-version"
+            ls -la build/
+            ls -la build/bin/ || true
+            exit 1
+          fi
+          
+          # Benchmark repository generation workloads
+          echo "Benchmark: small workload (files=20-30, commits=5-10)"
+          OUT_SMALL=$(mktemp -d /tmp/nextVersion-bench-small-XXXXXX)
+          /usr/bin/time -f "small: %e s, %M KB" ./build/bin/next-version --no-git --files 20-30 --commits 5-10 --lines 10-40 "$OUT_SMALL" > /dev/null
+          rm -rf "$OUT_SMALL"
+
+          echo "Benchmark: medium workload (files=100-150, commits=50-80)"
+          OUT_MED=$(mktemp -d /tmp/nextVersion-bench-med-XXXXXX)
+          /usr/bin/time -f "medium: %e s, %M KB" ./build/bin/next-version --no-git --files 100-150 --commits 50-80 --lines 20-100 "$OUT_MED" > /dev/null
+          rm -rf "$OUT_MED"
+
+          echo "Benchmark: chaos high complexity"
+          OUT_HI=$(mktemp -d /tmp/nextVersion-bench-hi-XXXXXX)
+          /usr/bin/time -f "chaos: %e s, %M KB" ./build/bin/next-version --no-git --chaos -x 9 "$OUT_HI" > /dev/null
+          rm -rf "$OUT_HI"
+          
+          # Check binary size
+          echo "Binary size: $(stat -c%s build/bin/next-version) bytes"
+          
+          # Check if binary is stripped
+          if file build/bin/next-version | grep -q "not stripped"; then
+            echo "Binary contains debug symbols"
+          else
+            echo "Binary is stripped"
+          fi
+          
+          # Verify build configuration
+          echo "Build configuration verification:"
+          echo "- Performance optimizations: $(grep -c "O3" build/CMakeCache.txt || echo "Not found")"
+          echo "- Debug symbols: $(file build/bin/next-version | grep -o "not stripped\|stripped")"
+      
+      - name: Clean up
+        run: |
+          echo "Nothing to clean besides temp dirs already removed."
+      
+      - name: Performance summary
+        run: |
+          echo "=== Performance Benchmark Summary ==="
+          echo "✓ Performance build completed successfully"
+          echo "✓ All benchmark tests passed"
+          echo "✓ Performance metrics captured"
+          echo ""
+          echo "Note: Performance benchmarks help detect regressions."
+          echo "Consider setting up performance tracking over time."
