@@ -187,29 +187,29 @@ The system uses a LOC-based delta system to calculate the actual version increme
 
 ### Semantic Version Analyzer Tool
 
-A dedicated script, `dev-bin/semantic-version-analyzer.sh`, is used to analyze the Git history and suggest the next appropriate version bump. This tool is the core of our automated versioning system.
+A dedicated script, `bin/semantic-version-analyzer.sh`, is used to analyze the Git history and suggest the next appropriate version bump. This tool is the core of our automated versioning system.
 
 ```bash
 # Analyze changes since the last Git tag (default behavior)
-./dev-bin/semantic-version-analyzer.sh
+./bin/semantic-version-analyzer.sh
 
 # Analyze changes since a specific Git tag (e.g., v10.4.0)
-./dev-bin/semantic-version-analyzer.sh --since v10.4.0
+./bin/semantic-version-analyzer.sh --since v10.4.0
 
 # Show a detailed analysis, including file changes and commit messages
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Analyze changes since a specific date (e.g., all changes since January 1, 2025)
-./dev-bin/semantic-version-analyzer.sh --since-date 2025-01-01
+./bin/semantic-version-analyzer.sh --since-date 2025-01-01
 
 # Get machine-readable JSON output
-./dev-bin/semantic-version-analyzer.sh --json
+./bin/semantic-version-analyzer.sh --json
 
 # Restrict analysis to specific paths
-./dev-bin/semantic-version-analyzer.sh --only-paths "src/**,include/**"
+./bin/semantic-version-analyzer.sh --only-paths "src/**,include/**"
 
 # Get only the suggestion (major/minor/patch/none)
-./dev-bin/semantic-version-analyzer.sh --suggest-only
+./bin/semantic-version-analyzer.sh --suggest-only
 ```
 
 #### What the Analyzer Checks
@@ -234,8 +234,8 @@ The analyzer supports both YAML configuration and environment variables:
 
 **YAML Configuration (Recommended)**:
 ```bash
-# Loads from dev-config/versioning.yml
-./dev-bin/semantic-version-analyzer.sh
+# Loads from config/versioning.yml
+./bin/semantic-version-analyzer.sh
 ```
 
 **Environment Variables (Fallback)**:
@@ -282,7 +282,7 @@ This is useful for hotfixes, specific prereleases, or when you need to override 
 
 ## Version Management Tools
 
-Several utility scripts are provided in the `dev-bin/` directory to assist with version management tasks.
+Several utility scripts are provided in the `bin/` directory to assist with version management tasks.
 
 ### `semantic-version-analyzer`
 
@@ -290,47 +290,47 @@ As described above, this script analyzes changes and suggests version bumps. It'
 
 ### `mathematical-version-bump`
 
-The `dev-bin/mathematical-version-bump.sh` script provides purely mathematical versioning - no manual bump types needed. The system automatically determines the appropriate version bump based on semantic analysis of changes.
+The `bin/mathematical-version-bump.sh` script provides purely mathematical versioning - no manual bump types needed. The system automatically determines the appropriate version bump based on semantic analysis of changes.
 
 ```bash
 # Automatically determine and apply version bump
-./dev-bin/mathematical-version-bump.sh --commit
+./bin/mathematical-version-bump.sh --commit
 
 # Dry run to see what would happen
-./dev-bin/mathematical-version-bump.sh --dry-run
+./bin/mathematical-version-bump.sh --dry-run
 
 # Set version directly
-./dev-bin/mathematical-version-bump.sh --set 10.5.13
+./bin/mathematical-version-bump.sh --set 10.5.13
 
 # Analyze changes since specific tag
-./dev-bin/mathematical-version-bump.sh --since v10.4.0 --commit
+./bin/mathematical-version-bump.sh --since v10.4.0 --commit
 
 # Print computed version without making changes
-./dev-bin/mathematical-version-bump.sh --print
+./bin/mathematical-version-bump.sh --print
 
 # Create a signed tag
-./dev-bin/mathematical-version-bump.sh --commit --tag --signed-tag
+./bin/mathematical-version-bump.sh --commit --tag --signed-tag
 
 # Push changes and tags to remote
-./dev-bin/mathematical-version-bump.sh --commit --tag --push --push-tags
+./bin/mathematical-version-bump.sh --commit --tag --push --push-tags
 ```
 
 ### `tag-manager`
 
-The `dev-bin/tag-manager.sh` script provides functionalities for listing, creating, and cleaning up Git tags. This is essential for maintaining a tidy and accurate tag history.
+The `bin/tag-manager.sh` script provides functionalities for listing, creating, and cleaning up Git tags. This is essential for maintaining a tidy and accurate tag history.
 
 ```bash
 # List all Git tags (sorted by version)
-./dev-bin/tag-manager.sh list
+./bin/tag-manager.sh list
 
 # Clean up old tags (interactively or by keeping a specific count)
-./dev-bin/tag-manager.sh cleanup [count]
+./bin/tag-manager.sh cleanup [count]
 
 # Create a new tag (use with caution, prefer automated releases)
-./dev-bin/tag-manager.sh create <version>
+./bin/tag-manager.sh create <version>
 
 # Show detailed information about a specific tag
-./dev-bin/tag-manager.sh info <tag>
+./bin/tag-manager.sh info <tag>
 ```
 
 ### Additional Version Tools

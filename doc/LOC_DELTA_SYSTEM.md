@@ -415,21 +415,21 @@ The LOC-based delta system is **always enabled** by default. No configuration is
 ```bash
 # The system automatically calculates deltas based on LOC
 # All bumps now increment only the patch version with calculated delta
-./dev-bin/bump-version.sh patch --commit
-./dev-bin/bump-version.sh minor --commit
-./dev-bin/bump-version.sh major --commit
+./bin/bump-version.sh patch --commit
+./bin/bump-version.sh minor --commit
+./bin/bump-version.sh major --commit
 ```
 
 ### View Delta Calculations
 ```bash
 # See calculated deltas in verbose mode
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Get JSON output with delta information
-./dev-bin/semantic-version-analyzer.sh --json
+./bin/semantic-version-analyzer.sh --json
 
 # Get machine-readable output
-./dev-bin/semantic-version-analyzer.sh --machine
+./bin/semantic-version-analyzer.sh --machine
 ```
 
 ### Custom Formulas
@@ -614,16 +614,16 @@ bonuses:
 ### Debug Mode
 ```bash
 # Enable verbose output
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Check JSON output
-./dev-bin/semantic-version-analyzer.sh --json | jq '.loc_delta'
+./bin/semantic-version-analyzer.sh --json | jq '.loc_delta'
 
 # Test rollover logic directly
 ./test-workflows/core-tests/test_rollover_logic.sh
 
 # Validate configuration
-./dev-bin/semantic-version-analyzer.sh --print-base
+./bin/semantic-version-analyzer.sh --print-base
 ```
 
 ### Configuration Validation

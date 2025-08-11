@@ -102,17 +102,17 @@ The cleanup strategy prioritizes:
 
 ## Manual Tag Management with `tag-manager`
 
-The `dev-bin/tag-manager.sh` script provides comprehensive command-line utilities for local and manual management of Git tags. This advanced tool includes numerous configuration options and safety features.
+The `bin/tag-manager.sh` script provides comprehensive command-line utilities for local and manual management of Git tags. This advanced tool includes numerous configuration options and safety features.
 
 ### Basic Commands
 
--   **`./dev-bin/tag-manager.sh list [glob]`**: Lists all Git tags in the repository, sorted by version (newest first). Optional glob pattern for filtering.
+-   **`./bin/tag-manager.sh list [glob]`**: Lists all Git tags in the repository, sorted by version (newest first). Optional glob pattern for filtering.
     ```bash
     # List all tags
-    ./dev-bin/tag-manager.sh list
+    ./bin/tag-manager.sh list
     
     # List tags matching pattern
-    ./dev-bin/tag-manager.sh list 'v10.*'
+    ./bin/tag-manager.sh list 'v10.*'
     
     # Example output:
     # v10.5.12
@@ -122,31 +122,31 @@ The `dev-bin/tag-manager.sh` script provides comprehensive command-line utilitie
     # v10.3.0
     ```
 
--   **`./dev-bin/tag-manager.sh cleanup [keep] [glob]`**: Interactively cleans up old tags. If `keep` is provided, it will keep only the specified number of most recent tags. Optional glob pattern for filtering.
+-   **`./bin/tag-manager.sh cleanup [keep] [glob]`**: Interactively cleans up old tags. If `keep` is provided, it will keep only the specified number of most recent tags. Optional glob pattern for filtering.
     ```bash
     # Interactively clean up tags
-    ./dev-bin/tag-manager.sh cleanup
+    ./bin/tag-manager.sh cleanup
 
     # Keep only the 5 most recent tags
-    ./dev-bin/tag-manager.sh cleanup 5
+    ./bin/tag-manager.sh cleanup 5
     
     # Keep 20 tags matching pattern
-    ./dev-bin/tag-manager.sh cleanup 20 'v10.*'
+    ./bin/tag-manager.sh cleanup 20 'v10.*'
     ```
 
--   **`./dev-bin/tag-manager.sh create <version> [commit]`**: Creates a new tag with the specified version at the given commit (defaults to HEAD). Accepts both "1.2.3" and "v1.2.3" formats.
+-   **`./bin/tag-manager.sh create <version> [commit]`**: Creates a new tag with the specified version at the given commit (defaults to HEAD). Accepts both "1.2.3" and "v1.2.3" formats.
     ```bash
     # Create a tag for version 10.5.13 at HEAD
-    ./dev-bin/tag-manager.sh create 10.5.13
+    ./bin/tag-manager.sh create 10.5.13
 
     # Create a tag for version 10.5.13 at specific commit
-    ./dev-bin/tag-manager.sh create v10.5.13 3f2c1d2
+    ./bin/tag-manager.sh create v10.5.13 3f2c1d2
     ```
 
--   **`./dev-bin/tag-manager.sh info <tag>`**: Shows detailed information about a specific tag, including commit hash, author, date, and changes since previous release.
+-   **`./bin/tag-manager.sh info <tag>`**: Shows detailed information about a specific tag, including commit hash, author, date, and changes since previous release.
     ```bash
     # Get information about a specific tag
-    ./dev-bin/tag-manager.sh info v10.5.12
+    ./bin/tag-manager.sh info v10.5.12
     ```
 
 ### Advanced Configuration Options
@@ -180,22 +180,22 @@ The `tag-manager` script supports numerous environment variables for fine-graine
 #### Batch Operations with Safety
 ```bash
 # Clean up with protection for major versions
-PROTECT_GLOB="v10.0.* v11.0.*" ./dev-bin/tag-manager.sh cleanup 8
+PROTECT_GLOB="v10.0.* v11.0.*" ./bin/tag-manager.sh cleanup 8
 
 # Dry run cleanup to see what would be deleted
-DRY_RUN=1 ./dev-bin/tag-manager.sh cleanup 5
+DRY_RUN=1 ./bin/tag-manager.sh cleanup 5
 
 # Clean up only remote tags (keep local for backup)
-REMOTE_ONLY=1 ./dev-bin/tag-manager.sh cleanup 10
+REMOTE_ONLY=1 ./bin/tag-manager.sh cleanup 10
 ```
 
 #### Tag Creation with Advanced Options
 ```bash
 # Create and immediately push a signed tag
-TAG_SIGN=1 PUSH_AFTER_CREATE=1 ./dev-bin/tag-manager.sh create 10.5.13
+TAG_SIGN=1 PUSH_AFTER_CREATE=1 ./bin/tag-manager.sh create 10.5.13
 
 # Create tag with custom message prefix
-TAG_MSG_PREFIX="Release" ./dev-bin/tag-manager.sh create 10.5.13
+TAG_MSG_PREFIX="Release" ./bin/tag-manager.sh create 10.5.13
 
 # Create tag even with uncommitted changes
 ALLOW_DIRTY_TAG=1 ./dev-bin/tag-manager.sh create 10.5.13

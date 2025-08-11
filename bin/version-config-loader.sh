@@ -27,7 +27,7 @@ readonly PROG="${0##*/}"
 (( BASH_VERSINFO[0] >= 4 )) || { printf '%s\n' "Error: $PROG requires Bash ≥ 4" >&2; exit 2; }
 
 # ---------- paths ----------
-DEFAULT_CONFIG="$SCRIPT_DIR/../dev-config/versioning.yml"
+DEFAULT_CONFIG="$SCRIPT_DIR/../config/versioning.yml"
 CONFIG_FILE="$DEFAULT_CONFIG"
 
 # ---------- help ----------

@@ -138,7 +138,7 @@ is_uint "$MAIN_VERSION_MOD" && (( MAIN_VERSION_MOD >= 1 )) || die "--main-mod mu
 
 # ----- load configuration -----------------------------------------------------
 # Load bonus multiplier cap from configuration if available
-config_file="${SCRIPT_DIR}/../dev-config/versioning.yml"
+config_file="${SCRIPT_DIR}/../config/versioning.yml"
 if [[ -f "$config_file" ]]; then
     cap_value=""
     if cap_value=$(yq -r '.bonus_multiplier_cap // empty' "$config_file" 2>/dev/null); then

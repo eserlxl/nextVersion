@@ -150,7 +150,7 @@ show_help() {
   cat << 'EOF'
 Mathematical Version Bumper for next-version
 
-Usage: ./dev-bin/mathematical-version-bump.sh [options]
+Usage: ./bin/mathematical-version-bump.sh [options]
 
 Purely mathematical versioning system: determines bump from semantic analysis.
 
@@ -186,11 +186,11 @@ Analysis Options (forwarded to semantic analyzer):
   --ignore-whitespace        Ignore whitespace-only diffs
 
 Examples:
-  ./dev-bin/mathematical-version-bump.sh --dry-run
-  ./dev-bin/mathematical-version-bump.sh --commit --tag
-  ./dev-bin/mathematical-version-bump.sh --set 1.0.0 --allow-prerelease
-  ./dev-bin/mathematical-version-bump.sh --since v1.0.0 --commit
-  ./dev-bin/mathematical-version-bump.sh --print
+  ./bin/mathematical-version-bump.sh --dry-run
+  ./bin/mathematical-version-bump.sh --commit --tag
+  ./bin/mathematical-version-bump.sh --set 1.0.0 --allow-prerelease
+  ./bin/mathematical-version-bump.sh --since v1.0.0 --commit
+  ./bin/mathematical-version-bump.sh --print
 EOF
 }
 

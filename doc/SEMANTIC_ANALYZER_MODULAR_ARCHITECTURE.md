@@ -18,7 +18,7 @@ The original monolithic semantic-version-analyzer has been refactored into small
   - Auto-detects base references (last tag, parent commit, etc.)
   - Manages merge-base detection for disjoint branches
   - Validates git references
-- **Usage**: ./dev-bin/ref-resolver.sh --since v1.0.0 --target HEAD
+  - **Usage**: ./bin/ref-resolver.sh --since v1.0.0 --target HEAD
 
 #### 2. version-config-loader.sh
 - **Purpose**: Loads and validates versioning configuration from YAML files and environment variables

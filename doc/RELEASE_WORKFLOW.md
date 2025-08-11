@@ -28,9 +28,9 @@ This guide outlines the automated and manual processes for creating new releases
 Key components of the release process include:
 -   **`semantic-version-analyzer`**: A utility script (`./dev-bin/semantic-version-analyzer.sh`) that analyzes commit history to suggest the next semantic version bump using the advanced LOC-based delta system.
 -   **GitHub Actions Workflow (`version-bump.yml`)**: This workflow automates the version bumping, tag creation, and GitHub Release generation based on detected changes.
--   **Mathematical Version Bumper**: A script (`./dev-bin/mathematical-version-bump.sh`) that handles the actual version increment using the LOC-based delta system.
+-   **Mathematical Version Bumper**: A script (`./bin/mathematical-version-bump.sh`) that handles the actual version increment using the LOC-based delta system.
 -   **LOC-Based Delta System**: Advanced versioning that always increases only the patch version with calculated increments based on change magnitude.
--   **Configuration System**: YAML-based configuration (`dev-config/versioning.yml`) for customizing bonus points, multipliers, and thresholds.
+-   **Configuration System**: YAML-based configuration (`config/versioning.yml`) for customizing bonus points, multipliers, and thresholds.
 
 [↑ Back to top](#release-workflow-guide)
 
@@ -44,19 +44,19 @@ Before initiating a release, it's good practice to analyze the changes since the
 
 ```bash
 # Analyze changes since the last official release
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Alternatively, analyze changes since a specific Git tag (e.g., v10.5.10)
-./dev-bin/semantic-version-analyzer.sh --since v10.5.10 --verbose
+./bin/semantic-version-analyzer.sh --since v10.5.10 --verbose
 
 # Get machine-readable JSON output for automation
-./dev-bin/semantic-version-analyzer.sh --json
+./bin/semantic-version-analyzer.sh --json
 
 # Restrict analysis to specific paths
-./dev-bin/semantic-version-analyzer.sh --only-paths "src/**,include/**" --verbose
+./bin/semantic-version-analyzer.sh --only-paths "src/**,include/**" --verbose
 
 # Show only the suggested bump type
-./dev-bin/semantic-version-analyzer.sh --suggest-only
+./bin/semantic-version-analyzer.sh --suggest-only
 ```
 
 ### 2. Review Suggested Version Bump

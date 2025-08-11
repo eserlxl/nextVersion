@@ -82,14 +82,14 @@ x_new = x + delta_x
 
 ## Implementation Details
 
-### Version Calculator (`dev-bin/version-calculator.sh`)
+### Version Calculator (`bin/version-calculator.sh`)
 
 Key functions:
 - `calc_base_delta()`: Implements the base delta formulas
 - `round_div()`: Provides nearest-integer rounding
 - `fmt_fixed2_from_int100()`: Formats bonus multiplier as 2-decimal string
 
-### Semantic Version Analyzer (`dev-bin/semantic-version-analyzer.sh`)
+### Semantic Version Analyzer (`bin/semantic-version-analyzer.sh`)
 
 Key features:
 - Calculates total bonus from multiple sources
@@ -129,7 +129,7 @@ Key features:
 
 ## Configuration
 
-The system supports configuration through `dev-config/versioning.yml`:
+The system supports configuration through `config/versioning.yml`:
 
 - `VERSION_BREAKING_CLI_BONUS`: Bonus for CLI breaking changes
 - `VERSION_API_BREAKING_BONUS`: Bonus for API breaking changes

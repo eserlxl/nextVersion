@@ -90,8 +90,8 @@ find_semantic_analyzer() {
     if [[ -n "$explicit" && -x "$explicit" ]]; then printf '%s' "$explicit"; return; fi
     local c
     for c in \
-        "$original_project_root/dev-bin/semantic-version-analyzer.sh" \
-        "$current_dir/dev-bin/semantic-version-analyzer.sh" \
+        "$original_project_root/bin/semantic-version-analyzer.sh" \
+        "$current_dir/bin/semantic-version-analyzer.sh" \
         "$SCRIPT_DIR/semantic-version-analyzer.sh"
     do
         [[ -x "$c" ]] && { printf '%s' "$c"; return; }

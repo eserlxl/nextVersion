@@ -227,10 +227,10 @@ create_commit() {
         fi
         
         # Add explanation if semantic analyzer is available and we're in CI
-        if [[ -n "${GITHUB_ACTIONS:-}" && -x "$original_project_root/dev-bin/semantic-version-analyzer.sh" ]]; then
+        if [[ -n "${GITHUB_ACTIONS:-}" && -x "$original_project_root/bin/semantic-version-analyzer.sh" ]]; then
             local explanation=""
             local analyzer_output
-            analyzer_output="$("$original_project_root/dev-bin/semantic-version-analyzer.sh" --verbose 2>/dev/null || true)"
+            analyzer_output="$("$original_project_root/bin/semantic-version-analyzer.sh" --verbose 2>/dev/null || true)"
             
             if [[ -n "$analyzer_output" ]]; then
                 # Extract reason from verbose output
