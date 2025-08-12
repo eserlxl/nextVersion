@@ -298,8 +298,8 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   // Exclude generic main() additions from enhanced CLI patterns to reduce noise
   // by not defining a mainSignatureAdded regex here (kept as a no-op placeholder)
   [[maybe_unused]] const bool countMainSignature = false;
-  [[maybe_unused]] int enhancedCount = 0;
-  [[maybe_unused]] int helpTextChangesCount = 0;
+  int enhancedCount = 0;
+  int helpTextChangesCount = 0;
   
   auto isCommentLine = [](const std::string &ln) -> bool {
     // minus or plus, optional spaces, then // or /*
@@ -379,8 +379,8 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   }
   // Restrict manual CLI changes to explicit manual long option edits only.
   r.manualCliChanges = (r.manualAddedLongCount>0 || r.manualRemovedLongCount>0);
-  r.helpTextChanges = 0;
-  r.enhancedCliPatterns = 0;
+  r.helpTextChanges = helpTextChangesCount;
+  r.enhancedCliPatterns = enhancedCount;
   // Align CLI change flag with bash: treat any option set change or short removals as CLI changes
   r.cliChanges = r.breakingCliChanges
               || r.manualCliChanges
