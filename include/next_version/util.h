@@ -54,7 +54,8 @@ inline std::string readFileIfExists(const std::string &path) {
 
 inline std::string jsonEscape(const std::string &s) {
   std::string out; out.reserve(s.size() + 8);
-  for (unsigned char c : s) {
+  for (char ch : s) {
+    unsigned char c = static_cast<unsigned char>(ch);
     switch (c) {
       case '\\': out += "\\\\"; break;
       case '"': out += "\\\""; break;

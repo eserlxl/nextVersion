@@ -98,7 +98,10 @@ ConfigValues loadConfigValues(const std::string &projectRoot) {
         
         while (std::getline(iss2, line2)) {
           int indent = 0;
-          while (indent < static_cast<int>(line2.size()) && (line2[indent] == ' ' || line2[indent] == '\t')) ++indent;
+          while (indent < static_cast<int>(line2.size())) {
+            const char ch = line2[static_cast<std::size_t>(indent)];
+            if (ch == ' ' || ch == '\t') { ++indent; } else { break; }
+          }
           
           if (!inParent) {
             // Look for parent section
@@ -152,8 +155,11 @@ ConfigValues loadConfigValues(const std::string &projectRoot) {
         } 
         continue; 
       }
-      int indent = 0; 
-      while (indent < static_cast<int>(line.size()) && (line[indent] == ' ' || line[indent] == '\t')) ++indent; 
+      int indent = 0;
+      while (indent < static_cast<int>(line.size())) {
+        const char ch = line[static_cast<std::size_t>(indent)];
+        if (ch == ' ' || ch == '\t') { ++indent; } else { break; }
+      }
       if (indent <= base && line.find_first_not_of(" \t\r\n") != std::string::npos) break;
       std::smatch m2; 
       std::regex r2(std::string("^[ \\t]{") + std::to_string(base+1) + ",}" + key + ":\\s*([0-9]+(\\.[0-9]+)?)\\s*$");
@@ -291,9 +297,9 @@ CliResults analyzeCliOptions(const std::string &repoRoot, const std::string &bas
   std::regex argvAccessAdded(R"(^\+.*\bargv\[)");
   // Exclude generic main() additions from enhanced CLI patterns to reduce noise
   // by not defining a mainSignatureAdded regex here (kept as a no-op placeholder)
-  const bool countMainSignature = false;
-  int enhancedCount = 0;
-  int helpTextChangesCount = 0;
+  [[maybe_unused]] const bool countMainSignature = false;
+  [[maybe_unused]] int enhancedCount = 0;
+  [[maybe_unused]] int helpTextChangesCount = 0;
   
   auto isCommentLine = [](const std::string &ln) -> bool {
     // minus or plus, optional spaces, then // or /*
