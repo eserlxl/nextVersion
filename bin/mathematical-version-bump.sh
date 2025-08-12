@@ -15,6 +15,7 @@ export LC_ALL=C
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/opt/lxl/linux/nextVersion/bin/version-utils.sh
 source "${SCRIPT_DIR}/version-utils.sh"
 
 # Initialize colors
@@ -56,6 +57,10 @@ source "$SCRIPT_DIR/version-utils.sh"
 # Ensure cleanup hook exists even if utilities change later
 # Note: cleanup is handled by version-utils.sh automatically
 
+# Predefine for shellcheck; real value captured in trap
+st=0
+
+# shellcheck disable=SC2154
 trap '{
   st=$?
   if (( st != 0 )); then

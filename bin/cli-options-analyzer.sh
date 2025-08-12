@@ -15,6 +15,7 @@ export LC_ALL=C
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/opt/lxl/linux/nextVersion/bin/version-utils.sh
 source "${SCRIPT_DIR}/version-utils.sh"
 
 # Initialize colors
@@ -126,6 +127,8 @@ done
 $VERBOSE && note() { printf '[cli-analyzer] %s\n' "$*" >&2; }
 
 [[ -n "$BASE_REF" ]] || die "--base is required"
+# Default baseline tools are checked inside require_cmd() when no args are passed.
+# shellcheck disable=SC2119
 require_cmd
 have_git || die "git command not found"
 
@@ -308,6 +311,8 @@ SRC_DIFF=$(git -c color.ui=false diff "${DIFF_FLAGS[@]}" "$BASE_REF".."$TARGET_R
 CPP_DIFF=$(git -c color.ui=false diff "${DIFF_FLAGS[@]}" "$BASE_REF".."$TARGET_REF" -- "${PATHSPEC[@]}" || true)
 
 # Header-only diff subset (kept for reference), but API prototype removals should be checked across the entire diff
+# Kept for reference/debug: header-only diff subset
+# shellcheck disable=SC2034
 HDR_DIFF=$(printf '%s' "$SRC_DIFF" | grep -E '^\+|^-|^diff --git|^index|^@@|/.*\.(h|hh|hpp)$' -n --color=never | sed -n 'p' || true)
 
 # --- extract option sets -----------------------------------------------------
@@ -383,7 +388,8 @@ long_option_added_re='^\+[^/#!].*--[A-Za-z0-9\-]+'
 argc_check_added_re='^\+.*argc[[:space:]]*[<>=!]'
 argv_access_added_re='^\+.*argv\['
 # Exclude generic main() additions from enhanced CLI patterns to reduce noise
-main_signature_added_re='^$NO_MATCH_MAIN_SIGNATURE_PATTERN$'
+# Use a never-match pattern for bash ERE to effectively disable this check
+main_signature_added_re='^$'
 
 is_comment_line() {
   local ln="$1"
@@ -397,7 +403,7 @@ has_quoted_long_opt() {
 
 removed_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^-" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
 added_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^\+" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
-missing_cases=$(comm -23 <(printf '%s\n' $removed_cases | sed '/^$/d') <(printf '%s\n' $added_cases | sed '/^$/d') || true)
+missing_cases=$(comm -23 <(printf '%s\n' "$removed_cases" | sed '/^$/d') <(printf '%s\n' "$added_cases" | sed '/^$/d') || true)
 breaking_cli_changes=false
 [[ -n "$missing_cases" ]] && breaking_cli_changes=true
 

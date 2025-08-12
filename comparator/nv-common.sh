@@ -66,12 +66,12 @@ seed_random() {
 rand_int() { local min=$1 max=$2; echo $(( min + RANDOM % (max - min + 1) )); }
 rand_bool(){ local p="${1:-50}"; (( RANDOM % 100 < p )) && echo 1 || echo 0; }
 rand_pick(){ local -a items=("$@"); echo "${items[$((RANDOM%${#items[@]}))]}"; }
-rand_word(){ local n; n="$(rand_int 6 12)"; tr -dc 'a-z' < /dev/urandom | head -c "$n" 2>/dev/null || echo "word$RANDOM"; }
+rand_word(){ local n; n="$(rand_int 6 12)"; tr -dc '[:lower:]' < /dev/urandom | head -c "$n" 2>/dev/null || echo "word$RANDOM"; }
 
 # ---------- complexity scalers ----------
 COMPLEXITY=5
 c_scale() { awk -v b="$1" -v c="$COMPLEXITY" 'BEGIN{ printf("%d", (b*(0.6+0.1*c))+0.5) }'; }
-c_range() { local smin smax; smin="$(c_scale "$1")"; smax="$(c_scale "$2")"; (( smax < smin )) && smax=$((smin+1)); echo "$(rand_int "$smin" "$smax")"; }
+c_range() { local smin smax; smin="$(c_scale "$1")"; smax="$(c_scale "$2")"; (( smax < smin )) && smax=$((smin+1)); rand_int "$smin" "$smax"; }
 c_prob()  {
   local base="${1:-50}"
   [[ "$base" =~ ^[0-9]+$ ]] || base=50

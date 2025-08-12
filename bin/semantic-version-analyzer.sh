@@ -15,6 +15,7 @@ export LC_ALL=C
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/opt/lxl/linux/nextVersion/bin/version-utils.sh
 source "${SCRIPT_DIR}/version-utils.sh"
 
 # Initialize colors

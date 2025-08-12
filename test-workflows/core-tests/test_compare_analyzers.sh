@@ -143,7 +143,7 @@ rand_pick() { # rand_pick item1 item2 ...
 }
 rand_word() {
   local n; n="$(rand_int 6 12)"
-  tr -dc 'a-z' < /dev/urandom | head -c "$n" 2>/dev/null || echo "word$RANDOM"
+  tr -dc '[:lower:]' < /dev/urandom | head -c "$n" 2>/dev/null || echo "word$RANDOM"
 }
 
 # ----------- [complexity] scaling helpers -----------
@@ -157,7 +157,7 @@ c_range() { # scale a range bounds with c_scale
   smin="$(c_scale "$base_min")"
   smax="$(c_scale "$base_max")"
   (( smax < smin )) && smax=$((smin+1))
-  echo "$(rand_int "$smin" "$smax")"
+  rand_int "$smin" "$smax"
 }
 c_prob() { # increase probability with complexity (base% to ~ base*1.3 at 10)
   local base="$1"
@@ -214,7 +214,7 @@ write_cpp_main_min() {
   {
     echo '#include <iostream>'
     echo 'int main(){'
-    echo '  std::cout<<"ok\n";'
+    printf '%s\n' '  std::cout<<"ok\n";'
     # add some dummy loops to increase length/complexity
     local i=0
     while (( i < lines )); do
@@ -249,7 +249,8 @@ whitespace_nudge() {
 
 add_feature_file() {
   mkdir -p src include
-  local fname="feature_$(rand_word)"
+  local fname
+  fname="feature_$(rand_word)"
   echo "#pragma once" > "include/${fname}.h"
   printf "int %s(){return %d;}\n" "${fname}" "$(rand_int 0 9)" > "src/${fname}.cpp"
 }
@@ -294,7 +295,7 @@ add_security_fix() {
       echo "void shim_$i(char* d,const char* s,size_t n){ copy_safe(d,s,n); }"
       ((++i))
     done
-  } > src/sec_$(rand_word).cpp
+  } > "src/sec_$(rand_word).cpp"
 }
 
 breaking_api_change() {
@@ -314,7 +315,8 @@ breaking_api_change() {
 # [complexity] feature file generators
 add_feature_file_once() {
   mkdir -p src include
-  local fname="feature_$(rand_word)"
+  local fname
+  fname="feature_$(rand_word)"
   local fns; fns="$(c_range 1 4)"         # [complexity] multiple funcs per file
   echo "#pragma once" > "include/${fname}.h"
   {
@@ -436,11 +438,13 @@ generate_random_repo() {
 
       # [complexity] branch/merge more frequently and sometimes nested
       if (( $(rand_bool "$(c_prob 10)") )); then
-        local br="exp/$(rand_word)"
+        local br
+        br="exp/$(rand_word)"
         git_new_branch "$br"
         add_feature_files_bulk; git_safe_add; git_commit "feat: experimental $(rand_word)"
         if (( $(rand_bool "$(c_prob 40)") )); then
-          local br2="wip/$(rand_word)"
+          local br2
+          br2="wip/$(rand_word)"
           git_new_branch "$br2"
           add_feature_files_bulk; git_safe_add; git_commit "wip: spike $(rand_word)"
           git_switch "$br"
