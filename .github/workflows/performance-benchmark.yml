@@ -68,17 +68,17 @@ jobs:
           # Benchmark repository generation workloads
           echo "Benchmark: small workload (basic analysis)"
           OUT_SMALL=$(mktemp -d /tmp/nextVersion-bench-small-XXXXXX)
-          /usr/bin/time -f "small: %e s, %M KB" ./build/bin/next-version --no-git --verbose "$OUT_SMALL" > /dev/null
+          /usr/bin/time -f "small: %e s, %M KB" ./build/bin/next-version --no-git --verbose --repo-root "$OUT_SMALL" > /dev/null
           rm -rf "$OUT_SMALL"
 
           echo "Benchmark: medium workload (detailed analysis)"
           OUT_MED=$(mktemp -d /tmp/nextVersion-bench-med-XXXXXX)
-          /usr/bin/time -f "medium: %e s, %M KB" ./build/bin/next-version --no-git --verbose "$OUT_MED" > /dev/null
+          /usr/bin/time -f "medium: %e s, %M KB" ./build/bin/next-version --no-git --verbose --repo-root "$OUT_MED" > /dev/null
           rm -rf "$OUT_MED"
 
           echo "Benchmark: chaos high complexity"
           OUT_HI=$(mktemp -d /tmp/nextVersion-bench-hi-XXXXXX)
-          /usr/bin/time -f "chaos: %e s, %M KB" ./build/bin/next-version --no-git --chaos -x 9 "$OUT_HI" > /dev/null
+          /usr/bin/time -f "chaos: %e s, %M KB" ./build/bin/next-version --no-git --chaos -x 9 --repo-root "$OUT_HI" > /dev/null
           rm -rf "$OUT_HI"
           
           # Check binary size

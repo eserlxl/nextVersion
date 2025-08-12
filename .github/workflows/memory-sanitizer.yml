@@ -78,6 +78,6 @@ jobs:
           build-msan/bin/next-version --help
           build-msan/bin/next-version --version
           TMP_MSAN=$(mktemp -d /tmp/nextVersion-msan-XXXXXX)
-          build-msan/bin/next-version --no-git --verbose "$TMP_MSAN"
+          build-msan/bin/next-version --no-git --verbose --repo-root "$TMP_MSAN"
           test -d "$TMP_MSAN"
           rm -rf "$TMP_MSAN"
