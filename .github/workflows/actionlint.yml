@@ -38,13 +38,20 @@ jobs:
 
       - name: Install actionlint
         run: |
+          # Download and install actionlint
           curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash -o /tmp/download-actionlint.bash
           bash /tmp/download-actionlint.bash
-          echo "actionlint version: $(/tmp/actionlint -version)"
+          
+          # Move actionlint to a standard location and make it executable
+          sudo mv /tmp/actionlint /usr/local/bin/
+          sudo chmod +x /usr/local/bin/actionlint
+          
+          # Verify installation
+          echo "actionlint version: $(actionlint -version)"
 
       - name: Run actionlint
         env:
           SHELLCHECK_OPTS: --external-sources --source-path=SCRIPTDIR
         run: |
-          /tmp/actionlint -color
+          actionlint -color
 
