@@ -72,6 +72,21 @@ jobs:
         run: |
           build/bin/next-version --help
           build/bin/next-version --version
+          # Allow analyzer classification exit codes when running on a temp repo root
+          TMP_DBG=$(mktemp -d /tmp/nextVersion-debug-XXXXXX)
+          set +e
+          build/bin/next-version --no-git --verbose --repo-root "$TMP_DBG"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            if [ "$rc" -eq 10 ] || [ "$rc" -eq 11 ] || [ "$rc" -eq 12 ] || [ "$rc" -eq 20 ]; then
+              echo "Notice: analyzer returned classification exit code $rc (acceptable in smoke tests)."
+            else
+              echo "Error: next-version failed in smoke run with exit code $rc"
+              exit $rc
+            fi
+          fi
+          rm -rf "$TMP_DBG"
           echo "Smoke tests OK"
       
       - name: Test with GDB (if available)

@@ -100,7 +100,19 @@ jobs:
           ./build/bin/next-version --help
           ./build/bin/next-version --version
           TEMP_DIR=$(mktemp -d /tmp/nextVersion-ci-XXXXXX)
+          # Allow analyzer's classification exit codes (10/11/12/20) without failing the job
+          set +e
           ./build/bin/next-version --no-git --verbose --repo-root "$TEMP_DIR"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            if [ "$rc" -eq 10 ] || [ "$rc" -eq 11 ] || [ "$rc" -eq 12 ] || [ "$rc" -eq 20 ]; then
+              echo "Notice: analyzer returned classification exit code $rc (acceptable)."
+            else
+              echo "Error: next-version failed with exit code $rc"
+              exit $rc
+            fi
+          fi
           test -d "$TEMP_DIR"
           find "$TEMP_DIR" -type f | head -5 | sed 's/^/Generated: /'
           rm -rf "$TEMP_DIR"

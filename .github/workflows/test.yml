@@ -139,6 +139,21 @@ jobs:
           # Verify help and version
           "${BINARY_PATH}" --help > /dev/null
           "${BINARY_PATH}" --version > /dev/null
+          # Run analyzer against an empty temp repo root; allow classification exit codes
+          TMP_SMOKE=$(mktemp -d /tmp/nextVersion-smoke-XXXXXX)
+          set +e
+          "${BINARY_PATH}" --no-git --verbose --repo-root "$TMP_SMOKE" > /dev/null 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            if [ "$rc" -eq 10 ] || [ "$rc" -eq 11 ] || [ "$rc" -eq 12 ] || [ "$rc" -eq 20 ]; then
+              echo "Notice: analyzer returned classification exit code $rc (acceptable in smoke tests)."
+            else
+              echo "Error: next-version failed in smoke run with exit code $rc"
+              exit $rc
+            fi
+          fi
+          rm -rf "$TMP_SMOKE"
           echo "✓ Smoke tests passed"
 
       - name: Run C++ unit tests
