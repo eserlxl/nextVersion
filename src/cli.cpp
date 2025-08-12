@@ -9,8 +9,25 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
+#include <string>
 
 namespace nv {
+
+std::string readVersionFile() {
+  std::ifstream file("VERSION");
+  if (file.is_open()) {
+    std::string version;
+    std::getline(file, version);
+    file.close();
+    return version;
+  }
+  return "unknown";
+}
+
+void showVersion() {
+  std::cout << "next-version " << readVersionFile() << "\n";
+}
 
 void showHelp() {
   std::cout <<
@@ -19,6 +36,7 @@ R"HELP(Semantic Version Analyzer v2 for next-version
 Usage: semantic-version-analyzer [options]
 
 Options:
+  --version                Show version information
   --since <tag>            Analyze changes since specific tag (default: last tag)
   --since-tag <tag>        Alias for --since
   --since-commit <hash>    Analyze changes since specific commit
@@ -95,6 +113,7 @@ Options parseArgs(int argc, char **argv) {
     else if (arg == "--tag-prefix") opts.tagPrefix = needValue(arg.c_str());
     else if (arg == "--message") opts.commitMessage = needValue(arg.c_str());
     else if (arg == "--help" || arg == "-h") { showHelp(); std::exit(0); }
+    else if (arg == "--version") { showVersion(); std::exit(0); }
     else {
       std::cerr << "Error: Unknown option: " << arg << "\n";
       std::exit(1);

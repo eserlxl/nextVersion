@@ -13,6 +13,7 @@
 namespace nv {
 
 void showHelp();
+void showVersion();
 Options parseArgs(int argc, char **argv);
 
 }
