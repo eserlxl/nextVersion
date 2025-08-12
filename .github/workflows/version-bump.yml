@@ -127,17 +127,19 @@ jobs:
               ;;
           esac
 
-          echo "bump_type=${BUMP_TYPE}" >> "$GITHUB_OUTPUT"
-          echo "release_notes=${{ github.event.inputs.release_notes || '' }}" >> "$GITHUB_OUTPUT"
-          echo "prerelease=${{ github.event.inputs.prerelease || false }}" >> "$GITHUB_OUTPUT"
+          {
+            echo "bump_type=${BUMP_TYPE}"
+            echo "release_notes=${{ github.event.inputs.release_notes || '' }}"
+            echo "prerelease=${{ github.event.inputs.prerelease || false }}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Summarize analysis
         if: steps.version-analysis.outputs.bump_type != 'skip'
         run: |
           {
             echo "### Version analysis"
-            echo "- Bump type: `${{ steps.version-analysis.outputs.bump_type }}`"
-            echo "- Target branch: `${{ env.TARGET_BRANCH }}`"
+            echo "- Bump type: ${{ steps.version-analysis.outputs.bump_type }}"
+            echo "- Target branch: ${{ env.TARGET_BRANCH }}"
             echo "- New version (after bump): will be computed in the next step"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -157,7 +159,8 @@ jobs:
           fi
 
           # Create an isolated GNUPGHOME under /tmp and persist it across steps
-          export GNUPGHOME="$(mktemp -d /tmp/gnupg-XXXXXX)"
+          GNUPGHOME="$(mktemp -d /tmp/gnupg-XXXXXX)"
+          export GNUPGHOME
           chmod 700 "$GNUPGHOME"
           echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
 

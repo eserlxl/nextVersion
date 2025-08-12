@@ -80,7 +80,7 @@ jobs:
           echo "To actually delete, run this workflow with dry_run=false"
         else
           echo "Deleting tags..."
-          echo "$TAGS_TO_DELETE" | while read tag; do
+          echo "$TAGS_TO_DELETE" | while read -r tag; do
             if [ -n "$tag" ]; then
               echo "Deleting tag: $tag"
               git tag -d "$tag"
