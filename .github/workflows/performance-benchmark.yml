@@ -66,14 +66,14 @@ jobs:
           fi
           
           # Benchmark repository generation workloads
-          echo "Benchmark: small workload (files=20-30, commits=5-10)"
+          echo "Benchmark: small workload (basic analysis)"
           OUT_SMALL=$(mktemp -d /tmp/nextVersion-bench-small-XXXXXX)
-          /usr/bin/time -f "small: %e s, %M KB" ./build/bin/next-version --no-git --files 20-30 --commits 5-10 --lines 10-40 "$OUT_SMALL" > /dev/null
+          /usr/bin/time -f "small: %e s, %M KB" ./build/bin/next-version --no-git --verbose "$OUT_SMALL" > /dev/null
           rm -rf "$OUT_SMALL"
 
-          echo "Benchmark: medium workload (files=100-150, commits=50-80)"
+          echo "Benchmark: medium workload (detailed analysis)"
           OUT_MED=$(mktemp -d /tmp/nextVersion-bench-med-XXXXXX)
-          /usr/bin/time -f "medium: %e s, %M KB" ./build/bin/next-version --no-git --files 100-150 --commits 50-80 --lines 20-100 "$OUT_MED" > /dev/null
+          /usr/bin/time -f "medium: %e s, %M KB" ./build/bin/next-version --no-git --verbose "$OUT_MED" > /dev/null
           rm -rf "$OUT_MED"
 
           echo "Benchmark: chaos high complexity"

@@ -100,7 +100,7 @@ jobs:
           ./build/bin/next-version --help
           ./build/bin/next-version --version
           TEMP_DIR=$(mktemp -d /tmp/nextVersion-ci-XXXXXX)
-          ./build/bin/next-version --no-git --files 2-3 --commits 1-2 --lines 5-10 "$TEMP_DIR"
+          ./build/bin/next-version --no-git --verbose "$TEMP_DIR"
           test -d "$TEMP_DIR"
           find "$TEMP_DIR" -type f | head -5 | sed 's/^/Generated: /'
           rm -rf "$TEMP_DIR"
