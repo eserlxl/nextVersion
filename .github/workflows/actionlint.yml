@@ -40,7 +40,7 @@ jobs:
         run: |
           # Download and install actionlint
           curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash -o /tmp/download-actionlint.bash
-          bash /tmp/download-actionlint.bash
+          bash /tmp/download-actionlint.bash 1.7.7 /tmp
           
           # Move actionlint to a standard location and make it executable
           sudo mv /tmp/actionlint /usr/local/bin/
