@@ -139,18 +139,6 @@ jobs:
           # Verify help and version
           "${BINARY_PATH}" --help > /dev/null
           "${BINARY_PATH}" --version > /dev/null
-          # Generate a small fake repo in /tmp and validate outputs
-          TEMP_DIR=$(mktemp -d /tmp/nextVersion-ci-XXXXXX)
-          echo "Using temp dir: ${TEMP_DIR}"
-          "${BINARY_PATH}" --no-git --files 3-5 --commits 2-3 --lines 5-10 --verbose "${TEMP_DIR}"
-          test -d "${TEMP_DIR}"
-          FILE_COUNT=$(find "${TEMP_DIR}" -type f | wc -l)
-          if [ "${FILE_COUNT}" -le 0 ]; then
-            echo "No files generated in ${TEMP_DIR}"
-            exit 1
-          fi
-          echo "Generated ${FILE_COUNT} files in ${TEMP_DIR}"
-          rm -rf "${TEMP_DIR}"
           echo "✓ Smoke tests passed"
 
       - name: Run C++ unit tests

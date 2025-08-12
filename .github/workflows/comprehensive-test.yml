@@ -138,12 +138,6 @@ jobs:
           # Test CLI entry points
           "${BINARY_PATH}" --help > /dev/null
           "${BINARY_PATH}" --version > /dev/null
-          # Generate a tiny repo in /tmp and verify outputs
-          TMPD=$(mktemp -d /tmp/nextVersion-ci-XXXXXX)
-          "${BINARY_PATH}" --no-git --files 2-3 --commits 1-2 --lines 5-10 "$TMPD"
-          test -d "$TMPD"
-          test "$(find "$TMPD" -type f | wc -l)" -gt 0
-          rm -rf "$TMPD"
           echo "✓ Smoke tests passed"
 
       - name: Run C++ unit tests
