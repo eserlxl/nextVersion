@@ -67,6 +67,10 @@ Git operations (optional):
   --remote <name>          Remote name (default: origin)
   --tag-prefix <pfx>       Tag prefix (default: v)
   --message <msg>          Extra commit message paragraph
+ 
+ Compatibility:
+   --no-git                Accepted for compatibility; has no effect because
+                           git commit/tag/push are opt-in via explicit flags
   --help, -h               Show this help
 )HELP";
 }
@@ -113,6 +117,10 @@ Options parseArgs(int argc, char **argv) {
     else if (arg == "--tag-prefix") opts.tagPrefix = needValue(arg.c_str());
     else if (arg == "--message") opts.commitMessage = needValue(arg.c_str());
     else if (arg == "--help" || arg == "-h") { showHelp(); std::exit(0); }
+    // Compatibility no-op: some external harnesses pass --no-git to disable
+    // git operations. Our tool only performs git commit/tag/push when the
+    // corresponding flags are provided, so accept and ignore this flag.
+    else if (arg == "--no-git") { /* no-op */ }
     else if (arg == "--version") { showVersion(); std::exit(0); }
     else {
       std::cerr << "Error: Unknown option: " << arg << "\n";
