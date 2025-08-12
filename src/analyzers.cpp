@@ -70,8 +70,8 @@ RefResolution resolveRefsNative(const Options &opts) {
 
 ConfigValues loadConfigValues(const std::string &projectRoot) {
   ConfigValues cfg;
-  const std::string path = projectRoot.empty() ? std::string("dev-config/versioning.yml") : (projectRoot + "/dev-config/versioning.yml");
-  const std::string text = readFileIfExists(path);
+  const std::string baseDir = projectRoot.empty() ? std::string(".") : projectRoot;
+  const std::string text = readFileIfExistsUnderRoot(baseDir, "dev-config/versioning.yml");
   if (text.empty()) return cfg;
   
   auto findNum = [&](const std::string &section, const std::string &key) -> std::optional<long long> {

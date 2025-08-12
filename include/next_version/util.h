@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 namespace nv {
 
@@ -41,15 +42,54 @@ inline std::string trim(const std::string &s) {
   return s.substr(start, end - start + 1);
 }
 
+inline bool containsParentTraversal(const std::filesystem::path &p) {
+  for (const auto &part : p) {
+    if (part == "..") return true;
+  }
+  return false;
+}
+
+inline std::string readFileIfExistsUnderRoot(const std::string &baseDir, const std::string &relativePath) {
+  namespace fs = std::filesystem;
+  try {
+    const fs::path base = fs::weakly_canonical(fs::path(baseDir));
+    const fs::path rel = fs::path(relativePath);
+
+    // Only allow relative, non-empty paths with no parent traversals
+    if (rel.empty() || rel.is_absolute()) return {};
+    if (containsParentTraversal(rel)) return {};
+
+    const fs::path joined = base / rel;
+    const fs::path canon = fs::weakly_canonical(joined);
+
+    // Ensure the resolved path is inside the base directory using element-wise prefix check
+    auto isWithinBase = [&]() -> bool {
+      auto itBase = base.begin();
+      auto itCanon = canon.begin();
+      for (; itBase != base.end(); ++itBase, ++itCanon) {
+        if (itCanon == canon.end() || *itBase != *itCanon) return false;
+      }
+      return true; // all base components matched
+    };
+    if (!isWithinBase()) return {};
+
+    FILE *f = std::fopen(canon.c_str(), "rb");
+    if (!f) return {};
+    std::string data;
+    char buf[4096];
+    std::size_t n;
+    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) data.append(buf, n);
+    std::fclose(f);
+    return data;
+  } catch (...) {
+    return {};
+  }
+}
+
+// Deprecated: prefer readFileIfExistsUnderRoot(baseDir, relativePath).
+// This fallback only allows reading relative paths under the current working directory.
 inline std::string readFileIfExists(const std::string &path) {
-  FILE *f = std::fopen(path.c_str(), "rb");
-  if (!f) return {};
-  std::string data;
-  char buf[4096];
-  std::size_t n;
-  while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) data.append(buf, n);
-  std::fclose(f);
-  return data;
+  return readFileIfExistsUnderRoot(".", path);
 }
 
 inline std::string jsonEscape(const std::string &s) {

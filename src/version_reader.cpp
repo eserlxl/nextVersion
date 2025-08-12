@@ -14,7 +14,7 @@ namespace nv {
 std::string readCurrentVersion(const std::string &repoRoot) {
   std::string currentVersion = "0.0.0";
   if (!repoRoot.empty()) {
-    std::string data = readFileIfExists(repoRoot + "/VERSION");
+    std::string data = readFileIfExistsUnderRoot(repoRoot, "VERSION");
     if (!data.empty()) {
       data = trim(data);
       if (data.find_first_not_of("0123456789.") == std::string::npos && std::count(data.begin(), data.end(), '.') == 2) {
@@ -22,7 +22,7 @@ std::string readCurrentVersion(const std::string &repoRoot) {
       }
     }
   } else {
-    std::string data = readFileIfExists("VERSION");
+    std::string data = readFileIfExistsUnderRoot(".", "VERSION");
     if (!data.empty()) {
       data = trim(data);
       if (data.find_first_not_of("0123456789.") == std::string::npos && std::count(data.begin(), data.end(), '.') == 2) {
