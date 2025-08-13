@@ -52,7 +52,7 @@ log_error() {
     ((TESTS_FAILED++))
 }
 
-# shellcheck disable=SC2329
+# shellcheck disable=SC2329,SC2317
 log_warning() {
     printf "%s[WARN]%s %s\n" "${YELLOW}" "${NC}" "$1"
 }

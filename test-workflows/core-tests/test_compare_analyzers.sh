@@ -247,6 +247,8 @@ whitespace_nudge() {
   sed -E 's/[[:space:]]+/ /g' -i "$1" 2>/dev/null || true
 }
 
+# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 add_feature_file() {
   mkdir -p src include
   local fname
@@ -255,6 +257,7 @@ add_feature_file() {
   printf "int %s(){return %d;}\n" "${fname}" "$(rand_int 0 9)" > "src/${fname}.cpp"
 }
 
+# shellcheck disable=SC2317
 add_perf_code() {
   mkdir -p src
   local N; N="$(c_lines 800)"             # [complexity] bigger vectors
@@ -268,6 +271,7 @@ int perf_fn_${RANDOM}(){
 EOF
 }
 
+# shellcheck disable=SC2317
 add_test() {
   mkdir -p test
   local assertions; assertions="$(c_range 1 20)"  # [complexity]
@@ -283,13 +287,14 @@ add_test() {
   } > "test/test_$(rand_word).cpp"
 }
 
+# shellcheck disable=SC2317
 add_security_fix() {
   mkdir -p src
   local lines; lines="$(c_lines 25)"      # [complexity]
   {
     echo '#include <cstring>'
     echo '#include <cstddef>'
-    echo 'void copy_safe(char* d,const char* s,size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]='\''\''; } }'
+    printf 'void copy_safe(char* d,const char* s,size_t n){ if(n){ std::strncpy(d,s,n-1); d[n-1]=\\0; } }\n'
     local i=0
     while (( i < lines )); do
       echo "void shim_$i(char* d,const char* s,size_t n){ copy_safe(d,s,n); }"
@@ -298,6 +303,7 @@ add_security_fix() {
   } > "src/sec_$(rand_word).cpp"
 }
 
+# shellcheck disable=SC2317
 breaking_api_change() {
   mkdir -p include src
   echo "#pragma once" > include/api.h
@@ -313,6 +319,7 @@ breaking_api_change() {
 }
 
 # [complexity] feature file generators
+# shellcheck disable=SC2317
 add_feature_file_once() {
   mkdir -p src include
   local fname
@@ -327,6 +334,7 @@ add_feature_file_once() {
   } > "src/${fname}.cpp"
 }
 
+# shellcheck disable=SC2317
 add_feature_files_bulk() { # [complexity] add many files at once
   local n; n="$(c_range 1 5)"
   local k
@@ -463,6 +471,7 @@ generate_random_repo() {
 }
 
 # Generate many repos; prints their paths (one per line)
+# shellcheck disable=SC2317
 generate_random_repos() {
   local count="${1:-10}"
   local i=0
@@ -509,6 +518,7 @@ main() {
 
   if [[ "$CLEANUP" == "true" ]]; then
     # Cleanup on exit unless user asked not to.
+    # shellcheck disable=SC2317,SC2329
     cleanup() {
       for r in "${repos[@]}"; do
         [[ -n "$r" && -d "$r" ]] && rm -rf -- "$r"

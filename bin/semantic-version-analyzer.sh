@@ -15,7 +15,7 @@ export LC_ALL=C
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/opt/lxl/linux/nextVersion/bin/version-utils.sh
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/version-utils.sh"
 
 # Initialize colors
@@ -120,7 +120,7 @@ done
 # ----------------------------- helpers ----------------------------------------
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 
-# shellcheck disable=SC2329
+# shellcheck disable=SC2329,SC2317
 log()   { printf '%s\n' "$*" >&2; }
 debug() { 
   if [[ "$VERBOSE" == "true" ]]; then
@@ -272,7 +272,7 @@ require_exec "$SCRIPT_DIR/keyword-analyzer.sh"
 require_exec "$SCRIPT_DIR/version-calculator.sh"
 
 # ----------------------------- main -------------------------------------------
-# shellcheck disable=SC2329
+# shellcheck disable=SC2329,SC2317
 cleanup() {
   [[ "${__did_pushd:-false}" == "true" ]] && { popd >/dev/null || true; }
 }

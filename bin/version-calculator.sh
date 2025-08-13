@@ -14,23 +14,13 @@ IFS=$'\n\t'
 export LC_ALL=C
 
 # Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/version-utils.sh"
 
 # Initialize colors
 init_colors
-
-# ----- script directory ------------------------------------------------------
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-
-# ----- source utilities ------------------------------------------------------
-# shellcheck disable=SC1091
-if [[ -f "$SCRIPT_DIR/version-utils.sh" ]]; then
-    # Expected to provide: die, is_uint, init_colors
-    # shellcheck source=/dev/null
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/version-utils.sh"
-fi
 
 # ----- guards ----------------------------------------------------------------
 (( BASH_VERSINFO[0] >= 4 )) || { echo "Error: requires Bash ≥ 4" >&2; exit 1; }
