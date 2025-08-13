@@ -233,7 +233,7 @@ Result: 10.5.12 → 10.5.38 (patch with major-level delta)
 
 ### YAML Configuration (Recommended)
 
-The system uses `dev-config/versioning.yml` for comprehensive configuration:
+The system uses `config/versioning.yml` for comprehensive configuration:
 
 ```yaml
 # Base deltas for different change types
@@ -623,7 +623,7 @@ bonuses:
 ./test-workflows/core-tests/test_rollover_logic.sh
 
 # Validate configuration
-./bin/semantic-version-analyzer.sh --print-base
+./bin/version-config-loader.sh --machine
 ```
 
 ### Configuration Validation

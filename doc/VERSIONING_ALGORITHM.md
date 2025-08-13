@@ -145,7 +145,7 @@ The system provides multiple output formats:
 ### Human-Readable
 ```
 Current version: 1.2.3
-Bump type: minor
+Suggested bump: MINOR
 Next version: 1.2.33
 
 Calculation Details:
@@ -164,7 +164,7 @@ Reason: LOC=500, MINOR update, base_delta=10, bonus=10*2.00=20, total_delta=30
 ### Machine-Readable
 ```
 CURRENT_VERSION=1.2.3
-BUMP_TYPE=minor
+SUGGESTION=minor
 NEXT_VERSION=1.2.33
 LOC=500
 BONUS=10

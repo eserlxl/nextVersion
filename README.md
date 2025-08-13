@@ -21,15 +21,16 @@ nextVersion is a sophisticated versioning system that automatically calculates s
 
 ```bash
 # Build the project
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make -j20
 
-# Analyze your repository
-./bin/semantic-version-analyzer
+# Run the native analyzer
+./bin/next-version --help
 
-# Automatically bump version
-./bin/mathematical-version-bump --commit
+# Machine-readable output
+./bin/next-version --json
 ```
 
 ### Bash Implementation (Portable)
@@ -83,7 +84,8 @@ Intelligent rollover logic with `MAIN_VERSION_MOD = 1000`:
 ```bash
 git clone <repository-url>
 cd nextVersion
-mkdir build && cd build
+mkdir build
+cd build
 cmake ..
 make -j20
 sudo make install

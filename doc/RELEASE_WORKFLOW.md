@@ -26,7 +26,7 @@ This guide outlines the automated and manual processes for creating new releases
 `next-version` employs a release process primarily driven by [Semantic Versioning (SemVer)](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/). New releases are typically automated via GitHub Actions based on the type of changes merged into the `main` branch. This ensures that version bumps (MAJOR, MINOR, PATCH) accurately reflect the nature of the changes, and release notes are automatically generated.
 
 Key components of the release process include:
--   **`semantic-version-analyzer`**: A utility script (`./dev-bin/semantic-version-analyzer.sh`) that analyzes commit history to suggest the next semantic version bump using the advanced LOC-based delta system.
+-   **`semantic-version-analyzer`**: A utility script (`./bin/semantic-version-analyzer.sh`) that analyzes commit history to suggest the next semantic version bump using the advanced LOC-based delta system.
 -   **GitHub Actions Workflow (`version-bump.yml`)**: This workflow automates the version bumping, tag creation, and GitHub Release generation based on detected changes.
 -   **Mathematical Version Bumper**: A script (`./bin/mathematical-version-bump.sh`) that handles the actual version increment using the LOC-based delta system.
 -   **LOC-Based Delta System**: Advanced versioning that always increases only the patch version with calculated increments based on change magnitude.
@@ -134,22 +134,22 @@ Use the semantic version analyzer to understand the impact of your changes:
 
 ```bash
 # Basic analysis
-./dev-bin/semantic-version-analyzer.sh
+./bin/semantic-version-analyzer.sh
 
 # Detailed analysis with file changes
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Machine-readable output for automation
-./dev-bin/semantic-version-analyzer.sh --json | jq '.suggestion'
+./bin/semantic-version-analyzer.sh --json | jq '.suggestion'
 
 # Analyze specific time period
-./dev-bin/semantic-version-analyzer.sh --since-date 2025-01-01 --verbose
+./bin/semantic-version-analyzer.sh --since-date 2025-01-01 --verbose
 
 # Show configuration values
-./dev-bin/semantic-version-analyzer.sh --print-base
+./bin/version-config-loader.sh --machine
 
 # Analyze changes since a specific commit
-./dev-bin/semantic-version-analyzer.sh --since-commit abc123 --verbose
+./bin/semantic-version-analyzer.sh --since-commit abc123 --verbose
 ```
 
 The analyzer will provide:
@@ -217,13 +217,13 @@ For maintenance releases, you may want to clean up old tags:
 
 ```bash
 # List all tags
-./dev-bin/tag-manager.sh list
+./bin/tag-manager.sh list
 
 # Clean up old tags (interactive)
-./dev-bin/tag-manager.sh cleanup
+./bin/tag-manager.sh cleanup
 
 # Or keep only the 10 most recent tags
-./dev-bin/tag-manager.sh cleanup 10
+./bin/tag-manager.sh cleanup 10
 ```
 
 [↑ Back to top](#release-workflow-guide)
@@ -236,7 +236,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=patch
 # LOC: 50, Base PATCH: 1, Final PATCH: 1
 ```
@@ -249,7 +249,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=minor
 # LOC: 200, Base MINOR: 5, Bonus: CLI changes (+2), Final MINOR: 7
 ```
@@ -262,7 +262,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=major
 # LOC: 100, Base MAJOR: 10, Bonus: Breaking CLI (+2), Final MAJOR: 12
 ```
@@ -275,7 +275,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=patch
 # LOC: 150, Base PATCH: 1, Bonus: Security keywords (3×+2), Final PATCH: 7
 ```
@@ -288,7 +288,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=major
 # LOC: 2000, Base MAJOR: 30, Final MAJOR: 30
 ```
@@ -301,7 +301,7 @@ For maintenance releases, you may want to clean up old tags:
 
 **Analysis**:
 ```bash
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 # Output: SUGGESTION=minor
 # LOC: 300, Base MINOR: 5, Bonus: Performance 20-50% (+2), Final MINOR: 7
 ```
@@ -326,17 +326,17 @@ For maintenance releases, you may want to clean up old tags:
 #### Issue: Incorrect Version Bump
 **Symptoms**: Version bump doesn't match expected change type
 **Solutions**:
-- Run `./dev-bin/semantic-version-analyzer.sh --verbose` to understand the analysis
+- Run `./bin/semantic-version-analyzer.sh --verbose` to understand the analysis
 - Check LOC calculations and bonus point assignments
 - Review the LOC-based delta system configuration
 - Consider manual release with specific bump type
-- Verify the configuration in `dev-config/versioning.yml`
+- Verify the configuration in `config/versioning.yml`
 
 #### Issue: Tag Conflicts
 **Symptoms**: Workflow fails due to existing tag
 **Solutions**:
 - Check for existing tags with the same version
-- Use `./dev-bin/tag-manager.sh list` to see all tags
+- Use `./bin/tag-manager.sh list` to see all tags
 - Clean up conflicting tags if necessary
 - Ensure no manual tags conflict with automated releases
 
@@ -359,7 +359,7 @@ For maintenance releases, you may want to clean up old tags:
 #### Issue: Mathematical Version Bump Script Not Found
 **Symptoms**: Workflow fails with "mathematical-version-bump.sh not found"
 **Solutions**:
-- Ensure the script exists at `./dev-bin/mathematical-version-bump.sh`
+- Ensure the script exists at `./bin/mathematical-version-bump.sh`
 - Check script permissions (should be executable)
 - Verify the script is committed to the repository
 - Check for any path issues in the workflow
@@ -372,13 +372,13 @@ cat VERSION
 git tag --sort=-version:refname | head -5
 
 # Analyze changes in detail
-./dev-bin/semantic-version-analyzer.sh --verbose --json | jq '.'
+./bin/semantic-version-analyzer.sh --verbose --json | jq '.'
 
 # Check workflow configuration
 cat .github/workflows/version-bump.yml
 
 # Validate configuration
-./dev-bin/semantic-version-analyzer.sh --print-base
+./bin/version-config-loader.sh --machine
 
 # Test rollover logic
 ./test-workflows/core-tests/test_rollover_logic.sh
@@ -390,11 +390,11 @@ cat .github/workflows/version-bump.yml
 git log --oneline --since="1 day ago" --name-only
 
 # Test mathematical version bump locally
-./dev-bin/mathematical-version-bump.sh --help
+./bin/mathematical-version-bump.sh --help
 
 # Check script permissions
-ls -la ./dev-bin/semantic-version-analyzer.sh
-ls -la ./dev-bin/mathematical-version-bump.sh
+ls -la ./bin/semantic-version-analyzer.sh
+ls -la ./bin/mathematical-version-bump.sh
 ```
 
 [↑ Back to top](#release-workflow-guide)
@@ -469,7 +469,7 @@ refactor: restructure log processing pipeline
 
 ### Versioning Configuration
 
-The versioning system can be customized through `dev-config/versioning.yml`:
+The versioning system can be customized through `config/versioning.yml`:
 
 ```yaml
 # Base deltas for different change types
@@ -499,8 +499,8 @@ bonuses:
 
 To adjust the versioning behavior for your project:
 
-1. **Edit Configuration**: Modify `dev-config/versioning.yml`
-2. **Test Changes**: Use `./dev-bin/semantic-version-analyzer.sh --print-base` to verify
+1. **Edit Configuration**: Modify `config/versioning.yml`
+2. **Test Changes**: Use `./bin/version-config-loader.sh --machine` to verify
 3. **Run Tests**: Execute `./test-workflows/test_semantic_version_analyzer_comprehensive.sh`
 4. **Commit Changes**: Include configuration updates in your release
 
@@ -519,7 +519,7 @@ Before applying configuration changes to production:
 
 ```bash
 # Test with current configuration
-./dev-bin/semantic-version-analyzer.sh --verbose
+./bin/semantic-version-analyzer.sh --verbose
 
 # Test with modified configuration
 ./test-workflows/core-tests/test_version_logic.sh
@@ -528,7 +528,7 @@ Before applying configuration changes to production:
 ./test-workflows/run_workflow_tests.sh
 
 # Test mathematical version bump
-./dev-bin/mathematical-version-bump.sh --help
+./bin/mathematical-version-bump.sh --help
 ```
 
 [↑ Back to top](#release-workflow-guide)

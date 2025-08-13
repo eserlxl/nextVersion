@@ -148,21 +148,16 @@ The current official version of `next-version` is stored in a plain text file na
 
 ### Displaying the Current Version
 
-Users can retrieve the current version of the `next-version` executable at runtime using the `--version` or `-V` command-line flags:
+Users can retrieve the current version of the `next-version` executable at runtime using the `--version` flag:
 
 ```bash
 next-version --version
-# Expected Output: next-version version 10.5.12
+# Expected Output: next-version 10.5.12
 ```
 
 ### Version Resolution Order
 
-The `next-version` executable attempts to read its version from several predefined locations, in a specific order of preference, to ensure it can find the `VERSION` file in various deployment scenarios:
-
-1.  `./VERSION`: Relative to the executable's current working directory (common during local development or when running from the build output directory).
-2.  `../VERSION`: Relative to the executable, assuming it's in a `bin/` subdirectory within a build folder (e.g., `build/bin/next-version`).
-3.  `/usr/share/next-version/VERSION`: A standard path for system-wide installations on Linux.
-4.  `/usr/local/share/next-version/VERSION`: A common path for local user installations.
+The `next-version` tool reads the version from the project root `VERSION` file (current working directory) when available.
 
 If the `VERSION` file is not found or accessible in any of these locations, the version will be displayed as "unknown".
 
@@ -243,7 +238,7 @@ The analyzer supports both YAML configuration and environment variables:
 export VERSION_PATCH_DELTA="1*(1+LOC/250)"
 export VERSION_MINOR_DELTA="5*(1+LOC/500)"
 export VERSION_MAJOR_DELTA="10*(1+LOC/1000)"
-./dev-bin/semantic-version-analyzer.sh
+./bin/semantic-version-analyzer.sh
 ```
 
 #### Bonus System Categories
@@ -417,9 +412,9 @@ If you encounter problems related to versioning, consider the following troubles
 2.  **Automatic release not triggered**: Check if your commit messages adhere to [Conventional Commits](https://www.conventionalcommits.org/) and if the changes meet the [automatic release detection thresholds](#automatic-release-detection-thresholds). Review the GitHub Actions workflow logs for any errors.
 3.  **Incorrect version bump suggested/applied**: Manually run `semantic-version-analyzer --verbose` to understand why a particular bump was suggested. If you believe it's incorrect, you can manually trigger the workflow and override the bump type.
 4.  **Tag conflicts or messy tag history**: Use the `tag-manager` script to list and clean up old or conflicting tags. Ensure you are not manually creating tags that conflict with the automated process.
-5.  **LOC-based delta calculation issues**: Check the configuration in `dev-config/versioning.yml` or environment variables. Ensure LOC divisors are greater than 0 to avoid division by zero errors.
+5.  **LOC-based delta calculation issues**: Check the configuration in `config/versioning.yml` or environment variables. Ensure LOC divisors are greater than 0 to avoid division by zero errors.
 6.  **Unexpected rollovers**: Review the current version numbers and LOC calculations. The system uses mod 1000 rollover logic, so version 10.5.999 + 1 = 10.6.0.
-7.  **Configuration loading errors**: Verify that `dev-config/versioning.yml` is properly formatted and accessible. Use `version-config-loader.sh` to validate the configuration.
+7.  **Configuration loading errors**: Verify that `config/versioning.yml` is properly formatted and accessible. Use `version-config-loader.sh` to validate the configuration.
 
 ### Getting Help
 

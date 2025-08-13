@@ -198,16 +198,16 @@ TAG_SIGN=1 PUSH_AFTER_CREATE=1 ./bin/tag-manager.sh create 10.5.13
 TAG_MSG_PREFIX="Release" ./bin/tag-manager.sh create 10.5.13
 
 # Create tag even with uncommitted changes
-ALLOW_DIRTY_TAG=1 ./dev-bin/tag-manager.sh create 10.5.13
+ALLOW_DIRTY_TAG=1 ./bin/tag-manager.sh create 10.5.13
 ```
 
 #### Non-Interactive Operations
 ```bash
 # Automated cleanup in CI/CD
-ASSUME_YES=1 ./dev-bin/tag-manager.sh cleanup 10
+ASSUME_YES=1 ./bin/tag-manager.sh cleanup 10
 
 # List tags with custom pattern
-TAG_GLOB="v10.*" ./dev-bin/tag-manager.sh list
+TAG_GLOB="v10.*" ./bin/tag-manager.sh list
 ```
 
 ### Direct Git Commands
@@ -269,7 +269,7 @@ git tag --sort=-version:refname | head -10
 - Use version-aware sorting: `git tag --sort=-version:refname`
 - Check tag format consistency
 - Ensure all tags follow `vX.Y.Z` format
-- Use `./dev-bin/tag-manager.sh list` for proper sorting
+- Use `./bin/tag-manager.sh list` for proper sorting
 
 #### Issue: Cleanup Not Working
 **Symptoms**: Tag cleanup workflow fails or doesn't work as expected
@@ -284,9 +284,9 @@ git tag --sort=-version:refname | head -10
 **Symptoms**: `tag-manager` script fails or behaves unexpectedly
 **Solutions**:
 - Check Bash version (requires ≥ 4): `bash --version`
-- Verify environment variables: `./dev-bin/tag-manager.sh --help`
+- Verify environment variables: `./bin/tag-manager.sh --help`
 - Check Git repository status: `git status`
-- Ensure proper permissions: `ls -la dev-bin/tag-manager.sh`
+- Ensure proper permissions: `ls -la bin/tag-manager.sh`
 
 ### Debugging Commands
 
@@ -304,7 +304,7 @@ git ls-remote --tags origin
 git for-each-ref --format='%(refname:short) %(creatordate)' refs/tags | sort -k2
 
 # Check tag-manager configuration
-./dev-bin/tag-manager.sh --help
+./bin/tag-manager.sh --help
 
 # Verify Git configuration
 git config --list | grep -E "(user\.name|user\.email|remote\.origin)"
@@ -358,7 +358,7 @@ git config --list | grep -E "(user\.name|user\.email|remote\.origin)"
 2.  **Release Notes**: Ensure release notes are generated and attached to tags.
 3.  **Testing**: Test releases locally before pushing tags to remote.
 4.  **Documentation**: Keep tag management documentation up-to-date.
-5.  **Validation**: Use `./dev-bin/tag-manager.sh info` to verify tag contents and metadata.
+5.  **Validation**: Use `./bin/tag-manager.sh info` to verify tag contents and metadata.
 
 ### Security Considerations
 

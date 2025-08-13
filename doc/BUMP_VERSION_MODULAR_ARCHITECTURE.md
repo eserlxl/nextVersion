@@ -114,12 +114,12 @@ version-calculator-loc.sh
 
 ```bash
 # Basic usage (purely mathematical)
-./dev-bin/mathematical-version-bump.sh --dry-run
-./dev-bin/mathematical-version-bump.sh --commit --tag
-./dev-bin/mathematical-version-bump.sh --set 1.0.0 --allow-prerelease
+./bin/mathematical-version-bump.sh --dry-run
+./bin/mathematical-version-bump.sh --commit --tag
+./bin/mathematical-version-bump.sh --set 1.0.0 --allow-prerelease
 
 # Analyze changes since specific reference
-./dev-bin/mathematical-version-bump.sh --since v1.0.0 --commit
+./bin/mathematical-version-bump.sh --since v1.0.0 --commit
 ```
 
 ### Using Individual Modules
@@ -128,26 +128,26 @@ Each module can be used independently for specific tasks:
 
 ```bash
 # Validate version format
-./dev-bin/version-validator.sh validate 1.0.0
-./dev-bin/version-validator.sh validate 1.0.0-rc.1 true
+./bin/version-validator.sh validate 1.0.0
+./bin/version-validator.sh validate 1.0.0-rc.1 true
 
 # Compare versions
-./dev-bin/version-validator.sh compare 1.0.0 1.0.1
+./bin/version-validator.sh compare 1.0.0 1.0.1
 
 # Calculate new version
-./dev-bin/version-calculator-loc.sh --current-version 1.0.0 --bump-type patch
+./bin/version-calculator-loc.sh --current-version 1.0.0 --bump-type patch
 
 # Check git operations
-./dev-bin/git-operations.sh check-dirty
+./bin/git-operations.sh check-dirty
 
 # Analyze semantic changes
-./dev-bin/semantic-version-analyzer.sh --since v1.0.0 --verbose
+./bin/semantic-version-analyzer.sh --since v1.0.0 --verbose
 
 # Load configuration
-./dev-bin/version-config-loader.sh --machine
+./bin/version-config-loader.sh --machine
 
 # Analyze CLI options
-./dev-bin/cli-options-analyzer.sh --since v1.0.0
+./bin/cli-options-analyzer.sh --since v1.0.0
 ```
 
 ## Benefits of Modular Architecture
@@ -309,19 +309,19 @@ Each module includes standalone usage for testing:
 
 ```bash
 # Test version validation
-./dev-bin/version-validator.sh validate 1.0.0
+./bin/version-validator.sh validate 1.0.0
 
 # Test version calculation
-./dev-bin/version-calculator-loc.sh --current-version 1.0.0 --bump-type patch
+./bin/version-calculator-loc.sh --current-version 1.0.0 --bump-type patch
 
 # Test git operations
-./dev-bin/git-operations.sh check-dirty
+./bin/git-operations.sh check-dirty
 
 # Test semantic analysis
-./dev-bin/semantic-version-analyzer.sh --since v1.0.0 --verbose
+./bin/semantic-version-analyzer.sh --since v1.0.0 --verbose
 
 # Test configuration loading
-./dev-bin/version-config-loader.sh --validate-only
+./bin/version-config-loader.sh --validate-only
 ```
 
 ## Future Enhancements
