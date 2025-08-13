@@ -162,9 +162,13 @@ create_release_structure() {
 copy_release_files() {
     print_status "Copying essential files..."
     
-    # Copy bash scripts
-    cp -r "$PROJECT_ROOT/bin"/*.sh "$RELEASE_DIR/bin/"
-    chmod +x "$RELEASE_DIR/bin"/*.sh
+    # Copy bash scripts (exclude any symlinks)
+    for script in "$PROJECT_ROOT/bin"/*.sh; do
+        if [[ -f "$script" ]] && [[ ! -L "$script" ]]; then
+            cp "$script" "$RELEASE_DIR/bin/"
+            chmod +x "$RELEASE_DIR/bin/$(basename "$script")"
+        fi
+    done
     
     # Copy configuration
     cp -r "$PROJECT_ROOT/config"/* "$RELEASE_DIR/config/"

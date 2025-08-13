@@ -143,6 +143,31 @@ target_compile_definitions(next-version PRIVATE
   DEV_BIN_DIR="${CMAKE_SOURCE_DIR}/dev-bin"
 )
 
+# Create symlink to bin/next-version for development convenience
+add_custom_command(TARGET next-version POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+    "$<TARGET_FILE:next-version>"
+    "${CMAKE_SOURCE_DIR}/bin/next-version"
+  COMMENT "Creating symlink: bin/next-version -> $<TARGET_FILE:next-version>"
+  VERBATIM
+)
+
+# Custom target to manage the symlink (useful for cleanup)
+add_custom_target(symlink-next-version
+  COMMAND ${CMAKE_COMMAND} -E create_symlink
+    "$<TARGET_FILE:next-version>"
+    "${CMAKE_SOURCE_DIR}/bin/next-version"
+  COMMENT "Creating/updating symlink: bin/next-version"
+  VERBATIM
+)
+
+# Custom target to remove the symlink
+add_custom_target(remove-symlink-next-version
+  COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_SOURCE_DIR}/bin/next-version"
+  COMMENT "Removing symlink: bin/next-version"
+  VERBATIM
+)
+
 # ---- IPO/LTO (only when meaningful) -----------------------------------------
 include(CheckIPOSupported)
 set(_ipo_allowed OFF)
