@@ -335,6 +335,12 @@ main() {
   fi
   declare -A FILE=(); parse_kv_into FILE <<<"$file_raw"
 
+  # Change presence detection (used as fallback for patch suggestion)
+  local has_changes="false"
+  if (( $(int_or_default "${FILE[DIFF_SIZE]}" 0) > 0 )); then
+    has_changes="true"
+  fi
+
   # 4) Analyze CLI options
   debug "Analyzing CLI options..."
   local cli_raw
@@ -459,6 +465,7 @@ main() {
   patch_th=$(int_or_default "${CFG[PATCH_BONUS_THRESHOLD]}" 0)
   
   debug "Thresholds: major_th=$major_th, minor_th=$minor_th, patch_th=$patch_th"
+  debug "Change detection: DIFF_SIZE=${FILE[DIFF_SIZE]:-0} -> has_changes=$has_changes"
 
   local suggestion="none"
   if [[ "$version_is_valid" == "false" ]]; then
@@ -466,6 +473,8 @@ main() {
   elif (( TOTAL_BONUS >= major_th )); then suggestion="major"
   elif (( TOTAL_BONUS >= minor_th )); then suggestion="minor"
   elif (( TOTAL_BONUS > patch_th )); then suggestion="patch"
+  # Fallback: when patch threshold is 0 and we detected any changes, suggest patch
+  elif [[ "$has_changes" == "true" && "$patch_th" -eq 0 ]]; then suggestion="patch"
   fi
 
   # 10) Next version (via version-calculator)
