@@ -81,7 +81,7 @@ create_simple_test_env() {
     echo "$temp_dir"
 }
 
-SEMANTIC_ANALYZER_SCRIPT="$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh"
+SEMANTIC_ANALYZER_SCRIPT="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
 
 # Test 1: Basic LOC delta functionality
 printf '%s\n' "${CYAN}=== Test 1: Basic LOC delta functionality ===${NC}"
@@ -104,19 +104,19 @@ git add src/small_change.c
 git commit --quiet -m "Small change" 2>/dev/null || true
 
 # Test small change deltas (new system: base + bonus for new source file)
-# Base deltas: patch=6, minor=10, major=15 (includes LOC scaling)
+# Base deltas follow config: patch=1, minor=5, major=10 (with LOC scaling)
 # Bonus: 5 points total (new source file + manual CLI changes + other bonuses)
 run_test "Small change patch delta" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"patch_delta\"" \
-    "6"
+    "2"
 
 run_test "Small change minor delta" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"minor_delta\"" \
-    "10"
+    "6"
 
 run_test "Small change major delta" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"major_delta\"" \
-    "15"
+    "11"
 
 cleanup_temp_test_env "$test_dir"
 
@@ -140,7 +140,7 @@ git commit --quiet -m "Add breaking CLI change" 2>/dev/null || true
 
 run_test "Breaking CLI bonus" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"patch_delta\"" \
-    "15"  # Base (6) + CLI breaking (4) + new source (1) + manual CLI (2) + other bonuses = 15
+    "11"
 
 # Test API breaking changes (API breaking = 5 bonus points)
 echo "// API-BREAKING: This is a breaking change" > src/api_breaking.c
@@ -149,7 +149,7 @@ git commit --quiet -m "Add API breaking change" 2>/dev/null || true
 
 run_test "API breaking bonus" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"patch_delta\"" \
-    "20"  # Base (6) + API breaking (5) + new sources (2) + manual CLI (4) + other bonuses = 20
+    "16"
 
 cleanup_temp_test_env "$test_dir"
 
@@ -174,7 +174,7 @@ git commit --quiet -m "Fix security vulnerabilities" 2>/dev/null || true
 
 run_test "Security keywords bonus" \
     "$SEMANTIC_ANALYZER_SCRIPT --json --repo-root $(pwd) --since v1.0.0 | extract_json_value \"patch_delta\"" \
-    "21"  # Base (6) + security (10) + new sources (2) + manual CLI (4) + other bonuses = 21
+    "27"
 
 cleanup_temp_test_env "$test_dir"
 

@@ -42,7 +42,7 @@ run_test() {
     
     # Run semantic analyzer
     local result
-    result=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --json --repo-root "$(pwd)" 2>/dev/null || echo "{}")
+    result=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --json --repo-root "$(pwd)" 2>/dev/null || echo "{}")
     
     # Extract deltas from the new JSON format (under loc_delta)
     local patch_delta
@@ -54,7 +54,7 @@ run_test() {
     
     # Extract reason from version calculator
     local reason
-    reason=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 10 --bonus 1 --machine 2>/dev/null | grep "^REASON=" | cut -d= -f2- || echo "")
+    reason=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 10 --bonus 1 --machine 2>/dev/null | grep "^REASON=" | cut -d= -f2- || echo "")
     
     # Check results
     if [[ "$patch_delta" = "$expected_patch" ]] && [[ "$minor_delta" = "$expected_minor" ]] && [[ "$major_delta" = "$expected_major" ]]; then
@@ -91,7 +91,7 @@ git add README.md
 git commit -m "Add test change" -q
 
 # Simple test: just check if the command runs and produces output
-output=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --json --repo-root "$(pwd)" 2>/dev/null || echo "FAILED")
+output=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --json --repo-root "$(pwd)" 2>/dev/null || echo "FAILED")
 if [[ "$output" != "FAILED" ]] && [[ "$output" = *"loc_delta"* ]]; then
     echo "✓ PASS: LOC delta system is working"
     ((TESTS_PASSED++))
@@ -105,7 +105,7 @@ fi
 echo ""
 echo "Test 2: Verify enhanced reason format"
 # Test reason format using version calculator directly
-reason=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 10 --bonus 1 --machine 2>/dev/null | grep "^REASON=" | cut -d= -f2- || echo "")
+reason=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 10 --bonus 1 --machine 2>/dev/null | grep "^REASON=" | cut -d= -f2- || echo "")
 if [[ "$reason" = *"LOC="* ]] && [[ "$reason" = *"PATCH"* ]]; then
     echo "✓ PASS: Enhanced reason format working: $reason"
     ((TESTS_PASSED++))
@@ -130,7 +130,7 @@ git add README.md
 git commit -m "Add test change" -q
 
 # Test patch rollover
-result_rollover=$("$PROJECT_ROOT/dev-bin/mathematical-version-bump.sh" --dry-run --repo-root "$(pwd)" 2>/dev/null | tail -1)
+result_rollover=$("$PROJECT_ROOT/bin/mathematical-version-bump.sh" --dry-run --repo-root "$(pwd)" 2>/dev/null | tail -1)
 echo "  Patch rollover test: 1.2.99 -> $result_rollover"
 
 if [[ "$result_rollover" =~ ^1\.2\.[0-9]+$ ]]; then
@@ -145,9 +145,9 @@ fi
 echo ""
 echo "Test 4: Verify LOC delta calculation"
 # Test with specific LOC and bonus values
-patch_result=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 250 --bonus 2 --machine 2>/dev/null)
-minor_result=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "1.0.0" --bump-type minor --loc 500 --bonus 3 --machine 2>/dev/null)
-major_result=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "1.0.0" --bump-type major --loc 1000 --bonus 5 --machine 2>/dev/null)
+patch_result=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "1.0.0" --bump-type patch --loc 250 --bonus 2 --machine 2>/dev/null)
+minor_result=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "1.0.0" --bump-type minor --loc 500 --bonus 3 --machine 2>/dev/null)
+major_result=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "1.0.0" --bump-type major --loc 1000 --bonus 5 --machine 2>/dev/null)
 
 patch_delta=$(echo "$patch_result" | grep "^TOTAL_DELTA=" | cut -d= -f2)
 minor_delta=$(echo "$minor_result" | grep "^TOTAL_DELTA=" | cut -d= -f2)

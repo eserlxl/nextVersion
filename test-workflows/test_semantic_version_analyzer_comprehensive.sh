@@ -26,7 +26,7 @@ RESET='\033[0m'
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-SEMANTIC_ANALYZER_SCRIPT="$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh"
+SEMANTIC_ANALYZER_SCRIPT="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
 
 # Test 1: Basic functionality
 printf '%s\n' "${CYAN}=== Test 1: Basic functionality ===${RESET}"

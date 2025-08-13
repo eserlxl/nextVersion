@@ -37,7 +37,7 @@ git commit -m "Rename test file"
 
 # Run semantic version analyzer from the temporary directory
 # Note: Using '|| true' to capture output even if command fails (intentional)
-result=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --machine --repo-root "$temp_dir" --base HEAD~1 --target HEAD 2>/dev/null || true)
+result=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --machine --repo-root "$temp_dir" --base HEAD~1 --target HEAD 2>/dev/null || true)
 
 # Extract suggestion
 suggestion=$(echo "$result" | grep "SUGGESTION=" | cut -d'=' -f2 || echo "unknown")

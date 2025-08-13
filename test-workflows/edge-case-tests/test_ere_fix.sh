@@ -131,7 +131,7 @@ second_commit=$(git rev-parse HEAD)
 
 # Test that manual CLI detection works (should not crash with ERE error)
 run_test "Manual CLI detection with escaped +" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "timeout 10s $PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
     11 \
     "manual_cli_changes=true"
 
@@ -177,7 +177,7 @@ second_commit=$(git rev-parse HEAD)
 
 # Test that getopt and manual counts are separate
 run_test "Getopt and manual counts separation" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --json --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --json --repo-root '$temp_dir'" \
     11 \
     '"manual_added_long_count": 0'
 
@@ -194,7 +194,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Breaking CLI change detection" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
     10 \
     "breaking_cli"
 
@@ -229,7 +229,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "API breaking change detection" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
     10 \
     "api_break"
 
@@ -246,7 +246,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Whitespace ignore with --ignore-whitespace" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --ignore-whitespace --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --ignore-whitespace --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
     20 \
     "NONE"
 
@@ -269,7 +269,7 @@ git add test2.txt
 git commit -m "Second commit"
 
 # Copy the analyzer script
-cp "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" .
+cp "$PROJECT_ROOT/bin/semantic-version-analyzer.sh" .
 
 run_test "No tags fallback to HEAD~1" \
     "./semantic-version-analyzer --print-base" \
@@ -288,17 +288,17 @@ first_commit=$(git rev-parse HEAD~3)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Pure mathematical versioning verbose output" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
     0 \
     "PURE MATHEMATICAL VERSIONING SYSTEM"
 
 run_test "Pure mathematical versioning bonus thresholds" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
     0 \
     "Total bonus >="
 
 run_test "Pure mathematical versioning no extra rules" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
     0 \
     "No minimum thresholds or extra rules"
 
@@ -306,7 +306,7 @@ run_test "Pure mathematical versioning no extra rules" \
 printf '%s=== Test 8: JSON Output Fields ===%s\n' "${YELLOW}" "${NC}"
 
 run_test "JSON includes manual CLI fields" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --verbose --since HEAD~4 --json --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~4 --json --repo-root '$temp_dir'" \
     11 \
     '"manual_added_long_count"'
 

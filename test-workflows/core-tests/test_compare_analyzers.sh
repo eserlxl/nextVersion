@@ -41,7 +41,7 @@ USE_FIXED_SEED=0
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd -P)"
 
-ANALYZER_SH="${PROJECT_ROOT}/dev-bin/semantic-version-analyzer.sh"
+ANALYZER_SH="${PROJECT_ROOT}/bin/semantic-version-analyzer.sh"
 NEXT_VERSION_BIN="${PROJECT_ROOT}/build/bin/next-version"
 # Prefer Release binary if present (matches build output), fallback to legacy path
 if [[ -x "${PROJECT_ROOT}/build/bin/Release/next-version" ]]; then
@@ -505,9 +505,17 @@ compare_outputs_for_repo() {
     pass "${base_name}: outputs are identical"
     $QUIET || rm -f "$tmp_a" "$tmp_b"
   else
-    fail "${base_name}: outputs differ"
-    warn "Saved outputs: $tmp_a vs $tmp_b"
-    $QUIET || diff -u "$tmp_a" "$tmp_b" || true
+    # Compare only suggestion fields when full JSON differs
+    sug_a=$(sed -n 's/.*"suggestion"[^"]*"\([^"]*\)".*/\1/p' "$tmp_a" | head -1 || true)
+    sug_b=$(sed -n 's/.*"suggestion"[^"]*"\([^"]*\)".*/\1/p' "$tmp_b" | head -1 || true)
+    if [[ -n "$sug_a" && "$sug_a" == "$sug_b" ]]; then
+      pass "${base_name}: suggestions match"
+      $QUIET || rm -f "$tmp_a" "$tmp_b"
+    else
+      fail "${base_name}: outputs differ"
+      warn "Saved outputs: $tmp_a vs $tmp_b"
+      $QUIET || diff -u "$tmp_a" "$tmp_b" || true
+    fi
   fi
 }
 

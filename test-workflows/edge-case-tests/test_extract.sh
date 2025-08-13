@@ -79,7 +79,7 @@ run_cli_extraction_test() {
     
     # Run semantic version analyzer from the temporary directory
     local cli_analysis
-    cli_analysis=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --base "$base_ref" --target "$target_ref" --json --repo-root "$temp_dir" 2>/dev/null || true)
+    cli_analysis=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --base "$base_ref" --target "$target_ref" --json --repo-root "$temp_dir" 2>/dev/null || true)
     
     echo "CLI analysis output:"
     echo "$cli_analysis"

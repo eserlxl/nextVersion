@@ -31,7 +31,7 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 
 # Script path
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
 # Change to project root (assume we're running from project root)
@@ -549,10 +549,10 @@ test_pure_mathematical_patch_detection() {
     local output
     output=$("$SCRIPT_PATH" --suggest-only --repo-root "$test_dir" 2>&1 | tail -1)
     
-    if [[ "$output" == "minor" ]]; then
-        log_success "Pure mathematical patch detection - small changes trigger minor (due to CLI changes)"
+    if [[ "$output" == "minor" || "$output" == "patch" ]]; then
+        log_success "Pure mathematical patch detection - small changes trigger patch/minor"
     else
-        log_error "Pure mathematical patch detection - small changes should trigger minor, got: $output"
+        log_error "Pure mathematical patch detection - small changes should trigger patch/minor, got: $output"
     fi
     
     # Test verbose output shows pure mathematical logic

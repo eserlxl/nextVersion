@@ -11,13 +11,13 @@ set -euo pipefail
 # Get project root - assume we're running from test-workflows/core-tests
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-SCRIPT_PATH="$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
 
 echo "Testing semantic version analyzer v2 modular architecture..."
 
 # Test help output
 echo "Testing help output..."
-if "$SCRIPT_PATH" --help | grep -q "Semantic Version Analyzer v2 for next-version"; then
+if "$SCRIPT_PATH" --help 2>/dev/null | grep -q "Semantic Version Analyzer v2 for next-version"; then
     echo "✅ PASS: Help output shows v2 architecture"
 else
     echo "❌ FAIL: Help output"

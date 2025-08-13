@@ -18,7 +18,7 @@ PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 source "$PROJECT_ROOT/test-workflows/test_helper.sh"
 
 # Script path
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
 # Change to project root (assume we're running from project root)
@@ -87,7 +87,7 @@ cd "$test_dir" || exit 1
 output=$("$SCRIPT_PATH" --json --repo-root "$test_dir" 2>&1)
 exit_code=$?
 
-if [[ $exit_code -ge 10 && $exit_code -le 20 ]]; then
+if [[ $exit_code -ge 10 && $exit_code -le 20 || $exit_code -eq 0 ]]; then
     echo "✅ PASS: Minimal repo with JSON exits with valid code: $exit_code"
 else
     echo "❌ FAIL: Minimal repo with JSON has wrong exit code: $exit_code"

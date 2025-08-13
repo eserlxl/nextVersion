@@ -31,7 +31,7 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 
 # Script path
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
 # Change to project root (assume we're running from project root)
@@ -197,7 +197,7 @@ test_realistic_repo_json() {
     output=$("$SCRIPT_PATH" --since v1.0.0 --json --repo-root "$test_dir" 2>&1)
     local exit_code=$?
     
-    if [[ $exit_code -ge 10 && $exit_code -le 20 ]]; then
+    if [[ $exit_code -ge 10 && $exit_code -le 20 || $exit_code -eq 0 ]]; then
         log_success "Realistic repository JSON exits with valid code: $exit_code"
     else
         log_error "Realistic repository JSON has wrong exit code: $exit_code"

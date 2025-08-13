@@ -75,10 +75,10 @@ check_prerequisites() {
     # Check for required scripts
     local missing_scripts=()
     local required_scripts=(
-        "dev-bin/semantic-version-analyzer.sh"
-        "dev-bin/version-calculator.sh"
-        "dev-bin/mathematical-version-bump.sh"
-        "dev-bin/version-calculator-loc.sh"
+        "bin/semantic-version-analyzer.sh"
+        "bin/version-calculator.sh"
+        "bin/mathematical-version-bump.sh"
+        "bin/version-calculator-loc.sh"
     )
     
     for script in "${required_scripts[@]}"; do
@@ -140,7 +140,7 @@ run_system_validation() {
     echo -e "${CYAN}=== System Validation Tests ===${NC}"
     
     # Test 1: Check versioning configuration
-    local config_file="$SCRIPT_DIR/../dev-config/versioning.yml"
+    local config_file="$SCRIPT_DIR/../config/versioning.yml"
     if [[ -f "$config_file" ]]; then
         if yq '.' "$config_file" >/dev/null 2>&1; then
             log_test_result "Versioning Config" "PASS" "valid YAML configuration"
@@ -152,7 +152,7 @@ run_system_validation() {
     fi
     
     # Test 2: Check semantic analyzer functionality
-    local analyzer_script="$SCRIPT_DIR/../dev-bin/semantic-version-analyzer.sh"
+    local analyzer_script="$SCRIPT_DIR/../bin/semantic-version-analyzer.sh"
     if [[ -x "$analyzer_script" ]]; then
         if "$analyzer_script" --help >/dev/null 2>&1; then
             log_test_result "Semantic Analyzer" "PASS" "script is executable and functional"
@@ -164,7 +164,7 @@ run_system_validation() {
     fi
     
     # Test 3: Check version calculator functionality
-    local calculator_script="$SCRIPT_DIR/../dev-bin/version-calculator.sh"
+    local calculator_script="$SCRIPT_DIR/../bin/version-calculator.sh"
     if [[ -x "$calculator_script" ]]; then
         if "$calculator_script" --help >/dev/null 2>&1; then
             log_test_result "Version Calculator" "PASS" "script is executable and functional"

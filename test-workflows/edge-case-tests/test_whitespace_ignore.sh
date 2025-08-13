@@ -81,11 +81,11 @@ run_whitespace_test() {
     
     # Run semantic version analyzer without --ignore-whitespace
     local result1
-    result1=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --machine --repo-root "$temp_dir" --base "$base_ref" --target "$target_ref" 2>/dev/null || true)
+    result1=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --machine --repo-root "$temp_dir" --base "$base_ref" --target "$target_ref" 2>/dev/null || true)
     
     # Run semantic version analyzer with --ignore-whitespace
     local result2
-    result2=$("$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh" --ignore-whitespace --machine --repo-root "$temp_dir" --base "$base_ref" --target "$target_ref" 2>/dev/null || true)
+    result2=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --ignore-whitespace --machine --repo-root "$temp_dir" --base "$base_ref" --target "$target_ref" 2>/dev/null || true)
     
     # Extract suggestions
     local suggestion1 suggestion2

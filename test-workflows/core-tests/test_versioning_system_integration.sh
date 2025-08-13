@@ -66,7 +66,7 @@ echo -e "${CYAN}=== Test 1: Configuration Loading ===${NC}"
 
 # Test that the versioning configuration can be loaded
 run_test "Versioning configuration loading" \
-    "yq '.' '$PROJECT_ROOT/dev-config/versioning.yml'" \
+    "yq '.' '$PROJECT_ROOT/config/versioning.yml'" \
     '"base_deltas"'
 
 # Test 2: Verify LOC delta calculation with configuration
@@ -84,7 +84,7 @@ git commit -m "Add test file" -q
 
 # Test semantic analyzer with LOC delta
 run_test "Semantic analyzer with LOC delta" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --json --repo-root $(pwd)" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --json --repo-root $(pwd)" \
     "loc_delta"
 
 # Test 3: Verify mathematical version bump integration
@@ -92,7 +92,7 @@ echo -e "${CYAN}=== Test 3: Mathematical Version Bump Integration ===${NC}"
 
 # Test mathematical version bump
 run_test "Mathematical version bump with LOC delta" \
-    "$PROJECT_ROOT/dev-bin/mathematical-version-bump.sh --print --repo-root $(pwd)" \
+    "$PROJECT_ROOT/bin/mathematical-version-bump.sh --print --repo-root $(pwd)" \
     "1."
 
 # Test 4: Verify version calculator with new system
@@ -100,7 +100,7 @@ echo -e "${CYAN}=== Test 4: Version Calculator Integration ===${NC}"
 
 # Test version calculator with LOC delta
 run_test "Version calculator with LOC delta" \
-    "$PROJECT_ROOT/dev-bin/version-calculator.sh --current-version 1.0.0 --bump-type patch --loc 100 --bonus 2 --machine" \
+    "$PROJECT_ROOT/bin/version-calculator.sh --current-version 1.0.0 --bump-type patch --loc 100 --bonus 2 --machine" \
     "TOTAL_DELTA="
 
 # Test 5: Verify rollover logic with new system
@@ -118,7 +118,7 @@ git commit -m "Add change for rollover test" -q
 
 # Test rollover with mathematical version bump
 run_test "Rollover logic with mathematical version bump" \
-    "$PROJECT_ROOT/dev-bin/mathematical-version-bump.sh --print --repo-root $(pwd)" \
+    "$PROJECT_ROOT/bin/mathematical-version-bump.sh --print --repo-root $(pwd)" \
     "1."
 
 # Test 6: Verify bonus system integration
@@ -131,7 +131,7 @@ git commit -m "BREAKING: API change" -q
 
 # Test semantic analyzer with breaking change
 run_test "Semantic analyzer with breaking change bonus" \
-    "$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh --json --repo-root $(pwd)" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --json --repo-root $(pwd)" \
     "total_bonus"
 
 # Test 7: Verify configuration override
@@ -142,7 +142,7 @@ export VERSION_PATCH_LIMIT=50
 export VERSION_MINOR_LIMIT=50
 
 run_test "Configuration override with environment variables" \
-    "$PROJECT_ROOT/dev-bin/version-calculator.sh --current-version 1.0.49 --bump-type patch --loc 10 --bonus 1 --machine" \
+    "$PROJECT_ROOT/bin/version-calculator.sh --current-version 1.0.49 --bump-type patch --loc 10 --bonus 1 --machine" \
     "TOTAL_DELTA="
 
 # Test 8: Verify error handling
@@ -150,12 +150,12 @@ echo -e "${CYAN}=== Test 8: Error Handling ===${NC}"
 
 # Test invalid version format
 run_test "Error handling for invalid version" \
-    "$PROJECT_ROOT/dev-bin/version-calculator.sh --current-version invalid --bump-type patch --loc 10 --bonus 1" \
+    "$PROJECT_ROOT/bin/version-calculator.sh --current-version invalid --bump-type patch --loc 10 --bonus 1" \
     "Next version:"
 
 # Test invalid bump type
 run_test "Error handling for invalid bump type" \
-    "$PROJECT_ROOT/dev-bin/version-calculator.sh --current-version 1.0.0 --bump-type invalid --loc 10 --bonus 1" \
+    "$PROJECT_ROOT/bin/version-calculator.sh --current-version 1.0.0 --bump-type invalid --loc 10 --bonus 1" \
     "Error:"
 
 # Summary

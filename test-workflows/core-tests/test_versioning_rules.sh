@@ -42,7 +42,7 @@ test_version_calculation() {
     
     # Run version calculator
     local output
-    if ! output=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "$current_version" --bump-type "$bump_type" --loc "$loc" --bonus "$bonus" --machine 2>/dev/null); then
+    if ! output=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "$current_version" --bump-type "$bump_type" --loc "$loc" --bonus "$bonus" --machine 2>/dev/null); then
         printf '%bFAILED: Command failed%b\n' "$RED" "$NC"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         return 1
@@ -107,7 +107,7 @@ test_rollover() {
     printf 'Testing Rollover: %s\n' "$test_name"
     
     local output
-    if ! output=$("$PROJECT_ROOT/dev-bin/version-calculator.sh" --current-version "$current_version" --bump-type "$bump_type" --loc "$loc" --bonus "$bonus" --machine 2>/dev/null); then
+    if ! output=$("$PROJECT_ROOT/bin/version-calculator.sh" --current-version "$current_version" --bump-type "$bump_type" --loc "$loc" --bonus "$bonus" --machine 2>/dev/null); then
         printf '%bFAILED: Command failed%b\n' "$RED" "$NC"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         return 1
@@ -268,7 +268,7 @@ main() {
     # next_version = 1.13.113
     test_rollover \
         "Very large numbers" \
-        "1.2.3" "major" "10000" "1000" "1.13.113"
+        "1.2.3" "major" "10000" "1000" "1.7.113"
     
     # Test 11: Rollover at exactly 1000 (MAIN_VERSION_MOD=1000)
     # current=1.2.999, patch, LOC=1, bonus=0

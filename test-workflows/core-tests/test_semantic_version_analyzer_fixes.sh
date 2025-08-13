@@ -32,7 +32,7 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 
 # Script path - updated for modular system
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
 # Change to project root (assume we're running from project root)

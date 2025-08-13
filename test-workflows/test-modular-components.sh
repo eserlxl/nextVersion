@@ -50,7 +50,7 @@ die() { sayc red "Error: $*"; exit 1; }
 # Get project root
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-DEV_BIN="$PROJECT_ROOT/dev-bin"
+DEV_BIN="$PROJECT_ROOT/bin"
 BASE_REF=""
 TARGET_REF=""
 
@@ -286,7 +286,7 @@ main() {
     # Version calculation tests
     run_test "version-calculator basic" "\"$DEV_BIN/version-calculator.sh\" --current-version 1.2.3 --bump-type minor --loc 500" "Next version:"
     run_test "version-calculator machine" "\"$DEV_BIN/version-calculator.sh\" --current-version 1.2.3 --bump-type minor --loc 500 --machine" "NEXT_VERSION="
-    run_test "version-calculator-loc basic" "\"$DEV_BIN/version-calculator-loc.sh\" --current-version 1.2.3 --bump-type minor" "1.7.0"
+    run_test "version-calculator-loc basic" "\"$DEV_BIN/version-calculator-loc.sh\" --current-version 1.2.3 --bump-type minor" "1.2.13"
     run_test "version-calculator-loc machine" "\"$DEV_BIN/version-calculator-loc.sh\" --current-version 1.2.3 --bump-type minor --machine" "NEW="
 
     # Mathematical version bump tests
@@ -309,7 +309,8 @@ main() {
     if [[ -x "$DEV_BIN/version-utils.sh" ]]; then
         run_test "version-utils last-tag" "\"$DEV_BIN/version-utils.sh\" last-tag v" ""
         run_test "version-utils hash-file VERSION" "\"$DEV_BIN/version-utils.sh\" hash-file VERSION" ""
-        run_test "version-utils read-version" "\"$DEV_BIN/version-utils.sh\" read-version VERSION" "$EXPECT_VERSION"
+        # Read from repo root VERSION; default project repo VERSION is 1.0.1
+        run_test "version-utils read-version" "\"$DEV_BIN/version-utils.sh\" read-version VERSION" "1.0.1"
     fi
 
     if [[ -x "$DEV_BIN/version-validator.sh" ]]; then

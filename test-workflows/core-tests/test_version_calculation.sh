@@ -26,7 +26,7 @@ test_dir=$(create_temp_test_env "version_calculation_test")
 cd "$test_dir"
 
 # Get project root and script path without changing directory
-SCRIPT_PATH="$PROJECT_ROOT/dev-bin/semantic-version-analyzer.sh"
+SCRIPT_PATH="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
 
 # Test 1: Basic version calculation
 echo ""
