@@ -198,6 +198,14 @@ if (BUILD_TESTING)
   endfunction()
 
   add_test_exe(test_basic           "test/test_basic.cpp")
+  add_test_exe(test_semver          "test/test_semver.cpp")
+  add_test_exe(test_suggestion_engine "test/test_suggestion_engine.cpp")
+  add_test_exe(test_version_math    "test/test_version_math.cpp")
+  add_test_exe(test_config_loader   "test/test_config_loader.cpp")
+  add_test_exe(test_cli_analyzer_breaking "test/test_cli_analyzer_breaking.cpp")
+  add_test_exe(test_git_stats       "test/test_git_stats.cpp")
+  add_test_exe(test_output_json     "test/test_output_json.cpp")
+  add_test_exe(test_version_reader_and_cli_parse "test/test_version_reader_and_cli_parse.cpp")
 
   # Convenience target to run tests with nice output
   add_custom_target(run-tests
