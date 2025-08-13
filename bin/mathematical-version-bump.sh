@@ -254,11 +254,21 @@ calculate_mathematical_version() {
   local sa_output="" sa_rc=0
   # Use temporary file to capture output without triggering error handling
   local temp_output
-  temp_output="$(mktemp)"
+  temp_output="$(mktemp /tmp/nv.sa.XXXXXX)"
+  # Temporarily disable ERR trap so non-zero analyzer exit codes don't abort
+  local __old_err_trap
+  __old_err_trap="$(trap -p ERR || true)"
+  trap - ERR
   set +e
   "$SCRIPT_DIR/semantic-version-analyzer.sh" "${analyzer_args[@]}" > "$temp_output" 2> >(sed 's/^/[analyzer] /' >&2)
   sa_rc=$?
   set -e
+  # Restore previous ERR trap (if any)
+  if [[ -n "$__old_err_trap" ]]; then
+    eval "$__old_err_trap"
+  else
+    trap - ERR
+  fi
   sa_output="$(cat "$temp_output" 2>/dev/null || echo "")"
   
 
@@ -275,11 +285,20 @@ calculate_mathematical_version() {
   local suggested_bump="none"
   local next_version=""
   
-  if [[ -n "$sa_output" ]]; then
+  # Prefer JSON fields when available and jq exists
+  if [[ -n "$sa_output" && $(command -v jq >/dev/null 2>&1; printf %s $?) -eq 0 ]]; then
     suggested_bump="$(echo "$sa_output" | jq -r '.suggestion // "none"' 2>/dev/null || echo "none")"
     next_version="$(echo "$sa_output" | jq -r '.next_version // empty' 2>/dev/null || echo "")"
-    
+  fi
 
+  # If JSON parsing failed or produced empty suggestion, map from exit code
+  if [[ -z "$suggested_bump" || "$suggested_bump" == "none" ]]; then
+    case "$sa_rc" in
+      10) suggested_bump="major" ;;
+      11) suggested_bump="minor" ;;
+      12) suggested_bump="patch" ;;
+      20) suggested_bump="none"  ;;
+    esac
   fi
 
   if [[ -z "$suggested_bump" ]]; then
