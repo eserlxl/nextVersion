@@ -522,10 +522,21 @@ if $breaking_cli_changes; then
   cli_changes=true
 fi
 
-# And align with C++: any removed short options in diff imply CLI changes
+# Treat explicit option removals as CLI-breaking (parity with C++ analyzer intent)
 rsn=${removed_short_count:-0}
+rln=${removed_long_count:-0}
+mrln=${manual_removed_long_count:-0}
 if [[ "$rsn" =~ ^[0-9]+$ ]] && (( rsn > 0 )); then
   cli_changes=true
+  breaking_cli_changes=true
+fi
+if [[ "$rln" =~ ^[0-9]+$ ]] && (( rln > 0 )); then
+  cli_changes=true
+  breaking_cli_changes=true
+fi
+if [[ "$mrln" =~ ^[0-9]+$ ]] && (( mrln > 0 )); then
+  cli_changes=true
+  breaking_cli_changes=true
 fi
 
 # Synthesize a minimal removed-option signal when switch/case analysis

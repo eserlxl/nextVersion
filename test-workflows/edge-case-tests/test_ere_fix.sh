@@ -131,9 +131,9 @@ second_commit=$(git rev-parse HEAD)
 
 # Test that manual CLI detection works (should not crash with ERE error)
 run_test "Manual CLI detection with escaped +" \
-    "timeout 10s $PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir' --strict-status --json" \
     11 \
-    "manual_cli_changes=true"
+    '"manual_cli_changes": true'
 
 # Test 2: Manual counts should not be added to getopt totals
 printf '%s=== Test 2: Manual Counts Separation ===%s\n' "${YELLOW}" "${NC}"

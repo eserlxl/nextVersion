@@ -101,9 +101,9 @@ suggestion=$(echo "$result" | grep "SUGGESTION=" | cut -d'=' -f2 || echo "unknow
 
 echo "Version bump suggestion: $suggestion"
 
-# Verify that CLI changes trigger minor version bump
-if [[ "$suggestion" = "minor" ]]; then
-    echo "✅ PASS: CLI changes correctly trigger minor version bump"
+# Verify that CLI changes trigger at least a minor version bump (minor or higher)
+if [[ "$suggestion" = "minor" || "$suggestion" = "major" ]]; then
+    echo "✅ PASS: CLI changes correctly trigger minor/major version bump"
     exit_code=0
 else
     echo "❌ FAIL: CLI changes should trigger minor version bump, got: $suggestion"

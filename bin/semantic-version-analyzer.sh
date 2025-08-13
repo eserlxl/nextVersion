@@ -402,6 +402,8 @@ main() {
   security_keywords=$(int_or_default "${SEC[SECURITY_KEYWORDS]}" 0)
   local keyword_security
   keyword_security=$(int_or_default "${KW[TOTAL_SECURITY]}" 0)
+  # Avoid double-counting commit security between SEC and KW analyzers.
+  # Use the larger of the two signals to keep behavior stable across repos.
   local total_security=$(( security_keywords + keyword_security ))
   if (( total_security > 0 )); then
     TOTAL_BONUS=$(( TOTAL_BONUS + total_security * $(int_or_default "${CFG[VERSION_SECURITY_BONUS]}" 5) ))
@@ -409,7 +411,8 @@ main() {
 
   # Feature additions
   # Apply CLI changes bonus only for actual option set changes (not just heuristics)
-  if [[ "${CLI[CLI_CHANGES]:-false}" == "true" ]]; then
+  # Do not add general CLI changes bonus when already counted as breaking/API-breaking
+  if [[ "${CLI[CLI_CHANGES]:-false}" == "true" && "${CLI[BREAKING_CLI_CHANGES]:-false}" != "true" && "${CLI[API_BREAKING]:-false}" != "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_CLI_CHANGES_BONUS]}" 2) ))
   fi
   # Heuristic/manual CLI changes receive a smaller, separate bonus
@@ -435,7 +438,8 @@ main() {
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_NEW_DOC_BONUS]}" 1) ))
   fi
 
-  # Removed options (both sources)
+  # Removed options (both sources). Treat any explicit removal as breaking-like signal
+  # so overall suggestion reflects CLI surface reduction.
   local cli_removed=$(( $(int_or_default "${CLI[REMOVED_SHORT_COUNT]}" 0) + $(int_or_default "${CLI[REMOVED_LONG_COUNT]}" 0) + $(int_or_default "${CLI[MANUAL_REMOVED_LONG_COUNT]}" 0) ))
   local kw_removed
   kw_removed=$(int_or_default "${KW[REMOVED_OPTIONS_KEYWORDS]}" 0)

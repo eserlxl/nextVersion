@@ -188,9 +188,13 @@ verify_ref "$BASE_REF"
 verify_ref "$TARGET_REF"
 
 # ------------- patterns (regex) -------------
-# Prefer PCRE (-P) for accurate word boundaries (\b) and whitespace (\s*)
+# Default to ERE for portability and stability. PCRE (-P) can exhibit
+# environment-specific failures with complex patterns. Allow opt-in via
+# FORCE_PCRE=true if absolutely needed and supported.
 USE_PCRE=false
-if grep_supports_pcre; then USE_PCRE=true; fi
+if [[ "${FORCE_PCRE:-}" == "true" ]] && grep_supports_pcre; then
+    USE_PCRE=true
+fi
 
 if $USE_PCRE; then
     # PCRE patterns
