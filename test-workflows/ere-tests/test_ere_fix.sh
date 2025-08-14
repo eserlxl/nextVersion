@@ -40,8 +40,11 @@ run_test() {
     
     # Run the test command
     local output
+    # Temporarily disable -e to allow capturing non-zero exit codes safely
+    set +e
     output=$(eval "$test_cmd" 2>&1)
     local exit_code=$?
+    set -e
     
     # Check exit code
     if [[ $exit_code -eq $expected_exit ]]; then
@@ -49,7 +52,7 @@ run_test() {
     else
         printf '%s✗ Exit code wrong: got %d, expected %d%s\n' "${RED}" "$exit_code" "$expected_exit" "${NC}"
         ((TESTS_FAILED++))
-        return 1
+        return 0  # Don't exit script, just mark test as failed
     fi
     
     # Check output if specified
@@ -60,7 +63,7 @@ run_test() {
             printf '%s✗ Output missing expected text: %s%s\n' "${RED}" "$expected_output" "${NC}"
             printf 'Actual output:\n%s\n' "$output"
             ((TESTS_FAILED++))
-            return 1
+            return 0  # Don't exit script, just mark test as failed
         fi
     fi
     
@@ -79,8 +82,16 @@ printf '%s=== Test 1: ERE Fix for Manual CLI Detection ===%s\n' "${YELLOW}" "${N
 # Create a test file without CLI parsing first
 mkdir -p src
 {
-    generate_license_header "c" "Test fixture for CLI detection testing"
     cat << 'EOF'
+// Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This file is part of nextVersion test suite and is licensed under
+// the GNU General Public License v3.0 or later.
+// See the LICENSE file in the project root for details.
+//
+// Test fixture for CLI detection testing
+
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -96,8 +107,16 @@ git commit -m "Add basic test file" --no-verify
 
 # Now add CLI parsing
 {
-    generate_license_header "c" "Test fixture for CLI detection testing"
     cat << 'EOF'
+// Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This file is part of nextVersion test suite and is licensed under
+// the GNU General Public License v3.0 or later.
+// See the LICENSE file in the project root for details.
+//
+// Test fixture for CLI detection testing
+
 #include <stdio.h>
 #include <string.h>
 
@@ -140,8 +159,16 @@ printf '%s=== Test 2: Manual Counts Separation ===%s\n' "${YELLOW}" "${NC}"
 
 # Create a file with getopt
 {
-    generate_license_header "c" "Test fixture for getopt CLI detection"
     cat << 'EOF'
+// Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This file is part of nextVersion test suite and is licensed under
+// the GNU General Public License v3.0 or later.
+// See the LICENSE file in the project root for details.
+//
+// Test fixture for getopt CLI detection
+
 #include <stdio.h>
 #include <getopt.h>
 
@@ -204,8 +231,16 @@ printf '%s=== Test 4: API Breaking Changes ===%s\n' "${YELLOW}" "${NC}"
 # Create header with prototype
 mkdir -p include
 {
-    generate_license_header "h" "Test fixture for API breaking change detection"
     cat << 'EOF'
+// Copyright © 2025 Eser KUBALI <lxldev.contact@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This file is part of nextVersion test suite and is licensed under
+// the GNU General Public License v3.0 or later.
+// See the LICENSE file in the project root for details.
+//
+// Test fixture for API breaking change detection
+
 #ifndef TEST_H
 #define TEST_H
 
