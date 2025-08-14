@@ -83,7 +83,17 @@ int main(int argc, char **argv) {
   const std::string currentVersion = readCurrentVersion(opts.repoRoot);
 
   // 9) Determine suggestion
-  const std::string suggestion = determineSuggestion(TOTAL_BONUS, CFGN);
+  std::string suggestion = determineSuggestion(TOTAL_BONUS, CFGN);
+
+  // Align with shell analyzer fallback: when patch threshold is 0 and we detected
+  // any changes (LOC > 0), suggest a PATCH instead of NONE.
+  // This keeps parity with test expectations in randomized repositories.
+  if (suggestion == "none") {
+    const int locSize = intOrDefault(fileKv.count("DIFF_SIZE") ? fileKv.at("DIFF_SIZE") : "", 0);
+    if (CFGN.patchBonusThreshold <= 0 && locSize > 0) {
+      suggestion = "patch";
+    }
+  }
 
   // 10) Next version (native)
   std::string nextVersion;

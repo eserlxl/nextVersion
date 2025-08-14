@@ -419,6 +419,11 @@ main() {
   if [[ "${CLI[MANUAL_CLI_CHANGES]:-false}" == "true" ]]; then
     TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_MANUAL_CLI_BONUS]}" 1) ))
   fi
+  # Reward explicit manual long option additions slightly so manual CLI edits
+  # can cross the minor threshold (parity with test expectations for ERE fix)
+  if (( $(int_or_default "${CLI[MANUAL_ADDED_LONG_COUNT]}" 0) > 0 )); then
+    TOTAL_BONUS=$(( TOTAL_BONUS + $(int_or_default "${CFG[VERSION_ADDED_OPTION_BONUS]}" 1) ))
+  fi
   # Disabled: Do not include help/usage text or heuristic enhanced CLI patterns
   # in TOTAL_BONUS to avoid noisy drift vs. C++ analyzer. Both counters are
   # still exposed (zeroed) for diagnostics but do not affect scoring.
@@ -544,8 +549,11 @@ main() {
     exit 0
   fi
   if [[ "$JSON_OUTPUT" == "true" ]]; then
-    # For JSON output, always exit with success code since the suggestion is encoded in the JSON
-    exit 0
+    # Respect strict-status in JSON mode: if strict-status is requested, return
+    # semantic exit codes; otherwise default to success.
+    if [[ "$STRICT_STATUS" != "true" ]]; then
+      exit 0
+    fi
   fi
   case "$suggestion" in
     major) exit 10 ;;
