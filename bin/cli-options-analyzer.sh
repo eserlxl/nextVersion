@@ -410,22 +410,25 @@ breaking_cli_changes=false
 # Count removals on '-' lines from full diff
 removed_struct_long=""
 added_struct_long=""
+# Initialize manual long option accumulators to avoid unbound variable errors under 'set -u'
+removed_long_opts=""
+added_long_opts=""
 while IFS= read -r ln; do
   [[ "$ln" =~ ^- ]] || continue
   # struct-based long options removed
   while read -r tok; do
     [[ -n "$tok" ]] && removed_struct_long=$(printf '%s\n%s' "$removed_struct_long" "$tok")
   done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
-  # prototype removal => API breaking
-  if [[ "$ln" =~ $proto_removed_re ]]; then
+  # prototype removal => API breaking (only for actual function prototypes, not CLI options)
+  if [[ "$ln" =~ $proto_removed_re ]] && [[ ! "$ln" =~ $long_opt_re ]]; then
     api_breaking=true
   fi
   # short option removals
   if [[ "$ln" =~ $short_opt_removed_re ]]; then
     removed_short_count=$(( ${removed_short_count:-0} + 1 ))
   fi
-  # manual long option removals (skip comment/quoted)
-  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+  # manual long option removals (skip comment lines only; allow quoted strings to detect manual CLI)
+  if ! is_comment_line "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
     done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
@@ -445,8 +448,8 @@ while IFS= read -r ln; do
   while read -r tok; do
     [[ -n "$tok" ]] && added_struct_long=$(printf '%s\n%s' "$added_struct_long" "$tok")
   done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
-  # manual long option adds (skip comment/quoted)
-  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+  # manual long option adds (skip comment lines only; allow quoted strings to detect manual CLI)
+  if ! is_comment_line "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
     done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
@@ -463,8 +466,8 @@ while IFS= read -r ln; do
   if [[ "$ln" =~ $getopt_call_re ]] || [[ "${ln,,}" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
     enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
   fi
-  # manual long option adds (skip comment/quoted)
-  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+  # manual long option adds (skip comment lines only; allow quoted strings to detect manual CLI)
+  if ! is_comment_line "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
     done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
@@ -477,7 +480,7 @@ while IFS= read -r ln; do
   if [[ "$ln" =~ $short_opt_removed_re ]]; then
     removed_short_count=$(( ${removed_short_count:-0} + 1 ))
   fi
-  if ! is_comment_line "$ln" && ! has_quoted_long_opt "$ln"; then
+  if ! is_comment_line "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
     done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
@@ -522,21 +525,24 @@ if $breaking_cli_changes; then
   cli_changes=true
 fi
 
-# Treat explicit option removals as CLI-breaking (parity with C++ analyzer intent)
+# Treat explicit option removals as CLI changes (not automatically breaking)
 rsn=${removed_short_count:-0}
 rln=${removed_long_count:-0}
 mrln=${manual_removed_long_count:-0}
 if [[ "$rsn" =~ ^[0-9]+$ ]] && (( rsn > 0 )); then
   cli_changes=true
-  breaking_cli_changes=true
+  # Don't automatically mark option removals as breaking changes
+  # They should be treated as minor version bumps, not major
 fi
 if [[ "$rln" =~ ^[0-9]+$ ]] && (( rln > 0 )); then
   cli_changes=true
-  breaking_cli_changes=true
+  # Don't automatically mark option removals as breaking changes
+  # They should be treated as minor version bumps, not major
 fi
 if [[ "$mrln" =~ ^[0-9]+$ ]] && (( mrln > 0 )); then
   cli_changes=true
-  breaking_cli_changes=true
+  # Don't automatically mark manual option removals as breaking changes
+  # They should be treated as minor version bumps, not major
 fi
 
 # Synthesize a minimal removed-option signal when switch/case analysis

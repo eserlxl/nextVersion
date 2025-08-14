@@ -200,7 +200,12 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 # Run semantic version analyzer
-result=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --machine --repo-root "$temp_dir" --base "$first_commit" --target "$second_commit" 2>&1 || true)
+result=$("$PROJECT_ROOT/bin/semantic-version-analyzer.sh" --verbose --repo-root "$temp_dir" --base "$first_commit" --target "$second_commit" 2>&1 || true)
+
+# Debug: Show the full result
+echo "Debug: Full result for Test 3:"
+echo "$result"
+echo "Debug: End of result for Test 3"
 
 # Extract suggestion
 suggestion=$(echo "$result" | grep "^SUGGESTION=" | cut -d'=' -f2 || echo "unknown")

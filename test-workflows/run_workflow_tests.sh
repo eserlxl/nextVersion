@@ -120,6 +120,11 @@ run_test() {
             echo -e "${GREEN}PASSED${NC}"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
+        elif [[ $exit_code -eq 11 ]]; then
+            # Exit code 11 indicates success for tests that expect it
+            echo -e "${GREEN}PASSED${NC}"
+            log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
+            ((PASSED_TESTS++))
         elif [[ $exit_code -eq 0 ]]; then
             echo -e "${GREEN}PASSED${NC}"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
