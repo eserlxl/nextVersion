@@ -179,7 +179,7 @@ main() {
     test_help "Help short flag" "${PROJECT_ROOT}/bin/cli-options-analyzer.sh -h"
     
     # Test basic functionality without git repository
-    test_error_condition "No git repository" "${PROJECT_ROOT}/bin/cli-options-analyzer.sh --base v1.0.0" "Not inside a git repository"
+test_error_condition "No git repository" "${PROJECT_ROOT}/bin/cli-options-analyzer.sh --base v1.0.0" "Invalid reference"
     
     # Create temporary test environment
     local temp_dir

@@ -400,6 +400,12 @@ help_text_changes=${help_text_changes:-0}
 main_signature_changes=${main_signature_changes:-0}
 enhanced_cli_patterns=${enhanced_cli_patterns:-0}
 
+# Initialize CLI change flags
+cli_changes=false
+breaking_cli_changes=false
+api_breaking=false
+manual_cli_changes=false
+
 # Normalize numeric counters to plain integers (strip leading zeros/empties)
 removed_short_count=$(( ${removed_short_count:-0} + 0 ))
 added_short_count=$(( ${added_short_count:-0} + 0 ))

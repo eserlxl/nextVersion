@@ -64,7 +64,13 @@ run_test_script() {
     if echo "$output" | grep -q "Tests passed:"; then
         passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
         failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
-        total=$(echo "$output" | grep "Total tests:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        # Look for total tests in different formats
+        if echo "$output" | grep -q "Total tests:"; then
+            total=$(echo "$output" | grep "Total tests:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        else
+            # Calculate total from passed + failed
+            total=$((passed + failed))
+        fi
     fi
     
     # Ensure variables are numeric
