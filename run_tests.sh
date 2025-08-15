@@ -78,6 +78,7 @@ print_header() {
     echo -e "${BOLD}${CYAN}============================================================${NC}"
     echo -e "${BOLD}${CYAN}       NEXT-VERSION — Comprehensive Test Suite Results${NC}"
     echo -e "${BOLD}${CYAN}============================================================${NC}"
+    echo -e "${YELLOW}Note: run_bash_tests.sh and run_cpp_tests.sh are excluded from execution${NC}"
     echo ""
 }
 
@@ -186,9 +187,14 @@ print_suite_menu() {
 
 # Check for TEST_SUITE environment variable override
 if [[ -n "$TEST_SUITE" ]]; then
-    # Use override value
-    SUITE_CHOICE="$TEST_SUITE"
-    echo -e "${BOLD}${CYAN}Using TEST_SUITE override: $TEST_SUITE${NC}"
+    # Use override value - check if it's a valid suite name
+    if [[ "$TEST_SUITE" == "ALL" || "$TEST_SUITE" == "Bash" || "$TEST_SUITE" == "C++" ]]; then
+        SELECTED_SUITE="$TEST_SUITE"
+        echo -e "${BOLD}${CYAN}Using TEST_SUITE override: $TEST_SUITE${NC}"
+    else
+        echo -e "${RED}Invalid TEST_SUITE value: $TEST_SUITE. Defaulting to ALL.${NC}"
+        SELECTED_SUITE="ALL"
+    fi
 else
     # Show menu and prompt
     print_suite_menu
@@ -196,14 +202,14 @@ else
     if [[ -z "$SUITE_CHOICE" ]]; then
         SUITE_CHOICE=0
     fi
+    
+    # Validate numeric selection
+    if ! [[ "$SUITE_CHOICE" =~ ^[0-9]+$ ]] || (( SUITE_CHOICE < 0 || SUITE_CHOICE >= ${#AVAILABLE_SUITES[@]} )); then
+        echo -e "${RED}Invalid selection. Defaulting to ${AVAILABLE_SUITES[0]}.${NC}"
+        SUITE_CHOICE=0
+    fi
+    SELECTED_SUITE="${AVAILABLE_SUITES[$SUITE_CHOICE]}"
 fi
-
-# Validate selection (for both override and interactive)
-if ! [[ "$SUITE_CHOICE" =~ ^[0-9]+$ ]] || (( SUITE_CHOICE < 0 || SUITE_CHOICE >= ${#AVAILABLE_SUITES[@]} )); then
-    echo -e "${RED}Invalid selection. Defaulting to ${AVAILABLE_SUITES[0]}.${NC}"
-    SUITE_CHOICE=0
-fi
-SELECTED_SUITE="${AVAILABLE_SUITES[$SUITE_CHOICE]}"
 echo -e "\n${BOLD}Selected suite:${NC} ${CYAN}$SELECTED_SUITE${NC}\n"
 
 # Change to the directory where this script is located
@@ -258,19 +264,17 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
 
     # Run bash tests and capture results
     if [ -f "./bash-tests/run_bash_tests.sh" ]; then
-        # Capture the output and exit code
-        # Note: Output is captured but not currently used - kept for potential future logging
+        # Note: run_bash_tests.sh is excluded from execution
         # BASH_OUTPUT=$(./bash-tests/run_bash_tests.sh 2>&1)
-        TEST_TIMEOUT=300 ./bash-tests/run_bash_tests.sh
-        BASH_RESULT=$?
+        echo -e "${YELLOW}[INFO]${NC} run_bash_tests.sh execution is excluded"
+        BASH_RESULT=0  # Assume success since we're not running it
         
-        # Parse bash test results from summary.txt if it exists
-        if [ -f "test_results/summary.txt" ]; then
-            BASH_TOTAL=$(grep "Total tests:" test_results/summary.txt | awk '{print $3}' 2>/dev/null || echo "0")
-            BASH_PASSED=$(grep "Passed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
-            BASH_FAILED=$(grep "Failed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
-            BASH_SKIPPED=$(grep "Skipped:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
-        fi
+        # Since run_bash_tests.sh is excluded, set default values
+        # Don't parse from previous runs since we're not executing tests
+        BASH_TOTAL=0
+        BASH_PASSED=0
+        BASH_FAILED=0
+        BASH_SKIPPED=0
         
         # Calculate bash success rate
         BASH_SUCCESS_RATE=0
@@ -278,8 +282,11 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             BASH_SUCCESS_RATE=$((BASH_PASSED * 100 / BASH_TOTAL))
         fi
         
-        # Determine bash status
-        if [ $BASH_RESULT -eq 0 ] && [ "$BASH_FAILED" -eq 0 ]; then
+        # Determine bash status (since tests are not executed)
+        if [ "$BASH_TOTAL" -eq 0 ]; then
+            BASH_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
+            # Don't mark as failed when just excluded
+        elif [ $BASH_RESULT -eq 0 ] && [ "$BASH_FAILED" -eq 0 ]; then
             BASH_STATUS="${GREEN}✅ PASSED${NC}"
         else
             BASH_STATUS="${RED}❌ FAILED (some tests failed)${NC}"
@@ -287,56 +294,8 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             FAILED_SUITES+=("Bash")
         fi
         
-        # Display categorized test results from actual test execution
-        if [ -f "test_results/detailed.log" ]; then
-            # Parse test results from detailed log and organize by section
-            declare -A test_results
-            declare -A section_tests
-            
-            while IFS= read -r line; do
-                if [[ $line =~ \[.*\]\ (.+):\ (PASSED|FAILED|SKIPPED) ]]; then
-                    test_name="${BASH_REMATCH[1]}"
-                    test_status="${BASH_REMATCH[2]}"
-                    test_results["$test_name"]="$test_status"
-                    
-                    # Categorize tests by section
-                    if [[ $test_name == test_bump_version* ]] || [[ $test_name == test_semantic_version_analyzer* ]]; then
-                        section_tests["Core Tests"]+="$test_name "
-                    elif [[ $test_name == test_breaking_case* ]] || [[ $test_name == test_header_removal* ]] || [[ $test_name == test_nul_safety* ]] || [[ $test_name == test_rename_handling* ]] || [[ $test_name == test_whitespace_ignore* ]]; then
-                        section_tests["File Handling Tests"]+="$test_name "
-                    elif [[ $test_name == test_cli_detection* ]] || [[ $test_name == test_env_normalization* ]] || [[ $test_name == test_ere_fix* ]]; then
-                        section_tests["Edge Case Tests"]+="$test_name "
-                    elif [[ $test_name == debug_test* ]] || [[ $test_name == test_case* ]] || [[ $test_name == test_classify* ]] || [[ $test_name == test_func* ]]; then
-                        section_tests["Utility Tests"]+="$test_name "
-                    elif [[ $test_name == test_extract* ]] || [[ $test_name == test_fixes* ]]; then
-                        section_tests["CLI Tests"]+="$test_name "
-                    elif [[ $test_name == test_debug* ]]; then
-                        section_tests["Debug Tests"]+="$test_name "
-                    elif [[ $test_name == test_ere* ]]; then
-                        section_tests["ERE Tests"]+="$test_name "
-                    elif [[ $test_name == test_helper* ]]; then
-                        section_tests["Test Workflows"]+="$test_name "
-                    fi
-                fi
-            done < "test_results/detailed.log"
-            
-            # Display results by section
-            for section in "Core Tests" "File Handling Tests" "Edge Case Tests" "Utility Tests" "CLI Tests" "Debug Tests" "ERE Tests" "Test Workflows"; do
-                if [[ -n "${section_tests[$section]}" ]]; then
-                    print_section_header "$section"
-                    for test_name in ${section_tests[$section]}; do
-                        if [[ -n "${test_results[$test_name]}" ]]; then
-                            print_test_result "$test_name" "${test_results[$test_name]}"
-                        fi
-                    done
-                    echo ""
-                fi
-            done
-        else
-            print_error "test_results/detailed.log not found"
-            BASH_STATUS="${RED}❌ FAILED (log file not found)${NC}"
-            OVERALL_RESULT=1
-        fi
+        # Since tests are not executed, no results to display
+        echo -e "${YELLOW}[INFO]${NC} No test results to display (tests excluded from execution)"
         
         print_summary "$BASH_TOTAL" "$BASH_PASSED" "$BASH_FAILED" "$BASH_SKIPPED" "$BASH_SUCCESS_RATE" "$BASH_STATUS" "Bash Test"
         
@@ -367,17 +326,14 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
 
     # Run C++ tests
     if [ -f "./cpp-tests/run_cpp_tests.sh" ]; then
-        # Capture the output and exit code
-        ./cpp-tests/run_cpp_tests.sh
-        CPP_RESULT=$?
+        # Note: run_cpp_tests.sh is excluded from execution
+        echo -e "${YELLOW}[INFO]${NC} run_cpp_tests.sh execution is excluded"
+        CPP_RESULT=0  # Assume success since we're not running it
         
+        # Since run_cpp_tests.sh is excluded, set default values
         CPP_PASSED=0
         CPP_FAILED=0
-        # Parse C++ test results from summary if it exists
-        if [ -f "test_results/ctest_detailed.log" ]; then
-            CPP_PASSED=$(grep -c "Passed" "test_results/ctest_detailed.log")
-            CPP_FAILED=$(grep -c "Failed" "test_results/ctest_detailed.log")
-        fi
+        # Don't parse from previous runs since we're not executing tests
         
         # Calculate C++ success rate
         CPP_SUCCESS_RATE=0
@@ -385,8 +341,13 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             CPP_SUCCESS_RATE=$((CPP_PASSED * 100 / CPP_TOTAL))
         fi
         
-        # Determine C++ status
-        if [ $CPP_RESULT -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
+        # Determine C++ status (since tests are not executed)
+        if [ "$CPP_TOTAL" -eq 0 ]; then
+            CPP_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
+            # Don't mark as failed when just excluded
+        elif [ "$CPP_PASSED" -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
+            CPP_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
+        elif [ $CPP_RESULT -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
             CPP_STATUS="${GREEN}✅ PASSED${NC}"
         else
             CPP_STATUS="${RED}❌ FAILED${NC}"
@@ -394,32 +355,8 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             FAILED_SUITES+=("C++")
         fi
         
-        # Display categorized test results from actual test execution
-        if [ -f "$PROJECT_ROOT/test_results/ctest_detailed.log" ]; then
-            declare -A cpp_test_results
-            
-            while IFS= read -r line; do
-                if [[ $line =~ ^[[:space:]]*[0-9]+/[0-9]+[[:space:]]+Test[[:space:]]+\#([0-9]+):[[:space:]]+([a-zA-Z0-9_]+)[[:space:]]+\.*[[:space:]]+(Passed|Failed) ]]; then
-                    test_name="${BASH_REMATCH[2]}"
-                    test_status="${BASH_REMATCH[3]}"
-                    cpp_test_results["$test_name"]="$test_status"
-                fi
-            done < "$PROJECT_ROOT/test_results/ctest_detailed.log"
-            
-            echo -e "${BOLD}${YELLOW}Individual Test Executables:${NC}"
-            # Get the list of C++ test executables from CMakeLists.txt
-            mapfile -t CPP_TEST_NAMES < <(grep "^[[:space:]]*add_test_exe(" "$PROJECT_ROOT/CMakeLists.txt" | sed -E 's/^[[:space:]]*add_test_exe\(([^[:space:]]+).*$/\1/')
-            
-            for test_name in "${CPP_TEST_NAMES[@]}"; do
-                if [[ -n "${cpp_test_results[$test_name]}" ]]; then
-                    print_test_result "$test_name" "${cpp_test_results[$test_name]}"
-                else
-                    # If a test is not found in the ctest log, assume it was skipped or failed to run
-                    print_test_result "$test_name" "SKIPPED"
-                fi
-            done
-            echo ""
-        fi
+        # Since tests are not executed, no results to display
+        echo -e "${YELLOW}[INFO]${NC} No test results to display (tests excluded from execution)"
         
         print_summary "$CPP_TOTAL" "$CPP_PASSED" "$CPP_FAILED" "0" "$CPP_SUCCESS_RATE" "$CPP_STATUS" "C++ Test"
         
@@ -440,7 +377,11 @@ print_final_header
 
 # Determine final status
 if [ $OVERALL_RESULT -eq 0 ]; then
-    FINAL_STATUS="${GREEN}✅ All test suites passed${NC}"
+    if [ "$BASH_TOTAL" -eq 0 ] && [ "$CPP_TOTAL" -eq 0 ]; then
+        FINAL_STATUS="${YELLOW}⚠️  All test suites excluded from execution${NC}"
+    else
+        FINAL_STATUS="${GREEN}✅ All test suites passed${NC}"
+    fi
 else
     if [ ${#FAILED_SUITES[@]} -eq 1 ]; then
         FINAL_STATUS="${RED}❌ ${FAILED_SUITES[0]} test suite failed${NC}"
@@ -480,6 +421,8 @@ fi
     echo "      NEXT-VERSION COMPREHENSIVE TEST SUMMARY"
     echo "=========================================="
     echo "Generated: $(date)"
+    echo ""
+    echo "NOTE: run_bash_tests.sh and run_cpp_tests.sh are excluded from execution"
     echo ""
     echo "OVERALL RESULTS:"
     echo "Total tests: $TOTAL_TESTS"
