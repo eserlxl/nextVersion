@@ -11,6 +11,5 @@
 #define TEST_H
 
 int test_function(int param);
-void another_function(void);
 
 #endif
