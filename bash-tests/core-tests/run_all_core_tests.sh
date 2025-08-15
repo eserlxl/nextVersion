@@ -83,7 +83,7 @@ run_test_script() {
     fi
     
     # Use appropriate timeout and capture both stdout and stderr
-    output=$(cd "$SCRIPT_DIR" && timeout "$timeout_value" "$script_path" $test_args 2>&1)
+    output=$(cd "$SCRIPT_DIR" && timeout "$timeout_value" "$script_path" "$test_args" 2>&1)
     exit_code=$?
     
     # Handle timeout
@@ -440,7 +440,8 @@ main() {
     
     local total_scripts=${#test_scripts[@]}
     local current_script=0
-    local start_time=$(date +%s)
+    local start_time
+    start_time=$(date +%s)
     local max_total_time=300  # Maximum 5 minutes total
     
     for test_script in "${test_scripts[@]}"; do
@@ -449,7 +450,8 @@ main() {
         local script_path="${SCRIPT_DIR}/$script_file"
         
         # Check if we're approaching the global timeout
-        local current_time=$(date +%s)
+        local current_time
+        current_time=$(date +%s)
         local elapsed_time=$((current_time - start_time))
         local remaining_time=$((max_total_time - elapsed_time))
         
