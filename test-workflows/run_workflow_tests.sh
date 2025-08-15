@@ -77,6 +77,41 @@ run_test() {
         return
     fi
     
+    # Skip core test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_core_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip utility test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_utility_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip edge case test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_edge_case_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip debug test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_debug_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip ERE test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_ere_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip file handling test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_file_handling_tests.sh" ]]; then
+        return
+    fi
+    
+    # Skip fixture test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_fixture_tests.sh" ]]; then
+        return
+    fi
+    
     echo -n "Running $test_name... "
     
     # Check if file exists
