@@ -205,6 +205,31 @@ display_summary() {
 
 # Main execution
 main() {
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --list)
+                list_tests
+                exit 0
+                ;;
+            --help|-h)
+                echo "Usage: $0 [options]"
+                echo ""
+                echo "Options:"
+                echo "  --list     List all available tests and exit"
+                echo "  --help, -h Show this help message"
+                echo ""
+                echo "This test suite validates the core functionality of the next-version project."
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+    
     echo -e "${CYAN}========================================${NC}"
     echo -e "${CYAN}next-version Core Test Suite${NC}"
     echo -e "${CYAN}========================================${NC}"
