@@ -417,7 +417,7 @@ added_long_count=$(( ${added_long_count:-0} + 0 ))
 # Port C++ regex contexts to bash
 long_opt_re='--[A-Za-z0-9][A-Za-z0-9\-]*'
 proto_removed_re='^-[^+].*[A-Za-z_][A-Za-z0-9_\s\*]+\s+[A-Za-z_][A-Za-z0-9_]*\([^;]*\)\s*;\s*$'
-short_opt_removed_re='^-[^+].*[^-]-[A-Za-z](\s|$)'
+# short_opt_removed_re='^-[^+].*[^-]-[A-Za-z](\s|$)'  # Currently unused, kept for future use
 case_label_re='case[[:space:]]+([^:[:space:]]+)[[:space:]]*:'
 getopt_call_re='(getopt_long|getopt)[[:space:]]*\('
 argc_argv_added_re='(^|[^[:alnum:]_])(argc|argv)([^[:alnum:]_]|$)'

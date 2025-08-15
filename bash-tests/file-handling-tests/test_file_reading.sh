@@ -12,6 +12,7 @@ set -Euo pipefail
 
 # Source test helper
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/../test_helper.sh"
 
 # Test counter

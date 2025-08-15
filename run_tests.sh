@@ -87,30 +87,32 @@ print_phase_header() {
     echo -e "${MAGENTA}------------------------------------------------------------${NC}"
 }
 
-print_test_result() {
-    local test_name="$1"
-    local status="$2"
-    local padding=""
-    
-    # Calculate padding to align test names
-    local name_length=${#test_name}
-    local max_length=40
-    local padding_length=$((max_length - name_length))
-    
-    for ((i=0; i<padding_length; i++)); do
-        padding+=" "
-    done
-    
-    if [ "${status^^}" = "PASSED" ]; then
-        echo -e "  ${GREEN}✔${NC} ${CYAN}$test_name${NC}${padding} ${GREEN}PASSED${NC}"
-    else
-        echo -e "  ${RED}✖${NC} ${CYAN}$test_name${NC}${padding} ${RED}FAILED${NC}"
-    fi
-}
+# Function to print test results (defined for potential future use)
+# print_test_result() {
+#     local test_name="$1"
+#     local status="$2"
+#     local padding=""
+#     
+#     # Calculate padding to align test names
+#     local name_length=${#test_name}
+#     local max_length=40
+#     local padding_length=$((max_length - name_length))
+#     
+#     for ((i=0; i<padding_length; i++)); do
+#         padding+=" "
+#     done
+#     
+#     if [ "${status^^}" = "PASSED" ]; then
+#         echo -e "  ${GREEN}✔${NC} ${CYAN}$test_name${NC}${padding} ${GREEN}PASSED${NC}"
+#     else
+#         echo -e "  ${RED}✖${NC} ${CYAN}$test_name${NC}${padding} ${RED}FAILED${NC}"
+#     fi
+# }
 
-print_section_header() {
-    echo -e "${BOLD}${YELLOW}$1:${NC}"
-}
+# Function to print section headers (defined for potential future use)
+# print_section_header() {
+#     echo -e "${BOLD}${YELLOW}$1:${NC}"
+# }
 
 print_summary() {
     local total="$1"
@@ -320,7 +322,7 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
         echo -e "${MAGENTA}------------------------------------------------------------${NC}"
     fi
     print_info_line "Project root" "$PROJECT_ROOT"
-    print_info_line "Test directory" "$TEST_DIR"
+    print_info_line "Test directory" "$test_dir"
     print_info_line "Build directory" "$BUILD_DIR"
     echo ""
 

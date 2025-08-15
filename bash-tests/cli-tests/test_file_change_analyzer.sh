@@ -13,6 +13,7 @@ set -Euo pipefail
 # Source test helper
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/../test_helper.sh"
 
 # Test counter
@@ -144,6 +145,7 @@ test_error_condition "No git repository" "${PROJECT_ROOT}/bin/file-change-analyz
     fi
     
     # Cleanup function
+    # shellcheck disable=SC2329
     cleanup() {
         rm -rf "$temp_dir"
     }

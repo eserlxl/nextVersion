@@ -527,6 +527,7 @@ main() {
   if [[ "$CLEANUP" == "true" ]]; then
     # Cleanup on exit unless user asked not to.
     # shellcheck disable=SC2317,SC2329
+    # shellcheck disable=SC2329
     cleanup() {
       for r in "${repos[@]}"; do
         [[ -n "$r" && -d "$r" ]] && rm -rf -- "$r"

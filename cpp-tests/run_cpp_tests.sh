@@ -15,7 +15,7 @@ set -Euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+# BLUE='\033[0;34m'  # Currently unused, kept for future use
 NC='\033[0m' # No Color
 
 # Test results tracking
@@ -32,8 +32,8 @@ SUMMARY_FILE="$FIXED_OUTPUT_DIR/cpp_tests_summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/cpp_tests_detailed.log"
 
 # Get script directory and project root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Currently unused, kept for future use
+# PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"  # Currently unused, kept for future use
 
 # Clean and recreate output directory
 rm -rf "$FIXED_OUTPUT_DIR"

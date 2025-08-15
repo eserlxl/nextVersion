@@ -13,7 +13,7 @@ IFS=$'\n\t'
 trap 'echo "[ERROR] line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-# shellcheck source=nv-common.sh
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/nv-common.sh"
 
 QUIET=false
