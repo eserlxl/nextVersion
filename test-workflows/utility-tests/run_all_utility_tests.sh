@@ -63,22 +63,16 @@ run_test_script() {
     # Extract test counts from output
     if echo "$output" | grep -q "✓.*:" && echo "$output" | grep -q "Tests passed:"; then
         # Tests with both checkmarks and summary (most specific case first)
-        echo "DEBUG: Output contains checkmarks and Tests passed" >&2
-        echo "DEBUG: Raw output: '$output'" >&2
         local passed_raw=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
         local failed_raw=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
-        echo "DEBUG: Raw passed value: '$passed_raw'" >&2
-        echo "DEBUG: Raw failed value: '$failed_raw'" >&2
-        passed=$(echo "$passed_raw" | sed 's/[^0-9]//g' || echo "0")
-        failed=$(echo "$failed_raw" | sed 's/[^0-9]//g' || echo "0")
+        passed=$(echo "$passed_raw" | grep -o '[0-9]\+' | head -1 || echo "0")
+        failed=$(echo "$failed_raw" | grep -o '[0-9]\+' | head -1 || echo "0")
         total=$((passed + failed))
-        echo "DEBUG: Pattern 1 matched - passed=$passed, failed=$failed, total=$total" >&2
     elif echo "$output" | grep -q "Tests passed:"; then
         # Tests with just summary
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' | sed 's/[^0-9]//g' || echo "0")
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' | sed 's/[^0-9]//g' || echo "0")
+        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' | grep -o '[0-9]\+' | head -1 || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' | grep -o '[0-9]\+' | head -1 || echo "0")
         total=$((passed + failed))
-        echo "DEBUG: Pattern 2 matched - passed=$passed, failed=$failed, total=$total" >&2
     elif echo "$output" | grep -q "✓.*->.*expected:"; then
         # Tests with detailed pass/fail output
         passed=$(echo "$output" | grep -c "✓" || echo "0")
