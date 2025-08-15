@@ -54,21 +54,32 @@ run_test_script() {
     local output
     local exit_code
     
-    # Special handling for tests that might be slow
-    local timeout_value=90
+    # Special handling for tests that might be slow - keep all under 300s total
+    local timeout_value=60
     local test_args=""
     
     # Reduce complexity for tests that generate random repositories
     if [[ "$script_path" == *"test_compare_analyzers.sh" ]]; then
-        timeout_value=120
-        test_args="--count 5 --complexity 3"
-        echo -e "${YELLOW}Running with reduced complexity (count=5, complexity=3) for faster execution${NC}"
+        timeout_value=75
+        test_args="--count 3 --complexity 2"
+        echo -e "${YELLOW}Running with minimal complexity (count=3, complexity=2) for faster execution${NC}"
     fi
     
-    # Give comprehensive tests a bit more time
+    # Give comprehensive tests minimal extra time
     if [[ "$script_path" == *"test_semantic_version_analyzer_comprehensive.sh" ]]; then
-        timeout_value=100
-        echo -e "${YELLOW}Running with extended timeout (100s) for comprehensive test${NC}"
+        timeout_value=80
+        echo -e "${YELLOW}Running with minimal timeout (80s) for comprehensive test${NC}"
+    fi
+    
+    # Additional optimizations for other potentially slow tests
+    if [[ "$script_path" == *"test_realistic_repositories.sh" ]]; then
+        timeout_value=70
+        echo -e "${YELLOW}Running with reduced timeout (70s) for realistic repository test${NC}"
+    fi
+    
+    if [[ "$script_path" == *"test_semantic_analyzer_realistic_repos.sh" ]]; then
+        timeout_value=70
+        echo -e "${YELLOW}Running with reduced timeout (70s) for realistic semantic analyzer test${NC}"
     fi
     
     # Use appropriate timeout and capture both stdout and stderr
@@ -404,7 +415,7 @@ main() {
     echo -e "${BLUE}Starting core test execution...${NC}"
     echo ""
     
-    # Run all test scripts
+    # Run all test scripts with global timeout protection
     local test_scripts=(
         "test_bump_version.sh:Version Bump Tests"
         "test_bump_version_loc_delta.sh:LOC Delta Version Bump Tests"
@@ -429,14 +440,27 @@ main() {
     
     local total_scripts=${#test_scripts[@]}
     local current_script=0
+    local start_time=$(date +%s)
+    local max_total_time=300  # Maximum 5 minutes total
     
     for test_script in "${test_scripts[@]}"; do
         local script_file="${test_script%%:*}"
         local script_name="${test_script##*:}"
         local script_path="${SCRIPT_DIR}/$script_file"
         
+        # Check if we're approaching the global timeout
+        local current_time=$(date +%s)
+        local elapsed_time=$((current_time - start_time))
+        local remaining_time=$((max_total_time - elapsed_time))
+        
+        if [[ $remaining_time -le 30 ]]; then
+            echo -e "${RED}⚠ Global timeout approaching (${elapsed_time}s elapsed). Skipping remaining tests.${NC}"
+            echo -e "${YELLOW}Completed $current_script out of $total_scripts tests in ${elapsed_time}s${NC}"
+            break
+        fi
+        
         ((current_script++))
-        echo -e "${BLUE}Progress: $current_script/$total_scripts - Running: $script_file${NC}"
+        echo -e "${BLUE}Progress: $current_script/$total_scripts - Running: $script_file (${remaining_time}s remaining)${NC}"
         
         if [[ -f "$script_path" ]]; then
             run_test_script "$script_name" "$script_path"

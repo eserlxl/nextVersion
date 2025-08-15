@@ -249,7 +249,9 @@ verify_ref() {
 read_version_file() {
   local vf="$1"
   [[ -f "$vf" ]] || { printf ''; return 0; }
-  tr -d '[:space:]' < "$vf" 2>/dev/null || printf ''
+  local version
+  version=$(tr -d '[:space:]' < "$vf" 2>/dev/null || printf '')
+  printf '%s' "$version"
 }
 
 validate_version_file_path() {
