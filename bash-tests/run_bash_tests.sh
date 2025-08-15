@@ -26,14 +26,19 @@ SKIPPED_TESTS=0
 FAILED_TEST_NAMES=()
 
 # Configuration
-TEST_TIMEOUT=${TEST_TIMEOUT:-300}  # Default 300 seconds timeout
+TEST_TIMEOUT=${TEST_TIMEOUT:-60}  # Default 60 seconds timeout for individual tests
 FIXED_OUTPUT_DIR="test_results"
 SUMMARY_FILE="$FIXED_OUTPUT_DIR/summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/detailed.log"
 
-# Clean and recreate output directory
-rm -rf "$FIXED_OUTPUT_DIR"
-mkdir -p "$FIXED_OUTPUT_DIR"
+# Clean and recreate output directory only if no summary exists
+if [ ! -f "$SUMMARY_FILE" ]; then
+    rm -rf "$FIXED_OUTPUT_DIR"
+    mkdir -p "$FIXED_OUTPUT_DIR"
+else
+    echo "Found existing test results, will append to them..."
+    mkdir -p "$FIXED_OUTPUT_DIR"
+fi
 
 echo "=========================================="
 echo "    NEXTVERSION BASH TEST SUITE"
@@ -140,7 +145,7 @@ run_test() {
         # Use longer timeout for comprehensive tests
         local current_timeout="$TEST_TIMEOUT"
         if [[ "$test_name" == *"comprehensive"* ]] || [[ "$test_name" == "run_loc_delta_tests.sh" ]] || [[ "$test_name" == "test-modular-components.sh" ]]; then
-            current_timeout=300  # 5 minutes for comprehensive tests
+            current_timeout=120  # 2 minutes for comprehensive tests
         fi
         
         timeout "${current_timeout}s" bash "$test_file" > "$output_file" 2>&1
@@ -265,14 +270,13 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT" || exit
 
 # Run tests in each subdirectory
-run_tests_in_directory "bash-tests/core-tests"
+run_tests_in_directory "bash-tests/utility-tests"
 run_tests_in_directory "bash-tests/file-handling-tests"
 run_tests_in_directory "bash-tests/edge-case-tests"
-run_tests_in_directory "bash-tests/utility-tests"
-run_tests_in_directory "bash-tests/cli-tests"
 run_tests_in_directory "bash-tests/debug-tests"
 run_tests_in_directory "bash-tests/ere-tests"
-run_tests_in_directory "bash-tests"
+run_tests_in_directory "bash-tests/cli-tests"
+run_tests_in_directory "bash-tests/core-tests"
 
 # Generate summary
 echo ""

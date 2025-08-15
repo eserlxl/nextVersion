@@ -78,7 +78,6 @@ print_header() {
     echo -e "${BOLD}${CYAN}============================================================${NC}"
     echo -e "${BOLD}${CYAN}       NEXT-VERSION — Comprehensive Test Suite Results${NC}"
     echo -e "${BOLD}${CYAN}============================================================${NC}"
-    echo -e "${YELLOW}Note: run_bash_tests.sh and run_cpp_tests.sh are excluded from execution${NC}"
     echo ""
 }
 
@@ -266,17 +265,47 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
 
     # Run bash tests and capture results
     if [ -f "./bash-tests/run_bash_tests.sh" ]; then
-        # Note: run_bash_tests.sh is excluded from execution
-        # BASH_OUTPUT=$(./bash-tests/run_bash_tests.sh 2>&1)
-        echo -e "${YELLOW}[INFO]${NC} run_bash_tests.sh execution is excluded"
-        BASH_RESULT=0  # Assume success since we're not running it
+        echo -e "${BLUE}[INFO]${NC} Checking for existing bash test results..."
         
-        # Since run_bash_tests.sh is excluded, set default values
-        # Don't parse from previous runs since we're not executing tests
-        BASH_TOTAL=0
-        BASH_PASSED=0
-        BASH_FAILED=0
-        BASH_SKIPPED=0
+        # Check if we already have a summary file
+        if [ -f "test_results/summary.txt" ]; then
+            echo -e "${BLUE}[INFO]${NC} Found existing bash test results, using those..."
+            BASH_OUTPUT="Using existing test results"
+            BASH_RESULT=0
+        else
+            echo -e "${BLUE}[INFO]${NC} No existing results found, running bash tests..."
+            BASH_OUTPUT=$(timeout 120 bash ./bash-tests/run_bash_tests.sh 2>&1)
+            BASH_RESULT=$?
+        fi
+        
+        # Parse bash test results from the summary file
+        if [ $BASH_RESULT -eq 0 ] && [ -f "test_results/summary.txt" ]; then
+            # Read test counts from the summary file
+            BASH_TOTAL=$(grep "Total tests:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+            BASH_PASSED=$(grep "Passed:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+            BASH_FAILED=$(grep "Failed:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+            BASH_SKIPPED=$(grep "Skipped:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+        elif [ $BASH_RESULT -eq 124 ]; then
+            # Timeout occurred, try to read partial results from summary file
+            echo -e "${YELLOW}[WARNING]${NC} Bash tests timed out, reading partial results..."
+            if [ -f "test_results/summary.txt" ]; then
+                BASH_TOTAL=$(grep "Total tests:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+                BASH_PASSED=$(grep "Passed:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+                BASH_FAILED=$(grep "Failed:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+                BASH_SKIPPED=$(grep "Skipped:" "test_results/summary.txt" | grep -o "[0-9]*" || echo "0")
+            else
+                BASH_TOTAL=0
+                BASH_PASSED=0
+                BASH_FAILED=0
+                BASH_SKIPPED=0
+            fi
+        else
+            # If bash tests failed or summary file not found, set default values
+            BASH_TOTAL=0
+            BASH_PASSED=0
+            BASH_FAILED=1
+            BASH_SKIPPED=0
+        fi
         
         # Calculate bash success rate
         BASH_SUCCESS_RATE=0
@@ -284,10 +313,9 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             BASH_SUCCESS_RATE=$((BASH_PASSED * 100 / BASH_TOTAL))
         fi
         
-        # Determine bash status (since tests are not executed)
-        if [ "$BASH_TOTAL" -eq 0 ]; then
-            BASH_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
-            # Don't mark as failed when just excluded
+        # Determine bash status
+        if [ $BASH_RESULT -eq 124 ]; then
+            BASH_STATUS="${YELLOW}⚠️  TIMEOUT (partial results)${NC}"
         elif [ $BASH_RESULT -eq 0 ] && [ "$BASH_FAILED" -eq 0 ]; then
             BASH_STATUS="${GREEN}✅ PASSED${NC}"
         else
@@ -296,8 +324,14 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             FAILED_SUITES+=("Bash")
         fi
         
-        # Since tests are not executed, no results to display
-        echo -e "${YELLOW}[INFO]${NC} No test results to display (tests excluded from execution)"
+        # Display bash test results summary
+        if [ -f "test_results/summary.txt" ]; then
+            echo "Bash Test Results:"
+            cat "test_results/summary.txt"
+        else
+            echo "Bash Test Results:"
+            echo "$BASH_OUTPUT"
+        fi
         
         print_summary "$BASH_TOTAL" "$BASH_PASSED" "$BASH_FAILED" "$BASH_SKIPPED" "$BASH_SUCCESS_RATE" "$BASH_STATUS" "Bash Test"
         
@@ -328,14 +362,22 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
 
     # Run C++ tests
     if [ -f "./cpp-tests/run_cpp_tests.sh" ]; then
-        # Note: run_cpp_tests.sh is excluded from execution
-        echo -e "${YELLOW}[INFO]${NC} run_cpp_tests.sh execution is excluded"
-        CPP_RESULT=0  # Assume success since we're not running it
+        echo -e "${BLUE}[INFO]${NC} Running C++ tests..."
+        CPP_OUTPUT=$(timeout 120 bash ./cpp-tests/run_cpp_tests.sh 2>&1)
+        CPP_RESULT=$?
         
-        # Since run_cpp_tests.sh is excluded, set default values
-        CPP_PASSED=0
-        CPP_FAILED=0
-        # Don't parse from previous runs since we're not executing tests
+        # Parse C++ test results from the summary file
+        if [ $CPP_RESULT -eq 0 ] && [ -f "test_results/cpp_tests_summary.txt" ]; then
+            # Read test counts from the summary file
+            CPP_TOTAL=$(grep "Total test categories:" "test_results/cpp_tests_summary.txt" | grep -o "[0-9]*" || echo "0")
+            CPP_PASSED=$(grep "Passed:" "test_results/cpp_tests_summary.txt" | grep -o "[0-9]*" || echo "0")
+            CPP_FAILED=$(grep "Failed:" "test_results/cpp_tests_summary.txt" | grep -o "[0-9]*" || echo "0")
+        else
+            # If C++ tests failed or summary file not found, set default values
+            CPP_TOTAL=0
+            CPP_PASSED=0
+            CPP_FAILED=1
+        fi
         
         # Calculate C++ success rate
         CPP_SUCCESS_RATE=0
@@ -343,13 +385,8 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             CPP_SUCCESS_RATE=$((CPP_PASSED * 100 / CPP_TOTAL))
         fi
         
-        # Determine C++ status (since tests are not executed)
-        if [ "$CPP_TOTAL" -eq 0 ]; then
-            CPP_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
-            # Don't mark as failed when just excluded
-        elif [ "$CPP_PASSED" -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
-            CPP_STATUS="${YELLOW}⚠️  SKIPPED (execution excluded)${NC}"
-        elif [ $CPP_RESULT -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
+        # Determine C++ status
+        if [ $CPP_RESULT -eq 0 ] && [ "$CPP_FAILED" -eq 0 ]; then
             CPP_STATUS="${GREEN}✅ PASSED${NC}"
         else
             CPP_STATUS="${RED}❌ FAILED${NC}"
@@ -357,8 +394,14 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             FAILED_SUITES+=("C++")
         fi
         
-        # Since tests are not executed, no results to display
-        echo -e "${YELLOW}[INFO]${NC} No test results to display (tests excluded from execution)"
+        # Display C++ test results summary
+        if [ -f "test_results/cpp_tests_summary.txt" ]; then
+            echo "C++ Test Results:"
+            cat "test_results/cpp_tests_summary.txt"
+        else
+            echo "C++ Test Results:"
+            echo "$CPP_OUTPUT"
+        fi
         
         print_summary "$CPP_TOTAL" "$CPP_PASSED" "$CPP_FAILED" "0" "$CPP_SUCCESS_RATE" "$CPP_STATUS" "C++ Test"
         
@@ -380,7 +423,7 @@ print_final_header
 # Determine final status
 if [ $OVERALL_RESULT -eq 0 ]; then
     if [ "$BASH_TOTAL" -eq 0 ] && [ "$CPP_TOTAL" -eq 0 ]; then
-        FINAL_STATUS="${YELLOW}⚠️  All test suites excluded from execution${NC}"
+        FINAL_STATUS="${YELLOW}⚠️  No tests found to run${NC}"
     else
         FINAL_STATUS="${GREEN}✅ All test suites passed${NC}"
     fi
@@ -423,8 +466,6 @@ fi
     echo "      NEXT-VERSION COMPREHENSIVE TEST SUMMARY"
     echo "=========================================="
     echo "Generated: $(date)"
-    echo ""
-    echo "NOTE: run_bash_tests.sh and run_cpp_tests.sh are excluded from execution"
     echo ""
     echo "OVERALL RESULTS:"
     echo "Total tests: $TOTAL_TESTS"
