@@ -172,9 +172,8 @@ main() {
     
     # Run all test scripts
     local test_scripts=(
-        # Add fixture test scripts here as they are created
-        # "test_fixture_validation.sh:Fixture Validation Tests"
-        # "test_fixture_content.sh:Fixture Content Tests"
+        "test_fixture_validation.sh:Fixture Validation Tests"
+        "test_fixture_content.sh:Fixture Content Tests"
     )
     
     if [[ ${#test_scripts[@]} -eq 0 ]]; then

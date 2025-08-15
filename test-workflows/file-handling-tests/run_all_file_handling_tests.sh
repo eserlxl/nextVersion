@@ -172,9 +172,8 @@ main() {
     
     # Run all test scripts
     local test_scripts=(
-        # Add file handling test scripts here as they are created
-        # "test_file_reading.sh:File Reading Tests"
-        # "test_file_parsing.sh:File Parsing Tests"
+        "test_file_reading.sh:File Reading Tests"
+        "test_file_parsing.sh:File Parsing Tests"
     )
     
     if [[ ${#test_scripts[@]} -eq 0 ]]; then

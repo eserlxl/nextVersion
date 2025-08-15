@@ -172,6 +172,8 @@ main() {
     # Run all test scripts
     local test_scripts=(
         "test_debug.sh:Debug Tests"
+        "test_debug_logging.sh:Debug Logging Tests"
+        "test_debug_markers.sh:Debug Markers Tests"
     )
     
     for test_script in "${test_scripts[@]}"; do
