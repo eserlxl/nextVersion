@@ -18,7 +18,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Source test helper functions
 # shellcheck disable=SC1091
 # shellcheck source=test_helper.sh
-source "$PROJECT_ROOT/test-workflows/test_helper.sh"
+source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
 echo "=== Testing NUL-Safe File Handling ==="
 

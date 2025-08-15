@@ -13,7 +13,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Source test helper functions
 # shellcheck disable=SC1091
-source "$PROJECT_ROOT/test-workflows/test_helper.sh"
+source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
 echo "Testing debug functionality..."
 

@@ -17,7 +17,7 @@ PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # Source the test helper
 # shellcheck source=test_helper.sh
 # shellcheck disable=SC1091
-source "$PROJECT_ROOT/test-workflows/test_helper.sh"
+source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
 # Create a temporary clean environment for testing
 test_dir=$(create_temp_test_env "loc_delta_system_test")

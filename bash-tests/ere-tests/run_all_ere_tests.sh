@@ -65,7 +65,9 @@ run_test_script() {
         # Extract just the numbers using grep with regex
         passed=$(echo "$output" | grep -o "Tests passed: [0-9]*" | grep -o "[0-9]*")
         failed=$(echo "$output" | grep -o "Tests failed: [0-9]*" | grep -o "[0-9]*")
-        total=$(echo "$output" | grep -o "Total tests: [0-9]*" | grep -o "[0-9]*")
+        
+        # Calculate total as sum of passed and failed tests
+        total=$((passed + failed))
         
         # Debug: show what we extracted (only if verbose)
         if [[ "${VERBOSE:-false}" == "true" ]]; then

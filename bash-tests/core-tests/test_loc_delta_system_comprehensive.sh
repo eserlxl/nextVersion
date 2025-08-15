@@ -16,7 +16,7 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # shellcheck source=test_helper.sh
 # shellcheck disable=SC1091
-source "$PROJECT_ROOT/test-workflows/test_helper.sh"
+source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
 # Colors for output
 RED='\033[0;31m'

@@ -15,7 +15,7 @@ IFS=$'\n\t'
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # shellcheck disable=SC1091
-source "$PROJECT_ROOT/test-workflows/test_helper.sh"
+source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
 echo "Testing Version Calculation Logic (Direct)"
 echo "========================================="
