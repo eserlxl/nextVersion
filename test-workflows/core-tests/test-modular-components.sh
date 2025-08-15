@@ -49,7 +49,7 @@ die() { sayc red "Error: $*"; exit 1; }
 # ---------------------- args ----------------------
 # Get project root
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 DEV_BIN="$PROJECT_ROOT/bin"
 BASE_REF=""
 TARGET_REF=""

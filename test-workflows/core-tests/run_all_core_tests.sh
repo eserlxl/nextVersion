@@ -62,15 +62,21 @@ run_test_script() {
     
     # Extract test counts from output, handling color codes and empty output
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
-        failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
-        # Look for total tests in different formats
-        if echo "$output" | grep -q "Total tests:"; then
-            total=$(echo "$output" | grep "Total tests:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
-        else
-            # Calculate total from passed + failed
-            total=$((passed + failed))
-        fi
+        # Remove all color codes and extract numbers - use more robust parsing
+        passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests passed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests failed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        
+        # Calculate total from passed + failed (more reliable than parsing Total tests)
+        total=$((passed + failed))
+        
+        # Debug output to see what we're parsing
+        echo "DEBUG: Parsed - passed: '$passed', failed: '$failed', total: '$total'" >&2
+    else
+        # If no test summary found, try to count from individual test results
+        passed=$(echo "$output" | grep -c "✓ PASS:" || echo "0")
+        failed=$(echo "$output" | grep -c "✗ FAIL:" || echo "0")
+        total=$((passed + failed))
+        echo "DEBUG: Counted manually - passed: '$passed', failed: '$failed', total: '$total'" >&2
     fi
     
     # Ensure variables are numeric

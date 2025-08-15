@@ -13,6 +13,7 @@ set -Euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Colors for output
 RED='\033[0;31m'
@@ -82,7 +83,7 @@ check_prerequisites() {
     )
     
     for script in "${required_scripts[@]}"; do
-        if [[ ! -x "$SCRIPT_DIR/../$script" ]]; then
+        if [[ ! -x "$PROJECT_ROOT/$script" ]]; then
             missing_scripts+=("$script")
         fi
     done
@@ -140,7 +141,7 @@ run_system_validation() {
     echo -e "${CYAN}=== System Validation Tests ===${NC}"
     
     # Test 1: Check versioning configuration
-    local config_file="$SCRIPT_DIR/../config/versioning.yml"
+    local config_file="$PROJECT_ROOT/config/versioning.yml"
     if [[ -f "$config_file" ]]; then
         if yq '.' "$config_file" >/dev/null 2>&1; then
             log_test_result "Versioning Config" "PASS" "valid YAML configuration"
@@ -152,7 +153,7 @@ run_system_validation() {
     fi
     
     # Test 2: Check semantic analyzer functionality
-    local analyzer_script="$SCRIPT_DIR/../bin/semantic-version-analyzer.sh"
+    local analyzer_script="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
     if [[ -x "$analyzer_script" ]]; then
         if "$analyzer_script" --help >/dev/null 2>&1; then
             log_test_result "Semantic Analyzer" "PASS" "script is executable and functional"
@@ -164,7 +165,7 @@ run_system_validation() {
     fi
     
     # Test 3: Check version calculator functionality
-    local calculator_script="$SCRIPT_DIR/../bin/version-calculator.sh"
+    local calculator_script="$PROJECT_ROOT/bin/version-calculator.sh"
     if [[ -x "$calculator_script" ]]; then
         if "$calculator_script" --help >/dev/null 2>&1; then
             log_test_result "Version Calculator" "PASS" "script is executable and functional"
@@ -197,10 +198,10 @@ run_system_validation
 # Run LOC delta specific tests
 echo ""
 echo -e "${CYAN}=== Core LOC Delta Tests ===${NC}"
-run_test "$SCRIPT_DIR/core-tests/test_loc_delta_system.sh"
-run_test "$SCRIPT_DIR/core-tests/test_loc_delta_system_comprehensive.sh"
-run_test "$SCRIPT_DIR/core-tests/test_bump_version_loc_delta.sh"
-run_test "$SCRIPT_DIR/core-tests/test_versioning_system_integration.sh"
+run_test "$SCRIPT_DIR/test_loc_delta_system.sh"
+run_test "$SCRIPT_DIR/test_loc_delta_system_comprehensive.sh"
+run_test "$SCRIPT_DIR/test_bump_version_loc_delta.sh"
+run_test "$SCRIPT_DIR/test_versioning_system_integration.sh"
 
 # Note: Other tests are run by the main test suite
 echo ""

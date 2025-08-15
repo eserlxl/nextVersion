@@ -10,9 +10,9 @@
 
 set -euo pipefail
 
-# Source the test helper
+# Get the project root (use environment variable if available, otherwise use current directory)
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # shellcheck disable=SC1091
 source "$PROJECT_ROOT/test-workflows/test_helper.sh"
 
