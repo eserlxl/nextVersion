@@ -2,8 +2,6 @@
 
 # Debug script to test run_test function
 
-set -Eeuo pipefail
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -29,7 +27,6 @@ run_test() {
     set +e
     output=$(eval "$test_cmd" 2>&1)
     local exit_code=$?
-    set -e
     
     # Check exit code
     if [[ $exit_code -eq $expected_exit ]]; then
@@ -37,7 +34,7 @@ run_test() {
     else
         printf '%s✗ Exit code wrong: got %d, expected %d%s\n' "${RED}" "$exit_code" "$expected_exit" "${NC}"
         ((TESTS_FAILED++))
-        return 0  # Don't exit script, just mark test as failed
+        return 1  # Return 1 to indicate test failure
     fi
     
     # Check output if specified
@@ -48,7 +45,7 @@ run_test() {
             printf '%s✗ Output missing expected text: %s%s\n' "${RED}" "$expected_output" "${NC}"
             printf 'Actual output:\n%s\n' "$output"
             ((TESTS_FAILED++))
-            return 0  # Don't exit script, just mark test as failed
+            return 1  # Return 1 to indicate test failure
         fi
     fi
     
@@ -69,8 +66,8 @@ run_test "Simple test 2" "echo 'test2'" 0 "test2"
 
 echo "After test 2"
 
-# Test 3
-run_test "Failing test" "exit 1" 0 "should not see this"
+# Test 3 - This test is intentionally designed to fail
+run_test "Failing test" "exit 1" 1 "should not see this"
 
 echo "After test 3"
 
@@ -82,3 +79,10 @@ echo "After test 4"
 echo "All tests completed"
 echo "Tests passed: $TESTS_PASSED"
 echo "Tests failed: $TESTS_FAILED"
+
+# Exit with appropriate code
+if [[ $TESTS_FAILED -eq 0 ]]; then
+    exit 0
+else
+    exit 1
+fi
