@@ -58,11 +58,10 @@ run_test_script() {
     local timeout_value=60
     local test_args=""
     
-    # Reduce complexity for tests that generate random repositories
+    # Skip test_compare_analyzers.sh as it has been moved to comparator/tests/
     if [[ "$script_path" == *"test_compare_analyzers.sh" ]]; then
-        timeout_value=75
-        test_args="--count 3 --complexity 2"
-        echo -e "${YELLOW}Running with minimal complexity (count=3, complexity=2) for faster execution${NC}"
+        echo -e "${YELLOW}SKIPPING: test_compare_analyzers.sh has been moved to comparator/tests/${NC}"
+        continue
     fi
     
     # Give comprehensive tests minimal extra time
@@ -127,7 +126,7 @@ run_test_script() {
         # Debug output to see what we're parsing
         echo "DEBUG: Parsed - passed: '$passed', failed: '$failed', total: '$total'" >&2
     elif echo "$output" | grep -q "Passed:"; then
-        # Handle alternative output format (e.g., test_compare_analyzers.sh)
+        # Handle alternative output format
         local parsed_passed
         parsed_passed=$(echo "$output" | grep "Passed:" | sed 's/\\033\[[0-9;]*m//g' | awk '{print $2}' | grep -E '^[0-9]+$' || echo "0")
         local parsed_failed
@@ -269,7 +268,6 @@ list_tests() {
     local test_scripts=(
         "test_bump_version.sh:Version Bump Tests"
         "test_bump_version_loc_delta.sh:LOC Delta Version Bump Tests"
-        "test_compare_analyzers.sh:Analyzer Comparison Tests"
         "test_loc_delta_system.sh:LOC Delta System Tests"
         "test_loc_delta_system_comprehensive.sh:Comprehensive LOC Delta Tests"
         "test_pure_mathematical_bonus.sh:Mathematical Bonus Tests"
@@ -419,7 +417,6 @@ main() {
     local test_scripts=(
         "test_bump_version.sh:Version Bump Tests"
         "test_bump_version_loc_delta.sh:LOC Delta Version Bump Tests"
-        "test_compare_analyzers.sh:Analyzer Comparison Tests"
         "test_loc_delta_system.sh:LOC Delta System Tests"
         "test_loc_delta_system_comprehensive.sh:Comprehensive LOC Delta Tests"
         "test_pure_mathematical_bonus.sh:Mathematical Bonus Tests"

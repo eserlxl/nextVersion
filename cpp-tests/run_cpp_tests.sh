@@ -78,7 +78,12 @@ run_test_category() {
     
     local output
     local exit_code
-    output=$(timeout "$TEST_TIMEOUT" bash "$test_dir/run_all_${test_name}_tests.sh" 2>&1)
+    # Convert hyphens to underscores for script naming convention
+    local script_name
+    script_name=$(echo "$test_name" | tr '-' '_')
+    # Use absolute path from cpp-tests directory
+    local script_path="cpp-tests/$test_dir/run_all_${script_name}.sh"
+    output=$(timeout "$TEST_TIMEOUT" bash "$script_path" 2>&1)
     exit_code=$?
     
     local end_time
