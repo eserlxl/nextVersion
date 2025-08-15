@@ -255,6 +255,9 @@ ci-gpg-out/
 ehthumbs.db
 Thumbs.db
 
+# Binaries
+bin/next-version
+
 # =============================================================================
 # DOCUMENTATION GENERATION
 # =============================================================================
@@ -290,4 +293,4 @@ env/
 venv/
 ENV/
 env.bak/
-venv.bak/bin/next-version
+venv.bak/
