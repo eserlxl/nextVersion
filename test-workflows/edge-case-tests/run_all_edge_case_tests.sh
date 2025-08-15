@@ -61,10 +61,49 @@ run_test_script() {
     local total=0
     
     # Extract test counts from output
+    local passed=0
+    local failed=0
+    local total=0
+    
+    # Try to extract test counts from various output formats
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
-        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}')
+        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' || echo "0")
+        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}' || echo "0")
+    elif echo "$output" | grep -q "Tests passed:"; then
+        # Alternative format: "Tests passed: X" (2nd field)
+        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' || echo "0")
+        # Calculate total if not provided
+        total=$((passed + failed))
+    fi
+    
+    # Ensure variables are numeric for arithmetic operations
+    passed=${passed:-0}
+    failed=${failed:-0}
+    total=${total:-0}
+    
+    # Debug: Print extracted values
+    echo "Debug: Extracted values - passed: '$passed', failed: '$failed', total: '$total'"
+    
+    # Final validation - ensure all variables are numeric
+    if ! [[ "$passed" =~ ^[0-9]+$ ]]; then
+        echo "Warning: Invalid passed value '$passed', setting to 0"
+        passed=0
+    fi
+    if ! [[ "$failed" =~ ^[0-9]+$ ]]; then
+        echo "Warning: Invalid failed value '$failed', setting to 0"
+        failed=0
+    fi
+    if ! [[ "$total" =~ ^[0-9]+$ ]]; then
+        echo "Warning: Invalid total value '$total', setting to 0"
+        total=0
+    fi
+    
+    # If total is still 0, calculate it from passed + failed
+    if [[ $total -eq 0 ]]; then
+        total=$((passed + failed))
+        echo "Debug: Calculated total as $total from passed ($passed) + failed ($failed)"
     fi
     
     # Update global counters

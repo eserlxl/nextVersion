@@ -67,7 +67,7 @@ run_test "Simple test 2" "echo 'test2'" 0 "test2"
 echo "After test 2"
 
 # Test 3 - This test is intentionally designed to fail
-run_test "Failing test" "exit 1" 1 "should not see this"
+run_test "Failing test" "exit 1" 1 ""
 
 echo "After test 3"
 

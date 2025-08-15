@@ -113,6 +113,34 @@ EOF
     
     # Cleanup
     rm -f "$temp_script"
+    
+    # Clean up temporary test files
+    rm -f /tmp/marker_format.txt /tmp/marker_timestamp.txt /tmp/marker_type.txt /tmp/marker_content.txt /tmp/multiple_markers.txt
+}
+
+# Function to test multiple markers
+test_multiple_markers() {
+    local test_name="Multiple markers"
+    
+    # Create test file with multiple markers
+    for i in start step end; do
+        echo "[MARKER:${i^^}] 2025-01-01 12:00:00: $i"
+    done > /tmp/multiple_markers.txt
+    
+    # Count the markers
+    local count
+    count=$(grep -c "MARKER:" /tmp/multiple_markers.txt)
+    
+    if [[ $count -eq 3 ]]; then
+        log_test_result "$test_name" "PASS" "Multiple markers test passed"
+        ((TESTS_PASSED++))
+    else
+        log_test_result "$test_name" "FAIL" "Expected 3 markers, got $count"
+        ((TESTS_FAILED++))
+    fi
+    
+    # Clean up
+    rm -f /tmp/multiple_markers.txt
 }
 
 # Main test execution
@@ -128,19 +156,19 @@ main() {
     test_debug_marker "Error marker" "error" "ERROR"
     
     # Test marker format validation
-    run_test "Marker format validation" 0 "bash -c 'echo \"[MARKER:START] 2025-01-01 12:00:00: message\" | grep -E \"^\\[MARKER:[A-Z]+\\].*:.*$\"'" "MARKER:START"
+    run_test "Marker format validation" 0 "echo '[MARKER:START] 2025-01-01 12:00:00: message' > /tmp/marker_format.txt && grep -E '^\[MARKER:[A-Z]+\].*:.*$' /tmp/marker_format.txt" "MARKER:START"
     
     # Test marker timestamp format
-    run_test "Marker timestamp format" 0 "bash -c 'echo \"[MARKER:INFO] 2025-01-01 12:00:00: test\" | grep -E \"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\"'" "2025-01-01 12:00:00"
+    run_test "Marker timestamp format" 0 "echo '[MARKER:INFO] 2025-01-01 12:00:00: test' > /tmp/marker_timestamp.txt && grep -E '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}' /tmp/marker_timestamp.txt" "2025-01-01 12:00:00"
     
     # Test marker type validation
-    run_test "Marker type validation" 0 "bash -c 'echo \"[MARKER:DEBUG] timestamp: message\" | grep -E \"MARKER:(START|STEP|CHECK|END|ERROR|INFO|DEBUG)\"'" "MARKER:DEBUG"
+    run_test "Marker type validation" 0 "echo '[MARKER:DEBUG] timestamp: message' > /tmp/marker_type.txt && grep -E 'MARKER:(START|STEP|CHECK|END|ERROR|INFO|DEBUG)' /tmp/marker_type.txt" "MARKER:DEBUG"
     
     # Test marker message content
-    run_test "Marker message content" 0 "bash -c 'echo \"[MARKER:INFO] 2025-01-01 12:00:00: Test message content\" | grep -o \": Test message content$\"'" "Test message content"
+    run_test "Marker message content" 0 "echo '[MARKER:INFO] 2025-01-01 12:00:00: Test message content' > /tmp/marker_content.txt && grep -o ': Test message content$' /tmp/marker_content.txt" "Test message content"
     
     # Test multiple markers
-    run_test "Multiple markers" 0 "bash -c 'for i in start step end; do echo \"[MARKER:\${i^^}] 2025-01-01 12:00:00: \$i\"; done | grep -c \"MARKER:\"'" "3"
+    test_multiple_markers
     
     echo ""
     echo "Test Summary:"

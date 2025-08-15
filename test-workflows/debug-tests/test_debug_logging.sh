@@ -112,6 +112,34 @@ EOF
     
     # Cleanup
     rm -f "$temp_script"
+    
+    # Clean up temporary test files
+    rm -f /tmp/debug_test_filter.txt /tmp/debug_test_format.txt /tmp/debug_test_consistency.txt
+}
+
+# Function to test debug output consistency
+test_debug_output_consistency() {
+    local test_name="Debug output consistency"
+    
+    # Create test file with multiple debug messages
+    for i in {1..3}; do
+        echo "[DEBUG:INFO] message $i"
+    done > /tmp/debug_test_consistency.txt
+    
+    # Count the debug messages
+    local count
+    count=$(grep -c "DEBUG:INFO" /tmp/debug_test_consistency.txt)
+    
+    if [[ $count -eq 3 ]]; then
+        log_test_result "$test_name" "PASS" "Debug output consistency verified"
+        ((TESTS_PASSED++))
+    else
+        log_test_result "$test_name" "FAIL" "Expected 3 debug messages, got $count"
+        ((TESTS_FAILED++))
+    fi
+    
+    # Clean up
+    rm -f /tmp/debug_test_consistency.txt
 }
 
 # Main test execution
@@ -130,13 +158,13 @@ main() {
     run_test "Debug output to stderr" 0 "bash -c 'echo \"[DEBUG] test\" >&2' 2>&1" "DEBUG"
     
     # Test debug level filtering
-    run_test "Debug level filtering" 0 "bash -c 'echo \"[DEBUG:INFO] message\" | grep -E \"DEBUG:(INFO|DEBUG|TRACE)\"'" "DEBUG:INFO"
+    run_test "Debug level filtering" 0 "echo '[DEBUG:INFO] message' > /tmp/debug_test_filter.txt && grep -E 'DEBUG:(INFO|DEBUG|TRACE)' /tmp/debug_test_filter.txt" "DEBUG:INFO"
     
     # Test debug message formatting
-    run_test "Debug message format validation" 0 "bash -c 'echo \"[DEBUG:INFO] test message\" | grep -E \"^\\[DEBUG:[A-Z]+\\].*$\"'" "DEBUG:INFO"
+    run_test "Debug message format validation" 0 "echo '[DEBUG:INFO] test message' > /tmp/debug_test_format.txt && grep -E '^\[DEBUG:[A-Z]+\].*$' /tmp/debug_test_format.txt" "DEBUG:INFO"
     
     # Test debug output consistency
-    run_test "Debug output consistency" 0 "bash -c 'for i in {1..3}; do echo \"[DEBUG:INFO] message \$i\"; done | grep -c \"DEBUG:INFO\"" "3"
+    test_debug_output_consistency
     
     echo ""
     echo "Test Summary:"

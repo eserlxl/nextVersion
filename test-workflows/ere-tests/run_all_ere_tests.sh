@@ -60,11 +60,11 @@ run_test_script() {
     local failed=0
     local total=0
     
-    # Extract test counts from output
+    # Extract test counts from output (strip ANSI color codes first)
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
-        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}')
+        passed=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g' | grep "Tests passed:" | awk '{print $3}')
+        failed=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g' | grep "Tests failed:" | awk '{print $3}')
+        total=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g' | grep "Total tests:" | awk '{print $3}')
     fi
     
     # Update global counters

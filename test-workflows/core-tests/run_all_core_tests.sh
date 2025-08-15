@@ -60,17 +60,22 @@ run_test_script() {
     local failed=0
     local total=0
     
-    # Extract test counts from output
+    # Extract test counts from output, handling color codes and empty output
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
-        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}')
+        passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        total=$(echo "$output" | grep "Total tests:" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
     fi
     
-    # Update global counters
-    TOTAL_TESTS=$((TOTAL_TESTS + total))
-    TOTAL_PASSED=$((TOTAL_PASSED + passed))
-    TOTAL_FAILED=$((TOTAL_FAILED + failed))
+    # Ensure variables are numeric
+    passed=${passed:-0}
+    failed=${failed:-0}
+    total=${total:-0}
+    
+    # Update global counters (ensure safe arithmetic)
+    TOTAL_TESTS=$((TOTAL_TESTS + ${total:-0}))
+    TOTAL_PASSED=$((TOTAL_PASSED + ${passed:-0}))
+    TOTAL_FAILED=$((TOTAL_FAILED + ${failed:-0}))
     
     # Display results
     echo "$output"

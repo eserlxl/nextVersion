@@ -62,9 +62,13 @@ run_test_script() {
     
     # Extract test counts from output
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
-        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}')
+        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        total=$((passed + failed))
+    else
+        passed=0
+        failed=0
+        total=0
     fi
     
     # Update global counters
