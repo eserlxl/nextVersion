@@ -6,8 +6,8 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-# Test runner for all tests in test-workflows directory
-# This script executes all test files and provides a summary of results
+# Test runner for all bash tests in bash-tests directory
+# This script executes all bash test files and provides a summary of results
 
 set -Euo pipefail
 
@@ -36,7 +36,7 @@ rm -rf "$FIXED_OUTPUT_DIR"
 mkdir -p "$FIXED_OUTPUT_DIR"
 
 echo "=========================================="
-echo "    NEXTVERSION WORKFLOW TEST SUITE"
+echo "    NEXTVERSION BASH TEST SUITE"
 echo "=========================================="
 echo "Output directory: $FIXED_OUTPUT_DIR"
 echo "Summary file: $SUMMARY_FILE"
@@ -265,19 +265,19 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT" || exit
 
 # Run tests in each subdirectory
-run_tests_in_directory "test-workflows/core-tests"
-run_tests_in_directory "test-workflows/file-handling-tests"
-run_tests_in_directory "test-workflows/edge-case-tests"
-run_tests_in_directory "test-workflows/utility-tests"
-run_tests_in_directory "test-workflows/cli-tests"
-run_tests_in_directory "test-workflows/debug-tests"
-run_tests_in_directory "test-workflows/ere-tests"
-run_tests_in_directory "test-workflows"
+run_tests_in_directory "bash-tests/core-tests"
+run_tests_in_directory "bash-tests/file-handling-tests"
+run_tests_in_directory "bash-tests/edge-case-tests"
+run_tests_in_directory "bash-tests/utility-tests"
+run_tests_in_directory "bash-tests/cli-tests"
+run_tests_in_directory "bash-tests/debug-tests"
+run_tests_in_directory "bash-tests/ere-tests"
+run_tests_in_directory "bash-tests"
 
 # Generate summary
 echo ""
 echo "=========================================="
-echo "          WORKFLOW TEST SUMMARY"
+echo "          BASH TEST SUMMARY"
 echo "=========================================="
 echo "Total tests: $TOTAL_TESTS"
 echo -e "Passed: ${GREEN}$PASSED_TESTS${NC}"
@@ -292,7 +292,7 @@ fi
 
 # Save summary to file
 {
-    echo "NEXTVERSION WORKFLOW TEST SUITE SUMMARY"
+    echo "NEXTVERSION BASH TEST SUITE SUMMARY"
     echo "Generated: $(date)"
     echo ""
     echo "Total tests: $TOTAL_TESTS"
