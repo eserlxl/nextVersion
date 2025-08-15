@@ -7,7 +7,7 @@
 # See the LICENSE file in the project root for details.
 #
 # Comprehensive test runner for NEXT-VERSION
-# Runs both test-workflows and test/ folder tests
+# Runs both bash-tests and cpp-tests
 # Usage: ./run_tests.sh
 
 # Don't use set -e to allow both test suites to run even if one fails
@@ -36,15 +36,15 @@ count_cpp_tests() {
     echo "$count"
 }
 
-# Function to count workflow tests by scanning test-workflows directory
-count_workflow_tests() {
-    local test_dir="test-workflows"
+# Function to count bash tests by scanning bash-tests directory
+count_bash_tests() {
+    local test_dir="bash-tests"
     if [ ! -d "$test_dir" ]; then
         echo "0"
         return
     fi
     
-    # Count all .sh files in test-workflows and subdirectories
+    # Count all .sh files in bash-tests and subdirectories
     local count
     count=$(find "$test_dir" -name "*.sh" -type f | wc -l)
     echo "$count"
@@ -163,17 +163,16 @@ print_final_footer() {
 }
 
 # Initialize variables
-WORKFLOW_START_TIME=$(date)
+BASH_START_TIME=$(date)
 PROJECT_ROOT=$(pwd)
-TEST_DIR="$PROJECT_ROOT/test"
 BUILD_DIR="$PROJECT_ROOT/build-test"
 
 # --- NEW: Test suite selection menu ---
-AVAILABLE_SUITES=("ALL" "Workflow" "C++ Unit")
+AVAILABLE_SUITES=("ALL" "Bash" "C++")
 SUITE_DESCRIPTIONS=(
-    "Run all test suites (Workflow + C++ Unit)"
-    "Run only shell-based workflow tests"
-    "Run only C++ unit tests"
+    "Run all test suites (Bash + C++)"
+    "Run only bash tests"
+    "Run only C++ tests"
 )
 
 print_suite_menu() {
@@ -215,26 +214,26 @@ mkdir -p test_results
 
 # Track overall test results
 OVERALL_RESULT=0
-WORKFLOW_RESULT=0
+BASH_RESULT=0
 CPP_RESULT=0
 FAILED_SUITES=()
 
-# Initialize workflow test counters
-WORKFLOW_TOTAL=0
-WORKFLOW_PASSED=0
-WORKFLOW_FAILED=0
-WORKFLOW_SKIPPED=0
+# Initialize bash test counters
+BASH_TOTAL=0
+BASH_PASSED=0
+BASH_FAILED=0
+BASH_SKIPPED=0
 
 # Count tests automatically
 CPP_TOTAL=$(count_cpp_tests)
-WORKFLOW_TOTAL=$(count_workflow_tests)
+BASH_TOTAL=$(count_bash_tests)
 
 if [ "$CPP_TOTAL" -eq 0 ]; then
     echo "Warning: No C++ tests found in CMakeLists.txt" >&2
 fi
 
-if [ "$WORKFLOW_TOTAL" -eq 0 ]; then
-    echo "Warning: No workflow tests found in test-workflows directory" >&2
+if [ "$BASH_TOTAL" -eq 0 ]; then
+    echo "Warning: No bash tests found in bash-tests directory" >&2
 fi
 
 # Initialize C++ test counters
@@ -243,49 +242,49 @@ CPP_FAILED=0
 
 print_header
 
-# PHASE 1: Shell-based Workflow Tests
-if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Workflow" ]]; then
+# PHASE 1: Bash Tests
+if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
     if [[ "$SELECTED_SUITE" == "ALL" ]]; then
-        print_phase_header "1" "Shell-based Workflow Tests"
+        print_phase_header "1" "Bash Tests"
     else
-        echo -e "${BOLD}${MAGENTA}Shell-based Workflow Tests${NC}"
+        echo -e "${BOLD}${MAGENTA}Bash Tests${NC}"
         echo -e "${MAGENTA}------------------------------------------------------------${NC}"
     fi
     print_info_line "Output directory" "test_results"
     print_info_line "Summary file" "test_results/summary.txt"
     print_info_line "Detailed log" "test_results/detailed.log"
-    print_info_line "Start time" "$WORKFLOW_START_TIME"
+    print_info_line "Start time" "$BASH_START_TIME"
     echo ""
 
-    # Run workflow tests and capture results
-    if [ -f "./test-workflows/run_workflow_tests.sh" ]; then
+    # Run bash tests and capture results
+    if [ -f "./bash-tests/run_bash_tests.sh" ]; then
         # Capture the output and exit code
         # Note: Output is captured but not currently used - kept for potential future logging
-        # WORKFLOW_OUTPUT=$(./test-workflows/run_workflow_tests.sh 2>&1)
-        TEST_TIMEOUT=300 ./test-workflows/run_workflow_tests.sh
-        WORKFLOW_RESULT=$?
+        # BASH_OUTPUT=$(./bash-tests/run_bash_tests.sh 2>&1)
+        TEST_TIMEOUT=300 ./bash-tests/run_bash_tests.sh
+        BASH_RESULT=$?
         
-        # Parse workflow test results from summary.txt if it exists
+        # Parse bash test results from summary.txt if it exists
         if [ -f "test_results/summary.txt" ]; then
-            WORKFLOW_TOTAL=$(grep "Total tests:" test_results/summary.txt | awk '{print $3}' 2>/dev/null || echo "0")
-            WORKFLOW_PASSED=$(grep "Passed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
-            WORKFLOW_FAILED=$(grep "Failed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
-            WORKFLOW_SKIPPED=$(grep "Skipped:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
+            BASH_TOTAL=$(grep "Total tests:" test_results/summary.txt | awk '{print $3}' 2>/dev/null || echo "0")
+            BASH_PASSED=$(grep "Passed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
+            BASH_FAILED=$(grep "Failed:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
+            BASH_SKIPPED=$(grep "Skipped:" test_results/summary.txt | awk '{print $2}' 2>/dev/null || echo "0")
         fi
         
-        # Calculate workflow success rate
-        WORKFLOW_SUCCESS_RATE=0
-        if [ "$WORKFLOW_TOTAL" -gt 0 ]; then
-            WORKFLOW_SUCCESS_RATE=$((WORKFLOW_PASSED * 100 / WORKFLOW_TOTAL))
+        # Calculate bash success rate
+        BASH_SUCCESS_RATE=0
+        if [ "$BASH_TOTAL" -gt 0 ]; then
+            BASH_SUCCESS_RATE=$((BASH_PASSED * 100 / BASH_TOTAL))
         fi
         
-        # Determine workflow status
-        if [ $WORKFLOW_RESULT -eq 0 ] && [ "$WORKFLOW_FAILED" -eq 0 ]; then
-            WORKFLOW_STATUS="${GREEN}✅ PASSED${NC}"
+        # Determine bash status
+        if [ $BASH_RESULT -eq 0 ] && [ "$BASH_FAILED" -eq 0 ]; then
+            BASH_STATUS="${GREEN}✅ PASSED${NC}"
         else
-            WORKFLOW_STATUS="${RED}❌ FAILED (some tests failed)${NC}"
+            BASH_STATUS="${RED}❌ FAILED (some tests failed)${NC}"
             OVERALL_RESULT=1
-            FAILED_SUITES+=("Workflow")
+            FAILED_SUITES+=("Bash")
         fi
         
         # Display categorized test results from actual test execution
@@ -335,15 +334,15 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Workflow" ]]; then
             done
         else
             print_error "test_results/detailed.log not found"
-            WORKFLOW_STATUS="${RED}❌ FAILED (log file not found)${NC}"
+            BASH_STATUS="${RED}❌ FAILED (log file not found)${NC}"
             OVERALL_RESULT=1
         fi
         
-        print_summary "$WORKFLOW_TOTAL" "$WORKFLOW_PASSED" "$WORKFLOW_FAILED" "$WORKFLOW_SKIPPED" "$WORKFLOW_SUCCESS_RATE" "$WORKFLOW_STATUS" "Workflow Test"
+        print_summary "$BASH_TOTAL" "$BASH_PASSED" "$BASH_FAILED" "$BASH_SKIPPED" "$BASH_SUCCESS_RATE" "$BASH_STATUS" "Bash Test"
         
     else
-        print_error "test-workflows/run_workflow_tests.sh not found"
-        WORKFLOW_STATUS="${RED}❌ FAILED (script not found)${NC}"
+        print_error "bash-tests/run_bash_tests.sh not found"
+        BASH_STATUS="${RED}❌ FAILED (script not found)${NC}"
         OVERALL_RESULT=1
     fi
     if [[ "$SELECTED_SUITE" == "ALL" ]]; then
@@ -353,12 +352,12 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Workflow" ]]; then
     fi
 fi
 
-# PHASE 2: C++ Unit Tests
-if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++ Unit" ]]; then
+# PHASE 2: C++ Tests
+if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
     if [[ "$SELECTED_SUITE" == "ALL" ]]; then
-        print_phase_header "2" "C++ Unit Tests"
+        print_phase_header "2" "C++ Tests"
     else
-        echo -e "${BOLD}${MAGENTA}C++ Unit Tests${NC}"
+        echo -e "${BOLD}${MAGENTA}C++ Tests${NC}"
         echo -e "${MAGENTA}------------------------------------------------------------${NC}"
     fi
     print_info_line "Project root" "$PROJECT_ROOT"
@@ -367,9 +366,9 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++ Unit" ]]; then
     echo ""
 
     # Run C++ tests
-    if [ -f "./test/run_unit_tests.sh" ]; then
+    if [ -f "./cpp-tests/run_cpp_tests.sh" ]; then
         # Capture the output and exit code
-        ./test/run_unit_tests.sh
+        ./cpp-tests/run_cpp_tests.sh
         CPP_RESULT=$?
         
         CPP_PASSED=0
@@ -392,7 +391,7 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++ Unit" ]]; then
         else
             CPP_STATUS="${RED}❌ FAILED${NC}"
             OVERALL_RESULT=1
-            FAILED_SUITES+=("C++ Unit")
+            FAILED_SUITES+=("C++")
         fi
         
         # Display categorized test results from actual test execution
@@ -422,10 +421,10 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++ Unit" ]]; then
             echo ""
         fi
         
-        print_summary "$CPP_TOTAL" "$CPP_PASSED" "$CPP_FAILED" "0" "$CPP_SUCCESS_RATE" "$CPP_STATUS" "C++ Unit Test"
+        print_summary "$CPP_TOTAL" "$CPP_PASSED" "$CPP_FAILED" "0" "$CPP_SUCCESS_RATE" "$CPP_STATUS" "C++ Test"
         
     else
-        print_error "test/run_unit_tests.sh not found"
+        print_error "cpp-tests/run_cpp_tests.sh not found"
         CPP_STATUS="${RED}❌ FAILED (script not found)${NC}"
         OVERALL_RESULT=1
     fi
@@ -453,8 +452,8 @@ else
     fi
 fi
 
-echo -e "${CYAN}Workflow tests :${NC} $WORKFLOW_STATUS  ${CYAN}($WORKFLOW_PASSED/$WORKFLOW_TOTAL passed)${NC}"
-echo -e "${CYAN}C++ unit tests :${NC} $CPP_STATUS  ${CYAN}($CPP_PASSED/$CPP_TOTAL passed)${NC}"
+echo -e "${CYAN}Bash tests     :${NC} $BASH_STATUS  ${CYAN}($BASH_PASSED/$BASH_TOTAL passed)${NC}"
+echo -e "${CYAN}C++ tests      :${NC} $CPP_STATUS  ${CYAN}($CPP_PASSED/$CPP_TOTAL passed)${NC}"
 echo ""
 echo -e "${CYAN}Overall result :${NC} $FINAL_STATUS"
 echo -e "${CYAN}Comprehensive summary saved to:${NC}"
@@ -464,10 +463,10 @@ echo -e "  ${YELLOW}$PROJECT_ROOT/test_results/comprehensive_test_summary.txt${N
 COMPREHENSIVE_SUMMARY="$PROJECT_ROOT/test_results/comprehensive_test_summary.txt"
 
 # Calculate totals
-TOTAL_TESTS=$((WORKFLOW_TOTAL + CPP_TOTAL))
-TOTAL_PASSED=$((WORKFLOW_PASSED + CPP_PASSED))
-TOTAL_FAILED=$((WORKFLOW_FAILED + CPP_FAILED))
-TOTAL_SKIPPED=$WORKFLOW_SKIPPED
+TOTAL_TESTS=$((BASH_TOTAL + CPP_TOTAL))
+TOTAL_PASSED=$((BASH_PASSED + CPP_PASSED))
+TOTAL_FAILED=$((BASH_FAILED + CPP_FAILED))
+TOTAL_SKIPPED=$BASH_SKIPPED
 
 # Calculate overall success rate
 OVERALL_SUCCESS_RATE=0
@@ -491,17 +490,17 @@ fi
     echo ""
     echo "BREAKDOWN BY TEST TYPE:"
     echo ""
-    echo "Workflow Tests:"
-    echo "  Total: $WORKFLOW_TOTAL"
-    echo "  Passed: $WORKFLOW_PASSED"
-    echo "  Failed: $WORKFLOW_FAILED"
-    echo "  Skipped: $WORKFLOW_SKIPPED"
-    if [ "$WORKFLOW_TOTAL" -gt 0 ]; then
-        WORKFLOW_RATE=$((WORKFLOW_PASSED * 100 / WORKFLOW_TOTAL))
-        echo "  Success rate: $WORKFLOW_RATE%"
+    echo "Bash Tests:"
+    echo "  Total: $BASH_TOTAL"
+    echo "  Passed: $BASH_PASSED"
+    echo "  Failed: $BASH_FAILED"
+    echo "  Skipped: $BASH_SKIPPED"
+    if [ "$BASH_TOTAL" -gt 0 ]; then
+        BASH_RATE=$((BASH_PASSED * 100 / BASH_TOTAL))
+        echo "  Success rate: $BASH_RATE%"
     fi
     echo ""
-    echo "C++ Unit Tests:"
+    echo "C++ Tests:"
     echo "  Total: $CPP_TOTAL"
     echo "  Passed: $CPP_PASSED"
     echo "  Failed: $CPP_FAILED"
@@ -512,10 +511,10 @@ fi
     fi
     echo ""
     echo "DETAILED LOGS:"
-    echo "Workflow test summary: test_results/summary.txt"
-    echo "C++ unit test summary: test_results/cpp_unit_test_summary.txt"
-    echo "Workflow detailed log: test_results/detailed.log"
-    echo "C++ detailed log: test_results/ctest_detailed.log"
+    echo "Bash test summary: test_results/summary.txt"
+    echo "C++ test summary: test_results/cpp_tests_summary.txt"
+    echo "Bash detailed log: test_results/detailed.log"
+    echo "C++ detailed log: test_results/ctest_cpp_detailed.log"
     echo "C++ build log: test_results/build.log"
     echo "Individual test outputs: test_results/"
     echo ""
