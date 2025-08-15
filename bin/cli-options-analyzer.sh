@@ -55,6 +55,7 @@ verify_git_repo() {
 set_diff_counts() {
   # args: before_list after_list; outputs: REM= count, ADD= count to named vars
   local before="$1" after="$2" _rem _add
+  # Handle multi-line input correctly by ensuring each item is on a separate line
   _rem=$(comm -23 <(printf '%s\n' "$before" | LC_ALL=C sort -u) <(printf '%s\n' "$after" | LC_ALL=C sort -u) | wc -l | tr -d ' ')
   _add=$(comm -13 <(printf '%s\n' "$before" | LC_ALL=C sort -u) <(printf '%s\n' "$after" | LC_ALL=C sort -u) | wc -l | tr -d ' ')
   printf '%s %s\n' "$_rem" "$_add"
@@ -219,7 +220,43 @@ scan_manual_long_opts() {
       # Skip obvious comments and quoted strings (naive)
       if (line ~ /(^[+-]\s*\/\/)|(^[+-]\s*\/\*)|(^[+-].*["'\''].*--)/) next
       # Require at least one alphanumeric after -- to avoid matching sequences like "---"
+      # Handle both unified=0 format (entire line) and unified=1+ format (individual lines)
       if (match(line, /--([A-Za-z0-9][A-Za-z0-9-]*)/, m)) print "--" m[1]
+    }
+  ' | LC_ALL=C sort -u
+}
+
+# Enhanced manual CLI detection that looks for CLI parsing patterns beyond just long options
+scan_manual_cli_patterns() {
+  local sign="$1" # '+' or '-'
+  awk -v s="$sign" '
+    $0 ~ ("^" s) {
+      line=$0
+      # Skip diff headers and hunk lines
+      if (line ~ /^(\+\+\+|---|@@)/) next
+      # Skip obvious comments
+      if (line ~ /(^[+-]\s*\/\/)|(^[+-]\s*\/\*)/) next
+      
+      # Look for CLI parsing patterns
+      # 1. Long options in string comparisons (e.g., strcmp(argv[i], "--help"))
+      if (match(line, /["'\'']--([A-Za-z0-9][A-Za-z0-9-]*)/, m)) {
+        print "--" m[1]
+        next
+      }
+      
+      # 2. Long options in if statements (e.g., if (strcmp(argv[i], "--help") == 0))
+      if (match(line, /--([A-Za-z0-9][A-Za-z0-9-]*)/, m)) {
+        print "--" m[1]
+        next
+      }
+      
+      # 3. CLI parsing logic (e.g., argc, argv usage)
+      if (line ~ /argc|argv/) {
+        # Look for long options in the same line
+        if (match(line, /--([A-Za-z0-9][A-Za-z0-9-]*)/, m)) {
+          print "--" m[1]
+        }
+      }
     }
   ' | LC_ALL=C sort -u
 }
@@ -368,10 +405,6 @@ removed_short_count=$(( ${removed_short_count:-0} + 0 ))
 added_short_count=$(( ${added_short_count:-0} + 0 ))
 removed_long_count=$(( ${removed_long_count:-0} + 0 ))
 added_long_count=$(( ${added_long_count:-0} + 0 ))
-manual_added_long_count=$(( ${manual_added_long_count:-0} + 0 ))
-manual_removed_long_count=$(( ${manual_removed_long_count:-0} + 0 ))
-help_text_changes=$(( ${help_text_changes:-0} + 0 ))
-enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 0 ))
 
 # --- raw diff heuristics (ported from C++ logic) ------------------------------
 
@@ -401,6 +434,8 @@ has_quoted_long_opt() {
   [[ "$ln" == *"\""* && "$ln" == *"--"* ]]
 }
 
+# Process all C/C++ files for manual CLI detection, regardless of getopt/struct option changes
+# This ensures that manual CLI changes are detected even when there are no getopt/struct option changes
 removed_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^-" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
 added_cases=$(printf '%s' "$SRC_DIFF" | grep -Ea -- "^\+" | grep -Eao -- "$case_label_re" | awk '{print $2}' | sed 's/://g' | LC_ALL=C sort -u || true)
 missing_cases=$(comm -23 <(printf '%s\n' "$removed_cases" | sed '/^$/d') <(printf '%s\n' "$added_cases" | sed '/^$/d') || true)
@@ -423,17 +458,18 @@ while IFS= read -r ln; do
   if [[ "$ln" =~ $proto_removed_re ]] && [[ ! "$ln" =~ $long_opt_re ]]; then
     api_breaking=true
   fi
-  # short option removals
-  if [[ "$ln" =~ $short_opt_removed_re ]]; then
-    removed_short_count=$(( ${removed_short_count:-0} + 1 ))
-  fi
+  # short option removals - disabled to avoid conflicts with structured approach
+  # The structured approach above correctly handles short option counting
+  # if [[ "$ln" =~ $short_opt_removed_re ]]; then
+  #   removed_short_count=$(( ${removed_short_count:-0} + 1 ))
+  # fi
   # manual long option removals (skip comment lines only; allow quoted strings to detect manual CLI)
   if ! is_comment_line "$ln"; then
     while read -r tok; do
       [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
     done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
   fi
-done < <(printf '%s' "$SRC_DIFF" | sed -n '/^-/p')
+done < <(printf '%s' "$CPP_DIFF" | sed -n '/^-/p')
 
 # Count additions on '+' lines from full diff
 while IFS= read -r ln; do
@@ -456,37 +492,6 @@ while IFS= read -r ln; do
   fi
 done < <(printf '%s' "$SRC_DIFF" | sed -n '/^\+/p')
 
-# Second pass on C/C++-only diff to mirror C++ behavior
-# Added lines: increment help/usage and enhanced patterns at most once per line
-while IFS= read -r ln; do
-  [[ "$ln" =~ ^\+ ]] || continue
-  if [[ "${ln,,}" =~ $help_usage_added_re ]]; then
-    help_text_changes=$(( ${help_text_changes:-0} + 1 ))
-  fi
-  if [[ "$ln" =~ $getopt_call_re ]] || [[ "${ln,,}" =~ $argc_argv_added_re ]] || [[ "$ln" =~ $short_option_added_re ]] || [[ "$ln" =~ $long_option_added_re ]] || [[ "$ln" =~ $argc_check_added_re ]] || [[ "$ln" =~ $argv_access_added_re ]] || [[ "$ln" =~ $main_signature_added_re ]]; then
-    enhanced_cli_patterns=$(( ${enhanced_cli_patterns:-0} + 1 ))
-  fi
-  # manual long option adds (skip comment lines only; allow quoted strings to detect manual CLI)
-  if ! is_comment_line "$ln"; then
-    while read -r tok; do
-      [[ -n "$tok" ]] && added_long_opts=$(printf '%s\n%s' "$added_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
-  fi
-done < <(printf '%s' "$CPP_DIFF" | sed -n '/^\+/p')
-
-# Removed lines in C/C++-only diff: short options and manual long option removals
-while IFS= read -r ln; do
-  [[ "$ln" =~ ^- ]] || continue
-  if [[ "$ln" =~ $short_opt_removed_re ]]; then
-    removed_short_count=$(( ${removed_short_count:-0} + 1 ))
-  fi
-  if ! is_comment_line "$ln"; then
-    while read -r tok; do
-      [[ -n "$tok" ]] && removed_long_opts=$(printf '%s\n%s' "$removed_long_opts" "$tok")
-    done < <(printf '%s' "$ln" | grep -Eao -- "$long_opt_re" || true)
-  fi
-done < <(printf '%s' "$CPP_DIFF" | sed -n '/^-/p')
-
 # Override struct-based long option add/remove counts to mirror C++
 removed_long_count=$(printf '%s\n' "$removed_struct_long" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 added_long_count=$(printf '%s\n' "$added_struct_long" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
@@ -496,17 +501,88 @@ removed_prototypes=$(printf '%s' "$SRC_DIFF" | count_removed_prototypes || print
 api_breaking=${api_breaking:-false}
 (( removed_prototypes > 0 )) && api_breaking=true
 
-# Manual/heuristic long option detection limited to C/C++ (keep for consistency)
-added_long_opts=${added_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '+')}
-removed_long_opts=${removed_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '-')}
+$VERBOSE && note "Raw diff heuristics completed, moving to enhanced manual CLI detection"
+
+# Enhanced manual CLI detection for ALL C/C++ files (not just those with getopt/struct options)
+# This ensures that manual CLI changes are detected even when there are no getopt/struct option changes
+# Use both the original scan_manual_long_opts and the enhanced scan_manual_cli_patterns
+# Also analyze file contents directly for new files that might not show up in diffs
+$VERBOSE && note "Starting enhanced manual CLI detection"
+added_long_opts_orig=${added_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '+')}
+removed_long_opts_orig=${removed_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_long_opts '-')}
+added_long_opts_enhanced=${added_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_cli_patterns '+')}
+removed_long_opts_enhanced=${removed_long_opts:-$(printf '%s' "$CPP_DIFF" | scan_manual_cli_patterns '-')}
+$VERBOSE && note "Diff-based detection: added_orig=$added_long_opts_orig, added_enhanced=$added_long_opts_enhanced"
+
+# Analyze file contents directly for CLI patterns (especially important for new files)
+added_long_opts_contents=""
+removed_long_opts_contents=""
+$VERBOSE && note "Starting file content analysis for ${#CHANGED_FILES[@]} files"
+for f in "${CHANGED_FILES[@]}"; do
+  # For new files or files with CLI changes, analyze the content directly
+  if [[ -n "${AFTER[$f]}" ]]; then
+    # Look for CLI patterns in the new/current content
+    while IFS= read -r line; do
+      # Look for long options in string comparisons (e.g., strcmp(argv[i], "--help"))
+      if [[ "$line" =~ [\"'"'"'"]--([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+        added_long_opts_contents=$(printf '%s\n%s' "$added_long_opts_contents" "--${BASH_REMATCH[1]}")
+        $VERBOSE && note "Found CLI option in content: --${BASH_REMATCH[1]}"
+      fi
+      # Look for long options in if statements (e.g., if (strcmp(argv[i], "--help") == 0))
+      if [[ "$line" =~ --([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+        added_long_opts_contents=$(printf '%s\n%s' "$added_long_opts_contents" "--${BASH_REMATCH[1]}")
+        $VERBOSE && note "Found CLI option in content: --${BASH_REMATCH[1]}"
+      fi
+      # Look for CLI parsing logic (e.g., argc, argv usage)
+      if [[ "$line" =~ argc|argv ]]; then
+        if [[ "$line" =~ --([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+          added_long_opts_contents=$(printf '%s\n%s' "$added_long_opts_contents" "--${BASH_REMATCH[1]}")
+          $VERBOSE && note "Found CLI option in content: --${BASH_REMATCH[1]}"
+        fi
+      fi
+    done < <(printf '%s' "${AFTER[$f]}")
+  fi
+  
+  # For removed files or files with CLI changes, analyze the old content
+  if [[ -n "${BEFORE[$f]}" ]]; then
+    # Look for CLI patterns in the old content
+    while IFS= read -r line; do
+      # Look for long options in string comparisons
+      if [[ "$line" =~ [\"'"'"'"]--([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+        removed_long_opts_contents=$(printf '%s\n%s' "$removed_long_opts_contents" "--${BASH_REMATCH[1]}")
+      fi
+      # Look for long options in if statements
+      if [[ "$line" =~ --([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+        removed_long_opts_contents=$(printf '%s\n%s' "$removed_long_opts_contents" "--${BASH_REMATCH[1]}")
+      fi
+      # Look for CLI parsing logic
+      if [[ "$line" =~ argc|argv ]]; then
+        if [[ "$line" =~ --([A-Za-z0-9][A-Za-z0-9-]*) ]]; then
+          removed_long_opts_contents=$(printf '%s\n%s' "$removed_long_opts_contents" "--${BASH_REMATCH[1]}")
+        fi
+      fi
+    done < <(printf '%s' "${BEFORE[$f]}")
+  fi
+done
+
+# Combine all detection methods
+added_long_opts=$(printf '%s\n%s\n%s' "$added_long_opts_orig" "$added_long_opts_enhanced" "$added_long_opts_contents" | sed '/^$/d' | LC_ALL=C sort -u)
+removed_long_opts=$(printf '%s\n%s\n%s' "$removed_long_opts_orig" "$removed_long_opts_enhanced" "$removed_long_opts_contents" | sed '/^$/d' | LC_ALL=C sort -u)
+
 manual_added_long_count=$(printf '%s\n' "$added_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 manual_removed_long_count=$(printf '%s\n' "$removed_long_opts" | sed '/^$/d' | LC_ALL=C sort -u | wc -l | tr -d ' ' || printf '0')
 manual_cli_changes=false
-# Parity with C++: only manual long option edits drive manual_cli_changes
+# Enhanced detection: any manual CLI pattern changes drive manual_cli_changes
 (( manual_added_long_count > 0 || manual_removed_long_count > 0 )) && manual_cli_changes=true
 
+# Always process manual CLI changes, even when there are no getopt/struct option changes
+# This ensures that manual CLI detection works independently
+if $manual_cli_changes; then
+  cli_changes=true
+fi
+
 # Composite CLI change flags
-cli_changes=false
+# Initialize cli_changes based on manual detection, then check other conditions
 if [[ -n "$short_after" && "$short_after" != "$short_before" ]]; then
   cli_changes=true
   [[ -n "$removed_short_list" ]] && breaking_cli_changes=true
@@ -596,21 +672,21 @@ emit_results_zero() {
 JSON
   elif $MACHINE_OUTPUT; then
     cat <<EOF
-CLI_CHANGES=false
-BREAKING_CLI_CHANGES=false
-API_BREAKING=false
-MANUAL_CLI_CHANGES=false
-MANUAL_ADDED_LONG_COUNT=0
-MANUAL_REMOVED_LONG_COUNT=0
-REMOVED_SHORT_COUNT=0
-ADDED_SHORT_COUNT=0
-REMOVED_LONG_COUNT=0
-ADDED_LONG_COUNT=0
-GETOPT_CHANGES=0
-ARG_PARSING_CHANGES=0
-HELP_TEXT_CHANGES=0
-MAIN_SIGNATURE_CHANGES=0
-ENHANCED_CLI_PATTERNS=0
+CLI_CHANGES=$(boolstr "$cli_changes")
+BREAKING_CLI_CHANGES=$(boolstr "$breaking_cli_changes")
+API_BREAKING=$(boolstr "$api_breaking")
+MANUAL_CLI_CHANGES=$(boolstr "$manual_cli_changes")
+MANUAL_ADDED_LONG_COUNT=$manual_added_long_count
+MANUAL_REMOVED_LONG_COUNT=$manual_removed_long_count
+REMOVED_SHORT_COUNT=$removed_short_count
+ADDED_SHORT_COUNT=$added_short_count
+REMOVED_LONG_COUNT=$removed_long_count
+ADDED_LONG_COUNT=$added_long_count
+GETOPT_CHANGES=$getopt_changes
+ARG_PARSING_CHANGES=$arg_parsing_changes
+HELP_TEXT_CHANGES=$help_text_changes
+MAIN_SIGNATURE_CHANGES=$main_signature_changes
+ENHANCED_CLI_PATTERNS=$enhanced_cli_patterns
 EOF
   else
     printf '=== CLI Options Analysis ===\nNo relevant source/header changes between %s..%s\n' "$BASE_REF" "$TARGET_REF"

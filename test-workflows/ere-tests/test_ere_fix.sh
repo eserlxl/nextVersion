@@ -8,7 +8,6 @@
 #
 # Test script for ERE fix and other improvements in semantic-version-analyzer
 
-set -Eeuo pipefail
 IFS=$'\n\t'
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd -P)"
@@ -44,7 +43,6 @@ run_test() {
     set +e
     output=$(eval "$test_cmd" 2>&1)
     local exit_code=$?
-    set -e
     
     # Check exit code
     if [[ $exit_code -eq $expected_exit ]]; then
@@ -52,7 +50,7 @@ run_test() {
     else
         printf '%s✗ Exit code wrong: got %d, expected %d%s\n' "${RED}" "$exit_code" "$expected_exit" "${NC}"
         ((TESTS_FAILED++))
-        return 0  # Don't exit script, just mark test as failed
+        return 1  # Return 1 to indicate test failure
     fi
     
     # Check output if specified
@@ -63,7 +61,7 @@ run_test() {
             printf '%s✗ Output missing expected text: %s%s\n' "${RED}" "$expected_output" "${NC}"
             printf 'Actual output:\n%s\n' "$output"
             ((TESTS_FAILED++))
-            return 0  # Don't exit script, just mark test as failed
+            return 1  # Return 1 to indicate test failure
         fi
     fi
     
@@ -204,7 +202,7 @@ second_commit=$(git rev-parse HEAD)
 
 # Test that getopt and manual counts are separate
 run_test "Getopt and manual counts separation" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --json --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --json --repo-root '$temp_dir' --strict-status" \
     11 \
     '"manual_added_long_count": 0'
 
@@ -221,7 +219,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Breaking CLI change detection" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir' --strict-status" \
     10 \
     "breaking_cli"
 
@@ -264,7 +262,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "API breaking change detection" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir' --strict-status" \
     10 \
     "api_break"
 
@@ -281,7 +279,7 @@ first_commit=$(git rev-parse HEAD~1)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Whitespace ignore with --ignore-whitespace" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --ignore-whitespace --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --ignore-whitespace --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir' --strict-status" \
     20 \
     "NONE"
 
@@ -307,7 +305,7 @@ git commit -m "Second commit"
 cp "$PROJECT_ROOT/bin/semantic-version-analyzer.sh" .
 
 run_test "No tags fallback to HEAD~1" \
-    "./semantic-version-analyzer --print-base" \
+    "./semantic-version-analyzer.sh --base HEAD~1 --target HEAD --machine" \
     0 \
     ""
 
@@ -323,17 +321,17 @@ first_commit=$(git rev-parse HEAD~3)
 second_commit=$(git rev-parse HEAD)
 
 run_test "Pure mathematical versioning verbose output" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base '$first_commit' --target '$second_commit' --repo-root '$temp_dir' --strict-status" \
     0 \
     "PURE MATHEMATICAL VERSIONING SYSTEM"
 
 run_test "Pure mathematical versioning bonus thresholds" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base HEAD~3 --target HEAD --repo-root '$temp_dir' --strict-status" \
     0 \
     "Total bonus >="
 
 run_test "Pure mathematical versioning no extra rules" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~3 --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base HEAD~3 --target HEAD --repo-root '$temp_dir' --strict-status" \
     0 \
     "No minimum thresholds or extra rules"
 
@@ -341,7 +339,7 @@ run_test "Pure mathematical versioning no extra rules" \
 printf '%s=== Test 8: JSON Output Fields ===%s\n' "${YELLOW}" "${NC}"
 
 run_test "JSON includes manual CLI fields" \
-    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --since HEAD~4 --json --repo-root '$temp_dir'" \
+    "$PROJECT_ROOT/bin/semantic-version-analyzer.sh --verbose --base HEAD~4 --target HEAD --json --repo-root '$temp_dir' --strict-status" \
     11 \
     '"manual_added_long_count"'
 

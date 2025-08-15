@@ -81,7 +81,8 @@ create_temp_test_env() {
     
     # Copy essential project files
     # Create test-specific VERSION file in /tmp (never touch project files)
-    echo "10.5.12" > VERSION
+    # Use the actual project version to ensure consistency
+    cp "$project_root/VERSION" . 2>/dev/null || echo "1.0.1" > VERSION
     cp "$project_root/CMakeLists.txt" . 2>/dev/null || echo "project(test)" > CMakeLists.txt
     cp -r "$project_root/src" . 2>/dev/null || mkdir -p src
     
