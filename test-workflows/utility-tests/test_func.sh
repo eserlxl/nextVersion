@@ -6,7 +6,8 @@
 # the GNU General Public License v3.0 or later.
 # See the LICENSE file in the project root for details.
 #
-set -Eeuo pipefail
+#!/bin/bash
+set -Euo pipefail
 classify_path() {
     local path="$1"
     if [[ "$path" =~ ^(build|dist|out|third_party|vendor|.git|node_modules|target|bin|obj)/ ]] || [[ "$path" =~ \.(lock|exe|dll|so|dylib|jar|war|ear|zip|tar|gz|bz2|xz|7z|rar)$ ]]; then

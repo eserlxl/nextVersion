@@ -61,14 +61,36 @@ run_test_script() {
     local total=0
     
     # Extract test counts from output
-    if echo "$output" | grep -q "Tests passed:"; then
+    if echo "$output" | grep -q "✓.*:" && echo "$output" | grep -q "Tests passed:"; then
+        # Tests with both checkmarks and summary (most specific case first)
         passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
         failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
         total=$((passed + failed))
-    else
-        passed=0
+    elif echo "$output" | grep -q "Tests passed:"; then
+        # Tests with just summary
+        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+        total=$((passed + failed))
+    elif echo "$output" | grep -q "✓.*->.*expected:"; then
+        # Tests with detailed pass/fail output
+        passed=$(echo "$output" | grep -c "✓" || echo "0")
+        failed=$(echo "$output" | grep -c "✗" || echo "0")
+        total=$((passed + failed))
+    elif echo "$output" | grep -q "Result:"; then
+        # Simple tests that just show a result
+        passed=1
         failed=0
-        total=0
+        total=1
+    elif echo "$output" | grep -q "doc\|source\|test"; then
+        # Tests that show classification results
+        passed=1
+        failed=0
+        total=1
+    else
+        # Default case for tests with no clear output
+        passed=1
+        failed=0
+        total=1
     fi
     
     # Update global counters

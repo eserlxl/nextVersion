@@ -8,8 +8,8 @@
 #
 set -euo pipefail
 
-# Get project root (assume we're running from project root)
-PROJECT_ROOT="$(pwd)"
+# Get project root (assume we're running from utility-tests directory)
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Source test helper functions
 # shellcheck disable=SC1091
