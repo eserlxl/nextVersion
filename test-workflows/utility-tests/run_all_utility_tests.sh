@@ -180,7 +180,7 @@ main() {
         "test_classify_inline.sh:Inline Classification Tests"
         "test_classify_inline2.sh:Inline Classification Tests 2"
         "test_classify_simple.sh:Simple Classification Tests"
-        "test_debug_test.sh:Debug Tests"
+        "test_git_commit_counting.sh:Git Commit Counting Tests"
         "test_func.sh:Function Tests"
         "test_func2.sh:Function Tests 2"
     )

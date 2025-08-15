@@ -171,7 +171,7 @@ main() {
     
     # Run all test scripts
     local test_scripts=(
-        "debug_test.sh:Debug ERE Tests"
+        "test_run_test_framework.sh:Test Framework Tests"
         "test_ere_fix.sh:ERE Fix Tests"
     )
     

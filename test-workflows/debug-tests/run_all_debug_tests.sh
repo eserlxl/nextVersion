@@ -147,10 +147,10 @@ display_summary() {
     
     echo ""
     echo -e "${BLUE}Test Coverage:${NC}"
+    echo "  ✓ CLI detection and analysis tests"
     echo "  ✓ Debug logging and marker tests"
     echo "  ✓ Debug output validation tests"
     echo "  ✓ Debug mode functionality tests"
-    echo "  ✓ Debug information display tests"
     echo ""
 }
 
@@ -171,7 +171,7 @@ main() {
     
     # Run all test scripts
     local test_scripts=(
-        "test_debug.sh:Debug Tests"
+        "test_cli_detection.sh:CLI Detection Tests"
         "test_debug_logging.sh:Debug Logging Tests"
         "test_debug_markers.sh:Debug Markers Tests"
     )
