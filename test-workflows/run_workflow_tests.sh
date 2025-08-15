@@ -72,6 +72,11 @@ run_test() {
         return
     fi
     
+    # Skip CLI test runner to prevent recursion
+    if [[ "$test_file" == *"run_all_cli_tests.sh" ]]; then
+        return
+    fi
+    
     echo -n "Running $test_name... "
     
     # Check if file exists
