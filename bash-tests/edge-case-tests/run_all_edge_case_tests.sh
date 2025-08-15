@@ -60,28 +60,23 @@ run_test_script() {
     local failed=0
     local total=0
     
-    # Extract test counts from output
-    local passed=0
-    local failed=0
-    local total=0
-    
-    # Try to extract test counts from various output formats
+    # Extract test counts from output - look for summary lines
     if echo "$output" | grep -q "Tests passed:"; then
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' || echo "0")
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' || echo "0")
-        total=$(echo "$output" | grep "Total tests:" | awk '{print $3}' || echo "0")
-    elif echo "$output" | grep -q "Tests passed:"; then
-        # Alternative format: "Tests passed: X" (2nd field)
-        passed=$(echo "$output" | grep "Tests passed:" | awk '{print $3}' || echo "0")
-        failed=$(echo "$output" | grep "Tests failed:" | awk '{print $3}' || echo "0")
-        # Calculate total if not provided
+        # Extract the numeric values from summary lines
+        passed=$(echo "$output" | grep "Tests passed:" | sed 's/.*Tests passed: *\([0-9]*\).*/\1/' | head -1)
+        failed=$(echo "$output" | grep "Tests failed:" | sed 's/.*Tests failed: *\([0-9]*\).*/\1/' | head -1)
+        
+        # Ensure we got valid numbers
+        if [[ -z "$passed" || ! "$passed" =~ ^[0-9]+$ ]]; then
+            passed=0
+        fi
+        if [[ -z "$failed" || ! "$failed" =~ ^[0-9]+$ ]]; then
+            failed=0
+        fi
+        
+        # Calculate total
         total=$((passed + failed))
     fi
-    
-    # Ensure variables are numeric for arithmetic operations
-    passed=${passed:-0}
-    failed=${failed:-0}
-    total=${total:-0}
     
     # Debug: Print extracted values
     echo "Debug: Extracted values - passed: '$passed', failed: '$failed', total: '$total'"
