@@ -274,4 +274,5 @@ test_error_condition "No git repository" "${PROJECT_ROOT}/bin/cli-options-analyz
 }
 
 # Run main function
+# shellcheck disable=SC2317
 main "$@"
