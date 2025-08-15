@@ -63,8 +63,8 @@ run_test_script() {
     # Extract test counts from output - look for summary lines
     if echo "$output" | grep -q "Tests passed:"; then
         # Extract the numeric values from summary lines
-        passed=$(echo "$output" | grep "Tests passed:" | sed 's/.*Tests passed: *\([0-9]*\).*/\1/' | head -1)
-        failed=$(echo "$output" | grep "Tests failed:" | sed 's/.*Tests failed: *\([0-9]*\).*/\1/' | head -1)
+        passed=$(echo "$output" | grep "Tests passed:" | sed 's/\\033\[[0-9;]*m//g' | awk '{print $3}' | head -1)
+        failed=$(echo "$output" | grep "Tests failed:" | sed 's/\\033\[[0-9;]*m//g' | awk '{print $3}' | head -1)
         
         # Ensure we got valid numbers
         if [[ -z "$passed" || ! "$passed" =~ ^[0-9]+$ ]]; then
