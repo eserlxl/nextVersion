@@ -12,7 +12,6 @@ set -Euo pipefail
 
 # Source test helper
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "${SCRIPT_DIR}/../test_helper.sh"
 
 # Colors for output

@@ -72,7 +72,7 @@ run_test() {
 
 # Create temporary test environment
 temp_dir=$(create_temp_test_env "ere-fix")
-cd "$temp_dir"
+cd "$temp_dir" || exit 1
 
 # Test 1: ERE fix - manual CLI detection should work with escaped +
 printf '%s=== Test 1: ERE Fix for Manual CLI Detection ===%s\n' "${YELLOW}" "${NC}"
@@ -288,7 +288,7 @@ printf '%s=== Test 6: No Tags Fallback ===%s\n' "${YELLOW}" "${NC}"
 
 # Create a temporary repo without tags using the helper
 TEMP_REPO=$(create_temp_test_env "no-tags-test")
-cd "$TEMP_REPO"
+cd "$TEMP_REPO" || exit 1
 
 # Remove the initial commit to simulate a repository without tags
 git reset --hard HEAD~1 2>/dev/null || true
@@ -311,7 +311,7 @@ run_test "No tags fallback to HEAD~1" \
 
 # Cleanup and return to original directory
 cleanup_temp_test_env "$TEMP_REPO"
-cd "$temp_dir"
+cd "$temp_dir" || exit 1
 
 # Test 7: Pure mathematical versioning system
 printf '%s=== Test 7: Pure Mathematical Versioning System ===%s\n' "${YELLOW}" "${NC}"

@@ -12,7 +12,6 @@ set -Euo pipefail
 
 # Source test helper
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "${SCRIPT_DIR}/../test_helper.sh"
 
 # Colors for output
@@ -24,9 +23,9 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Test results tracking
-TOTAL_TESTS=0
-TOTAL_PASSED=0
-TOTAL_FAILED=0
+declare -i TOTAL_TESTS=0
+declare -i TOTAL_PASSED=0
+declare -i TOTAL_FAILED=0
 FAILED_SCRIPTS=()
 
 # Function to run a test script and capture results
@@ -63,8 +62,10 @@ run_test_script() {
     # Extract test counts from output, handling color codes and empty output
     if echo "$output" | grep -q "Tests passed:"; then
         # Remove all color codes and extract numbers - use more robust parsing
-        local parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests passed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
-        local parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests failed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        local parsed_passed
+        parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests passed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        local parsed_failed
+        parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Tests failed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
         
         # Ensure we have valid numbers
         if [[ "$parsed_passed" =~ ^[0-9]+$ ]] && [[ "$parsed_failed" =~ ^[0-9]+$ ]]; then
@@ -79,6 +80,26 @@ run_test_script() {
         
         # Debug output to see what we're parsing
         echo "DEBUG: Parsed - passed: '$passed', failed: '$failed', total: '$total'" >&2
+    elif echo "$output" | grep -q "Passed:"; then
+        # Handle alternative output format (e.g., test_compare_analyzers.sh)
+        local parsed_passed
+        parsed_passed=$(echo "$output" | grep "Passed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Passed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        local parsed_failed
+        parsed_failed=$(echo "$output" | grep "Failed:" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/.*Failed: *\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' || echo "0")
+        
+        # Ensure we have valid numbers
+        if [[ "$parsed_passed" =~ ^[0-9]+$ ]] && [[ "$parsed_failed" =~ ^[0-9]+$ ]]; then
+            passed=$parsed_passed
+            failed=$parsed_failed
+            total=$((passed + failed))
+        else
+            passed=0
+            failed=0
+            total=0
+        fi
+        
+        # Debug output to see what we're parsing
+        echo "DEBUG: Parsed alternative format - passed: '$passed', failed: '$failed', total: '$total'" >&2
     else
         # If no test summary found, try to count from individual test results
         passed=$(echo "$output" | grep -c "✓ PASS:" || echo "0")
@@ -93,9 +114,9 @@ run_test_script() {
     if [[ ! "$total" =~ ^[0-9]+$ ]]; then total=0; fi
     
     # Update global counters (ensure safe arithmetic)
-    TOTAL_TESTS=$((TOTAL_TESTS + total))
-    TOTAL_PASSED=$((TOTAL_PASSED + passed))
-    TOTAL_FAILED=$((TOTAL_FAILED + failed))
+    TOTAL_TESTS=$((TOTAL_TESTS + total)) || TOTAL_TESTS=0
+    TOTAL_PASSED=$((TOTAL_PASSED + passed)) || TOTAL_PASSED=0
+    TOTAL_FAILED=$((TOTAL_FAILED + failed)) || TOTAL_FAILED=0
     
     # Display results
     echo "$output"

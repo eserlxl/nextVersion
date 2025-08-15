@@ -12,7 +12,6 @@ set -Euo pipefail
 
 # Source test helper
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "${SCRIPT_DIR}/../test_helper.sh"
 
 # Colors for output
@@ -63,8 +62,10 @@ run_test_script() {
     # Extract test counts from output
     if echo "$output" | grep -q "✓.*:" && echo "$output" | grep -q "Tests passed:"; then
         # Tests with both checkmarks and summary (most specific case first)
-        local passed_raw=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
-        local failed_raw=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
+        local passed_raw
+        passed_raw=$(echo "$output" | grep "Tests passed:" | awk '{print $3}')
+        local failed_raw
+        failed_raw=$(echo "$output" | grep "Tests failed:" | awk '{print $3}')
         passed=$(echo "$passed_raw" | grep -o '[0-9]\+' | head -1 || echo "0")
         failed=$(echo "$failed_raw" | grep -o '[0-9]\+' | head -1 || echo "0")
         total=$((passed + failed))
