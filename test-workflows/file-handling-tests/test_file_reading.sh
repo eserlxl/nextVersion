@@ -124,7 +124,7 @@ main() {
     run_test "File reading non-existent file" 1 "cat /tmp/non_existent_file_$$" "No such file"
     
     # Test file reading permissions
-    run_test "File reading permission check" 0 "touch /tmp/test_file_$$ && chmod 400 /tmp/test_file_$$ && echo 'test' > /tmp/test_file_$$ && cat /tmp/test_file_$$ && rm -f /tmp/test_file_$$" "test"
+    run_test "File reading permission check" 0 "touch /tmp/test_file_$$ && echo 'test' > /tmp/test_file_$$ && chmod 400 /tmp/test_file_$$ && cat /tmp/test_file_$$ && rm -f /tmp/test_file_$$" "test"
     
     echo ""
     echo "Test Summary:"
