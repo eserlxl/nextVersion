@@ -90,8 +90,8 @@ create_temp_test_env() {
     # to avoid copying and ensure we're testing the actual scripts
     
     # Create test-workflows structure
-    mkdir -p test-workflows/source-fixtures
-    cp -r "$project_root/test-workflows/source-fixtures" test-workflows/ 2>/dev/null || true
+    mkdir -p test-workflows/test-data
+    cp -r "$project_root/test-data" test-workflows/ 2>/dev/null || true
     
     # Initialize git repository
     if ! git init --quiet; then

@@ -87,6 +87,52 @@ run_test_script() {
     return $exit_code
 }
 
+# Function to list available tests
+list_tests() {
+    echo -e "${CYAN}========================================${NC}"
+    echo -e "${CYAN}Available Core Tests${NC}"
+    echo -e "${CYAN}========================================${NC}"
+    echo ""
+    
+    local test_scripts=(
+        "test_bump_version.sh:Version Bump Tests"
+        "test_bump_version_loc_delta.sh:LOC Delta Version Bump Tests"
+        "test_compare_analyzers.sh:Analyzer Comparison Tests"
+        "test_loc_delta_system.sh:LOC Delta System Tests"
+        "test_loc_delta_system_comprehensive.sh:Comprehensive LOC Delta Tests"
+        "test_pure_mathematical_bonus.sh:Mathematical Bonus Tests"
+        "test_realistic_repositories.sh:Realistic Repository Tests"
+        "test_rollover_logic.sh:Rollover Logic Tests"
+        "test_semantic_analyzer_realistic_repos.sh:Realistic Semantic Analyzer Tests"
+        "test_semantic_version_analyzer.sh:Semantic Version Analyzer Tests"
+        "test_semantic_version_analyzer_simple.sh:Simple Semantic Version Tests"
+        "test_semantic_version_analyzer_fixes.sh:Semantic Version Fix Tests"
+        "test_semantic_version_analyzer_comprehensive.sh:Comprehensive Semantic Version Analyzer Tests"
+        "test_version_calculation.sh:Version Calculation Tests"
+        "test_version_logic.sh:Version Logic Tests"
+        "test_versioning_rules.sh:Versioning Rules Tests"
+        "test_versioning_system_integration.sh:Versioning System Integration Tests"
+        "test-modular-components.sh:Modular Components Tests"
+        "run_loc_delta_tests.sh:LOC Delta Test Runner"
+    )
+    
+    for test_script in "${test_scripts[@]}"; do
+        local script_file="${test_script%%:*}"
+        local script_name="${test_script##*:}"
+        local script_path="${SCRIPT_DIR}/$script_file"
+        
+        if [[ -f "$script_path" ]]; then
+            echo -e "  ${GREEN}✓${NC} $script_file - $script_name"
+        else
+            echo -e "  ${RED}✗${NC} $script_file - $script_name (not found)"
+        fi
+    done
+    
+    echo ""
+    echo -e "${BLUE}Total: $(( ${#test_scripts[@]} )) test scripts${NC}"
+    echo ""
+}
+
 # Function to check script dependencies
 check_dependencies() {
     echo -e "${BLUE}Checking dependencies...${NC}"
@@ -152,6 +198,8 @@ display_summary() {
     echo "  ✓ LOC delta system tests"
     echo "  ✓ Mathematical bonus calculation tests"
     echo "  ✓ Versioning rules and integration tests"
+    echo "  ✓ Modular components architecture tests"
+    echo "  ✓ Comprehensive semantic analyzer tests"
     echo ""
 }
 
@@ -184,10 +232,13 @@ main() {
         "test_semantic_version_analyzer.sh:Semantic Version Analyzer Tests"
         "test_semantic_version_analyzer_simple.sh:Simple Semantic Version Tests"
         "test_semantic_version_analyzer_fixes.sh:Semantic Version Fix Tests"
+        "test_semantic_version_analyzer_comprehensive.sh:Comprehensive Semantic Version Analyzer Tests"
         "test_version_calculation.sh:Version Calculation Tests"
         "test_version_logic.sh:Version Logic Tests"
         "test_versioning_rules.sh:Versioning Rules Tests"
         "test_versioning_system_integration.sh:Versioning System Integration Tests"
+        "test-modular-components.sh:Modular Components Tests"
+        "run_loc_delta_tests.sh:LOC Delta Test Runner"
     )
     
     for test_script in "${test_scripts[@]}"; do

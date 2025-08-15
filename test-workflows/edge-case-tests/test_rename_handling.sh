@@ -24,15 +24,15 @@ temp_dir=$(create_temp_test_env "rename-handling")
 cd "$temp_dir"
 
 # Create a test file in the temporary directory
-mkdir -p source-fixtures
-echo "test content for rename" > source-fixtures/rename_test_original.txt
+mkdir -p test-data
+echo "test content for rename" > test-data/rename_test_original.txt
 
 # Add and commit the file
-git add source-fixtures/rename_test_original.txt
+git add test-data/rename_test_original.txt
 git commit -m "Add test file for rename test"
 
 # Rename the file
-git mv source-fixtures/rename_test_original.txt source-fixtures/rename_test_renamed.txt
+git mv test-data/rename_test_original.txt test-data/rename_test_renamed.txt
 git commit -m "Rename test file"
 
 # Run semantic version analyzer from the temporary directory

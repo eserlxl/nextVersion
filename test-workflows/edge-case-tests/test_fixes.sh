@@ -22,7 +22,7 @@ temp_dir=$(create_temp_test_env)
 trap 'cleanup_temp_test_env "$temp_dir"' EXIT
 
 # Test 1: Manual CLI detection in nested directories
-echo "Test 1: Manual CLI detection (nested test-workflows/source-fixtures/cli/main.c)"
+echo "Test 1: Manual CLI detection (nested test-data/cli/main.c)"
 cd "$temp_dir"
 
 # Create a basic main function first

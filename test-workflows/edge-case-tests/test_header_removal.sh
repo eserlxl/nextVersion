@@ -7,7 +7,7 @@
 # See the LICENSE file in the project root for details.
 #
 # Test header prototype removal detection in semantic-version-analyzer
-# This test verifies that removing a prototype in ../source-fixtures/test_header.h triggers api_breaking=true
+# This test verifies that removing a prototype in ../../test-data/test_header.h triggers api_breaking=true
 
 set -Eeuo pipefail
 

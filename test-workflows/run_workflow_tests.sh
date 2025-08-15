@@ -139,7 +139,7 @@ run_test() {
         
         # Use longer timeout for comprehensive tests
         local current_timeout="$TEST_TIMEOUT"
-        if [[ "$test_name" == *"comprehensive"* ]] || [[ "$test_name" == "run_loc_delta_tests.sh" ]]; then
+        if [[ "$test_name" == *"comprehensive"* ]] || [[ "$test_name" == "run_loc_delta_tests.sh" ]] || [[ "$test_name" == "test-modular-components.sh" ]]; then
             current_timeout=300  # 5 minutes for comprehensive tests
         fi
         
