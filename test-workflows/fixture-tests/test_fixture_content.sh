@@ -104,7 +104,7 @@ main() {
     test_fixture_content "Data type validation" "string: hello\nnumber: 42\nboolean: true" "grep 'boolean:' | cut -d' ' -f2" "true"
     
     # Test fixture content structure
-    test_fixture_content "Content structure validation" "header:\n  title: Test\n  version: 1.0\nbody:\n  content: test" "grep -c '^[[:space:]]*[a-z]*:'" "4"
+    test_fixture_content "Content structure validation" "header:\n  title: Test\n  version: 1.0\nbody:\n  content: test" "grep -c '^[[:space:]]*[a-z]*:'" "5"
     test_fixture_content "Content hierarchy validation" "level1:\n  level2:\n    level3: value" "grep -c '^[[:space:]]*level[0-9]:'" "3"
     
     # Test fixture content patterns
@@ -113,7 +113,7 @@ main() {
     
     # Test fixture content relationships
     test_fixture_content "Content relationship validation" "parent: item1\nchildren:\n  - child1\n  - child2" "grep 'parent:' | cut -d' ' -f2" "item1"
-    test_fixture_content "Content dependency validation" "requires: [dep1, dep2]\nprovides: [feature1, feature2]" "grep -c 'dep[0-9]'" "2"
+    test_fixture_content "Content dependency validation" "requires: [dep1, dep2]\nprovides: [feature1, feature2]" "grep -c 'dep[0-9]'" "1"
     
     # Test fixture content constraints
     test_fixture_content "Content constraint validation" "min_value: 0\nmax_value: 100\ncurrent: 50" "awk '\$2 >= 0 && \$2 <= 100' | wc -l" "3"
@@ -128,7 +128,7 @@ main() {
     run_test "Malformed content verification" 0 "echo 'invalid:format:here:extra' | awk -F':' '{print NF}'" "4"
     
     # Test fixture content verification
-    run_test "Content pattern verification" 0 "echo 'test content' | grep -q 'test'" "test"
+    run_test "Content pattern verification" 0 "echo 'test content' | grep 'test'" "test"
     run_test "Content format verification" 0 "echo 'version: 1.2.3' | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+'" "version: 1.2.3"
     
     # Test fixture content metadata
@@ -137,7 +137,7 @@ main() {
     
     # Test fixture content validation
     test_fixture_content "Content validation rules" "rules:\n  - required: true\n  - min_length: 1\n  - max_length: 100" "grep -c 'required:'" "1"
-    test_fixture_content "Content validation results" "validation:\n  status: passed\n  errors: 0\n  warnings: 1" "grep 'status:' | cut -d' ' -f2" "passed"
+    test_fixture_content "Content validation results" "validation:\n  status: passed\n  errors: 0\n  warnings: 1" "grep 'status:' | sed 's/^[[:space:]]*status: //'" "passed"
     
     echo ""
     echo "Test Summary:"

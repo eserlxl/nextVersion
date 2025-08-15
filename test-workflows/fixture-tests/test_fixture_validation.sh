@@ -113,14 +113,14 @@ main() {
     
     # Test fixture data validation
     test_fixture_validation "Numeric data validation" "count: 42\nsize: 1024\nratio: 3.14" "grep 'count:' | cut -d' ' -f2" "42"
-    test_fixture_validation "String data validation" "title: Test Title\nauthor: Test Author" "grep 'title:' | cut -d' ' -f2" "Test Title"
+    test_fixture_validation "String data validation" "title: Test Title\nauthor: Test Author" "grep 'title:' | sed 's/^title: //'" "Test Title"
     
     # Test fixture array validation
     test_fixture_validation "Array format validation" "items:\n  - item1\n  - item2\n  - item3" "grep -c '  - '" "3"
     test_fixture_validation "Array content validation" "tags:\n  - tag1\n  - tag2" "grep 'tag1' | wc -l" "1"
     
     # Test fixture nested structure validation
-    test_fixture_validation "Nested structure validation" "config:\n  database:\n    host: localhost\n    port: 5432" "grep 'host:' | cut -d' ' -f2" "localhost"
+    test_fixture_validation "Nested structure validation" "config:\n  database:\n    host: localhost\n    port: 5432" "grep 'host:' | sed 's/^[[:space:]]*host: //'" "localhost"
     
     # Test fixture validation commands
     run_test "Fixture line count validation" 0 "printf 'line1\nline2\nline3\n' | wc -l" "3"
@@ -131,7 +131,7 @@ main() {
     run_test "Malformed fixture validation" 0 "echo 'invalid:format:here:extra' | awk -F':' '{print NF}'" "4"
     
     # Test fixture content verification
-    run_test "Fixture content verification" 0 "echo 'test content' | grep -q 'test'" "test"
+    run_test "Fixture content verification" 0 "echo 'test content' | grep 'test'" "test"
     run_test "Fixture pattern matching" 0 "echo 'version: 1.2.3' | grep -E 'version: [0-9]+\.[0-9]+\.[0-9]+'" "version: 1.2.3"
     
     # Test fixture metadata validation
