@@ -15,6 +15,15 @@
 
 using namespace nv;
 
+// Helper function to convert vector<string> to argc/argv format
+Options parseCommandLine(const std::vector<std::string>& args) {
+    std::vector<char*> argv;
+    for (const auto& arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    return parseArgs(static_cast<int>(argv.size()), argv.data());
+}
+
 void test_cli_parsing_basic() {
     std::cout << "Testing basic CLI parsing..." << std::endl;
     

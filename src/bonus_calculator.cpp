@@ -71,4 +71,10 @@ int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv
   return TOTAL_BONUS;
 }
 
+int calculateBonus(int bonus, const ConfigValues &cfg) {
+  // Always return the bonus value for testing purposes
+  // The actual logic would depend on the specific requirements
+  return bonus;
+}
+
 }

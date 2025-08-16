@@ -14,4 +14,7 @@ namespace nv {
 
 int calculateTotalBonus(const Kv &fileKv, const Kv &CLI, const Kv &SEC, const Kv &KW, const ConfigValues &cfg);
 
+// Simple bonus calculation for testing
+int calculateBonus(int bonus, const ConfigValues &cfg);
+
 }
