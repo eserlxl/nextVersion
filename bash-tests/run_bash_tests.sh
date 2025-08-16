@@ -295,9 +295,9 @@ run_tests_in_directory() {
         return
     fi
     
-    # Find all test files in the directory, excluding this script
+*    # Find all test files in the directory, excluding runner scripts
     local test_files
-    mapfile -t test_files < <(find "$dir" -maxdepth 1 -type f \( -name "test_*" -o -name "*.sh" -o -name "*.c" \) -not -name "run_workflow_tests.sh" | sort)
+    mapfile -t test_files < <(find "$dir" -maxdepth 1 -type f \( -name "test_*" -o -name "*.sh" -o -name "*.c" \) -not -name "run_*.sh" -not -name "run_workflow_tests.sh" | sort)
     
     if [[ ${#test_files[@]} -eq 0 ]]; then
         echo "No test files found in $dir_name"
