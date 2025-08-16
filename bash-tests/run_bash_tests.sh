@@ -186,36 +186,36 @@ run_test() {
         
         # Check if this is a test that returns a specific exit code (like test_func.sh)
         if [[ "$test_name" == "test_func.sh" ]] && [[ $exit_code -eq 20 ]]; then
-            echo -e "${GREEN}PASSED${NC} (${duration}s)"
+            echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ "$test_name" == "test_ere_fix.sh" ]] && [[ $exit_code -eq 0 ]]; then
             # test_ere_fix.sh exits with 0 when all tests pass (which is expected behavior)
-            echo -e "${GREEN}PASSED${NC} (${duration}s)"
+            echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ "$test_name" == "test_compare_analyzers.sh" ]] && [[ $exit_code -eq 1 ]]; then
             # test_compare_analyzers.sh exits with 1 when it finds differences (which is expected behavior)
             # Note: This test has been moved to comparator/tests/
-            echo -e "${GREEN}PASSED${NC} (${duration}s)"
+            echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 11 ]]; then
             # Exit code 11 indicates success for tests that expect it
-            echo -e "${GREEN}PASSED${NC} (${duration}s)"
+            echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 0 ]]; then
-            echo -e "${GREEN}PASSED${NC} (${duration}s)"
+            echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 124 ]]; then
-            echo -e "${RED}TIMEOUT${NC} (${duration}s)"
+            echo -e "${RED}TIMEOUT${NC} ( duration: ${duration} s )"
             log_test "$test_name" "TIMEOUT" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name (TIMEOUT)")
         else
-            echo -e "${RED}FAILED${NC} (${duration}s)"
+            echo -e "${RED}FAILED${NC} ( duration: ${duration} s )"
             log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name")
@@ -235,7 +235,7 @@ run_test() {
                 TEST_DURATIONS+=("$duration")
                 TEST_NAMES+=("$test_name")
                 
-                echo -e "${GREEN}PASSED${NC} (${duration}s)"
+                echo -e "${GREEN}PASSED${NC} ( duration: ${duration} s )"
                 log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
                 ((PASSED_TESTS++))
             else
@@ -247,7 +247,7 @@ run_test() {
                 TEST_DURATIONS+=("$duration")
                 TEST_NAMES+=("$test_name")
                 
-                echo -e "${RED}FAILED${NC} (${duration}s)"
+                echo -e "${RED}FAILED${NC} ( duration: ${duration} s )"
                 log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
                 ((FAILED_TESTS++))
                 FAILED_TEST_NAMES+=("$test_name")
@@ -261,7 +261,7 @@ run_test() {
             TEST_DURATIONS+=("$duration")
             TEST_NAMES+=("$test_name")
             
-            echo -e "${YELLOW}SKIPPED (compilation failed)${NC} (${duration}s)"
+            echo -e "${YELLOW}SKIPPED (compilation failed)${NC} ( duration: ${duration} s )"
             log_test "$test_name" "SKIPPED" "Compilation failed: $(cat "$output_file")" "$duration"
             ((SKIPPED_TESTS++))
         fi
@@ -274,7 +274,7 @@ run_test() {
         TEST_DURATIONS+=("$duration")
         TEST_NAMES+=("$test_name")
         
-        echo -e "${YELLOW}SKIPPED (unknown file type)${NC} (${duration}s)"
+        echo -e "${YELLOW}SKIPPED (unknown file type)${NC} ( duration: ${duration} s )"
         log_test "$test_name" "SKIPPED" "Unknown file type" "$duration"
         ((SKIPPED_TESTS++))
     fi
