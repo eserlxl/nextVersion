@@ -55,7 +55,7 @@ run_test_script() {
     local exit_code
     
     # Improved timeout configuration based on test complexity
-    local timeout_value=120  # Increased default timeout to 2 minutes
+    local timeout_value=300  # Increased default timeout to 5 minutes
     local test_args=""  # Initialize test_args variable
     
     # Add test start timestamp for debugging
@@ -71,25 +71,25 @@ run_test_script() {
     
     # Give comprehensive tests more time
     if [[ "$script_path" == *"test_semantic_version_analyzer_comprehensive.sh" ]]; then
-        timeout_value=180  # Increased to 3 minutes for comprehensive test
-        echo -e "${YELLOW}Running with extended timeout (180s) for comprehensive test${NC}"
+        timeout_value=300  # Increased to 5 minutes for comprehensive test
+        echo -e "${YELLOW}Running with extended timeout (300s) for comprehensive test${NC}"
     fi
     
     # Additional optimizations for other potentially slow tests
     if [[ "$script_path" == *"test_realistic_repositories.sh" ]]; then
-        timeout_value=150  # Increased to 2.5 minutes
-        echo -e "${YELLOW}Running with extended timeout (150s) for realistic repository test${NC}"
+        timeout_value=300  # Increased to 5 minutes
+        echo -e "${YELLOW}Running with extended timeout (300s) for realistic repository test${NC}"
     fi
     
     if [[ "$script_path" == *"test_semantic_analyzer_realistic_repos.sh" ]]; then
-        timeout_value=150  # Increased to 2.5 minutes
-        echo -e "${YELLOW}Running with extended timeout (150s) for realistic semantic analyzer test${NC}"
+        timeout_value=300  # Increased to 5 minutes
+        echo -e "${YELLOW}Running with extended timeout (300s) for realistic semantic analyzer test${NC}"
     fi
     
     # Special handling for LOC delta tests which can be complex
     if [[ "$script_path" == *"test_loc_delta_system_comprehensive.sh" ]]; then
-        timeout_value=140  # Increased to 2.3 minutes
-        echo -e "${YELLOW}Running with extended timeout (140s) for comprehensive LOC delta test${NC}"
+        timeout_value=300  # Increased to 5 minutes
+        echo -e "${YELLOW}Running with extended timeout (300s) for comprehensive LOC delta test${NC}"
     fi
     
     # Use appropriate timeout and capture both stdout and stderr

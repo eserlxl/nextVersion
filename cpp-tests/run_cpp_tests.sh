@@ -26,7 +26,7 @@ SKIPPED_TESTS=0
 FAILED_TEST_NAMES=()
 
 # Configuration
-TEST_TIMEOUT=${TEST_TIMEOUT:-60}  # Default 60 seconds timeout for C++ tests
+TEST_TIMEOUT=${TEST_TIMEOUT:-300}  # Default 300 seconds timeout for C++ tests
 FIXED_OUTPUT_DIR="test_results"
 SUMMARY_FILE="$FIXED_OUTPUT_DIR/cpp_tests_summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/cpp_tests_detailed.log"

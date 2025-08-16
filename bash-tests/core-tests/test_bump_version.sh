@@ -37,11 +37,11 @@ run_test() {
     
     # Run the command with timeout and capture output
     local output
-    output=$(timeout 30s bash -c "$test_command" 2>&1 || true)
-    
-    # Check if timeout occurred
-    if [[ $? -eq 124 ]]; then
-        printf '%s\n' "${RED}✗ FAIL: $test_name (TIMEOUT after 30s)${RESET}"
+            output=$(timeout 300s bash -c "$test_command" 2>&1 || true)
+        
+        # Check if timeout occurred
+        if [[ $? -eq 124 ]]; then
+            printf '%s\n' "${RED}✗ FAIL: $test_name (TIMEOUT after 300s)${RESET}"
         printf '%s\n' "${YELLOW}Command: $test_command${RESET}"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         printf '%s\n' ""

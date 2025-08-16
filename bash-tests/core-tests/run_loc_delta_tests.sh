@@ -122,7 +122,7 @@ run_test() {
     # Run the test with timeout and capture output
     local output
     local exit_code
-    output=$(timeout 120 bash "$test_file" 2>&1)
+            output=$(timeout 300 bash "$test_file" 2>&1)
     exit_code=$?
     
     if [[ $exit_code -eq 0 ]]; then

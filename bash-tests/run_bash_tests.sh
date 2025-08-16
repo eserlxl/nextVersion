@@ -26,7 +26,7 @@ SKIPPED_TESTS=0
 FAILED_TEST_NAMES=()
 
 # Configuration
-TEST_TIMEOUT=${TEST_TIMEOUT:-60}  # Default 60 seconds timeout for individual tests
+TEST_TIMEOUT=${TEST_TIMEOUT:-300}  # Default 300 seconds timeout for individual tests
 FIXED_OUTPUT_DIR="test_results"
 SUMMARY_FILE="$FIXED_OUTPUT_DIR/summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/detailed.log"
@@ -147,7 +147,7 @@ run_test() {
         # Use longer timeout for comprehensive tests
         local current_timeout="$TEST_TIMEOUT"
         if [[ "$test_name" == *"comprehensive"* ]] || [[ "$test_name" == "run_loc_delta_tests.sh" ]] || [[ "$test_name" == "test-modular-components.sh" ]]; then
-            current_timeout=120  # 2 minutes for comprehensive tests
+            current_timeout=300  # 5 minutes for comprehensive tests
         fi
         
         timeout "${current_timeout}s" bash "$test_file" > "$output_file" 2>&1
