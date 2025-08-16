@@ -395,7 +395,7 @@ fi
 # Show longest running tests
 find_longest_tests
 
-# Save summary to file
+# Save summary to file (without displaying to console)
 {
     echo "NEXTVERSION BASH TEST SUITE SUMMARY"
     echo "Generated: $(date)"

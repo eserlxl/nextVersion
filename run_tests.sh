@@ -362,16 +362,18 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             FAILED_SUITES+=("Bash")
         fi
         
-        # Display bash test results summary
-        if [ -f "test_results/summary.txt" ]; then
-            echo "Bash Test Results:"
-            cat "test_results/summary.txt"
-        else
-            echo "Bash Test Results:"
-            echo "$BASH_OUTPUT"
+        # Display bash test results summary (only if bash tests failed to avoid duplication)
+        if [ "$BASH_RESULT" -ne 0 ]; then
+            if [ -f "test_results/summary.txt" ]; then
+                echo "Bash Test Results:"
+                cat "test_results/summary.txt"
+            else
+                echo "Bash Test Results:"
+                echo "$BASH_OUTPUT"
+            fi
         fi
         
-        print_summary "$BASH_TOTAL" "$BASH_PASSED" "$BASH_FAILED" "$BASH_SKIPPED" "$BASH_SUCCESS_RATE" "$BASH_STATUS" "Bash Test"
+        # Summary already displayed by bash test runner, no need to duplicate
         
     else
         print_error "bash-tests/run_bash_tests.sh not found"
@@ -451,16 +453,18 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             FAILED_SUITES+=("C++")
         fi
         
-        # Display C++ test results summary
-        if [ -f "test_results/cpp_tests_summary.txt" ]; then
-            echo "C++ Test Results:"
-            cat "test_results/cpp_tests_summary.txt"
-        else
-            echo "C++ Test Results:"
-            echo "$CPP_OUTPUT"
+        # Display C++ test results summary (only if C++ tests failed to avoid duplication)
+        if [ "$CPP_RESULT" -ne 0 ]; then
+            if [ -f "test_results/cpp_tests_summary.txt" ]; then
+                echo "C++ Test Results:"
+                cat "test_results/cpp_tests_summary.txt"
+            else
+                echo "C++ Test Results:"
+                echo "$CPP_OUTPUT"
+            fi
         fi
         
-        print_summary "$CPP_TOTAL" "$CPP_PASSED" "$CPP_FAILED" "0" "$CPP_SUCCESS_RATE" "$CPP_STATUS" "C++ Test"
+        # Summary already displayed by C++ test runner, no need to duplicate
         
     else
         print_error "cpp-tests/run_cpp_tests.sh not found"
