@@ -26,10 +26,29 @@ SKIPPED_TESTS=0
 FAILED_TEST_NAMES=()
 
 # Configuration
-TEST_TIMEOUT=${TEST_TIMEOUT:-300}  # Default 300 seconds timeout for individual tests
 FIXED_OUTPUT_DIR="test_results"
 SUMMARY_FILE="$FIXED_OUTPUT_DIR/summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/detailed.log"
+
+# Function to count total tests
+count_total_tests() {
+    local total=0
+    local dirs=("bash-tests/utility-tests" "bash-tests/file-handling-tests" "bash-tests/edge-case-tests" "bash-tests/debug-tests" "bash-tests/ere-tests" "bash-tests/cli-tests" "bash-tests/core-tests")
+    
+    for dir in "${dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            local test_files
+            mapfile -t test_files < <(find "$dir" -maxdepth 1 -type f \( -name "test_*" -o -name "*.sh" -o -name "*.c" \) -not -name "run_workflow_tests.sh" | sort)
+            total=$((total + ${#test_files[@]}))
+        fi
+    done
+    
+    echo "$total"
+}
+
+# Calculate timeout based on test count: test_count × 30 seconds
+TOTAL_TEST_COUNT=$(count_total_tests)
+TEST_TIMEOUT=${TEST_TIMEOUT:-$((TOTAL_TEST_COUNT * 30))}  # Dynamic timeout: test_count × 30 seconds
 
 # Clean and recreate output directory only if no summary exists
 if [ ! -f "$SUMMARY_FILE" ]; then
@@ -46,7 +65,8 @@ echo "=========================================="
 echo "Output directory: $FIXED_OUTPUT_DIR"
 echo "Summary file: $SUMMARY_FILE"
 echo "Detailed log: $DETAILED_LOG"
-echo "Test timeout: ${TEST_TIMEOUT}s"
+echo "Total test count: $TOTAL_TEST_COUNT"
+echo "Test timeout: ${TEST_TIMEOUT}s (calculated as: $TOTAL_TEST_COUNT × 30s)"
 echo ""
 
 # Function to log test results
