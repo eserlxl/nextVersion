@@ -132,6 +132,8 @@ print_phase_header() {
 #     echo -e "${BOLD}${YELLOW}$1:${NC}"
 # }
 
+# Function to print test summary (defined for potential future use)
+# shellcheck disable=SC2329
 print_summary() {
     local total="$1"
     local passed="$2"
@@ -294,7 +296,7 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
         echo -e "${BLUE}[INFO]${NC} Note: The script will wait for tests to complete or timeout (calculated dynamically)"
         
         # Calculate dynamic timeout for bash tests (same logic as run_bash_tests.sh)
-        BASH_TEST_COUNT=$(find bash-tests -name "test_*.sh" -o -name "*.sh" | grep -v "run_.*\.sh" | wc -l)
+        BASH_TEST_COUNT=$(find bash-tests -name "test_*.sh" -o -name "*.sh" | grep -c -v "run_.*\.sh")
         BASH_TIMEOUT=$((BASH_TEST_COUNT * 30))  # 30 seconds per test
         
         # Run bash tests in background and show progress
@@ -343,9 +345,11 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
             BASH_SKIPPED=0
         fi
         
-        # Calculate bash success rate
+        # Calculate bash success rate (for potential future use)
+        # shellcheck disable=SC2034
         BASH_SUCCESS_RATE=0
         if [ "$BASH_TOTAL" -gt 0 ]; then
+            # shellcheck disable=SC2034
             BASH_SUCCESS_RATE=$((BASH_PASSED * 100 / BASH_TOTAL))
         fi
         
@@ -438,9 +442,11 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
             CPP_FAILED=1
         fi
         
-        # Calculate C++ success rate
+        # Calculate C++ success rate (for potential future use)
+        # shellcheck disable=SC2034
         CPP_SUCCESS_RATE=0
         if [ "$CPP_TOTAL" -gt 0 ]; then
+            # shellcheck disable=SC2034
             CPP_SUCCESS_RATE=$((CPP_PASSED * 100 / CPP_TOTAL))
         fi
         
