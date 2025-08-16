@@ -295,7 +295,7 @@ run_tests_in_directory() {
         return
     fi
     
-*    # Find all test files in the directory, excluding runner scripts
+    # Find all test files in the directory, excluding runner scripts
     local test_files
     mapfile -t test_files < <(find "$dir" -maxdepth 1 -type f \( -name "test_*" -o -name "*.sh" -o -name "*.c" \) -not -name "run_*.sh" -not -name "run_workflow_tests.sh" | sort)
     

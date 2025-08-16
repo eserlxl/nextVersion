@@ -52,12 +52,11 @@ count_bash_tests() {
 
 print_ascii_art() {
   # Minimal color handling; uses tput if available
-  local magenta="" nc=""
+  local nc=""
   if [[ "${NO_COLOR:-}" != "true" ]] && command -v tput >/dev/null 2>&1; then
-    magenta="$(tput setaf 5)"; nc="$(tput sgr0)"
+    nc="$(tput sgr0)"
   fi
 
-  printf '%s%s' 
   cat <<'ASCII'
 
   ███╗   ██╗███████╗██╗  ██╗████████╗    ██╗   ██╗███████╗██████╗ ███████╗██╗ ██████╗ ███╗   ██╗
