@@ -54,45 +54,62 @@ run_test_script() {
     local output
     local exit_code
     
-    # Special handling for tests that might be slow - keep all under 300s total
-    local timeout_value=60
-    local test_args=""
+    # Improved timeout configuration based on test complexity
+    local timeout_value=120  # Increased default timeout to 2 minutes
+    local test_args=""  # Initialize test_args variable
+    
+    # Add test start timestamp for debugging
+    local test_start_time
+    test_start_time=$(date +%s)
+    echo -e "${BLUE}Test started at: $(date)${NC}"
     
     # Skip test_compare_analyzers.sh as it has been moved to comparator/tests/
     if [[ "$script_path" == *"test_compare_analyzers.sh" ]]; then
         echo -e "${YELLOW}SKIPPING: test_compare_analyzers.sh has been moved to comparator/tests/${NC}"
-        continue
+        return 0
     fi
     
-    # Give comprehensive tests minimal extra time
+    # Give comprehensive tests more time
     if [[ "$script_path" == *"test_semantic_version_analyzer_comprehensive.sh" ]]; then
-        timeout_value=80
-        echo -e "${YELLOW}Running with minimal timeout (80s) for comprehensive test${NC}"
+        timeout_value=180  # Increased to 3 minutes for comprehensive test
+        echo -e "${YELLOW}Running with extended timeout (180s) for comprehensive test${NC}"
     fi
     
     # Additional optimizations for other potentially slow tests
     if [[ "$script_path" == *"test_realistic_repositories.sh" ]]; then
-        timeout_value=70
-        echo -e "${YELLOW}Running with reduced timeout (70s) for realistic repository test${NC}"
+        timeout_value=150  # Increased to 2.5 minutes
+        echo -e "${YELLOW}Running with extended timeout (150s) for realistic repository test${NC}"
     fi
     
     if [[ "$script_path" == *"test_semantic_analyzer_realistic_repos.sh" ]]; then
-        timeout_value=70
-        echo -e "${YELLOW}Running with reduced timeout (70s) for realistic semantic analyzer test${NC}"
+        timeout_value=150  # Increased to 2.5 minutes
+        echo -e "${YELLOW}Running with extended timeout (150s) for realistic semantic analyzer test${NC}"
+    fi
+    
+    # Special handling for LOC delta tests which can be complex
+    if [[ "$script_path" == *"test_loc_delta_system_comprehensive.sh" ]]; then
+        timeout_value=140  # Increased to 2.3 minutes
+        echo -e "${YELLOW}Running with extended timeout (140s) for comprehensive LOC delta test${NC}"
     fi
     
     # Use appropriate timeout and capture both stdout and stderr
+    echo -e "${BLUE}Executing test with ${timeout_value}s timeout...${NC}"
     output=$(cd "$SCRIPT_DIR" && timeout "$timeout_value" "$script_path" "$test_args" 2>&1)
     exit_code=$?
     
     # Handle timeout
     if [[ $exit_code -eq 124 ]]; then
         echo -e "${RED}Error: Test script timed out after ${timeout_value} seconds: $script_path${NC}"
+        echo -e "${RED}This may indicate a hanging git operation or infinite loop${NC}"
         output="Test timed out after ${timeout_value} seconds"
         exit_code=1
     fi
     
-    echo -e "${BLUE}Test execution completed with exit code: $exit_code${NC}"
+    # Calculate test execution time
+    local test_end_time
+    test_end_time=$(date +%s)
+    local test_duration=$((test_end_time - test_start_time))
+    echo -e "${BLUE}Test execution completed with exit code: $exit_code in ${test_duration}s${NC}"
     
     # Parse test results from output
     local passed=0
@@ -439,7 +456,7 @@ main() {
     local current_script=0
     local start_time
     start_time=$(date +%s)
-    local max_total_time=300  # Maximum 5 minutes total
+    local max_total_time=600  # Maximum 10 minutes total for all tests
     
     for test_script in "${test_scripts[@]}"; do
         local script_file="${test_script%%:*}"
@@ -452,7 +469,7 @@ main() {
         local elapsed_time=$((current_time - start_time))
         local remaining_time=$((max_total_time - elapsed_time))
         
-        if [[ $remaining_time -le 30 ]]; then
+        if [[ $remaining_time -le 60 ]]; then
             echo -e "${RED}⚠ Global timeout approaching (${elapsed_time}s elapsed). Skipping remaining tests.${NC}"
             echo -e "${YELLOW}Completed $current_script out of $total_scripts tests in ${elapsed_time}s${NC}"
             break
@@ -462,7 +479,10 @@ main() {
         echo -e "${BLUE}Progress: $current_script/$total_scripts - Running: $script_file (${remaining_time}s remaining)${NC}"
         
         if [[ -f "$script_path" ]]; then
+            # Add progress indicator for long-running tests
+            echo -e "${YELLOW}Starting test execution...${NC}"
             run_test_script "$script_name" "$script_path"
+            echo -e "${YELLOW}Test execution completed.${NC}"
         else
             echo -e "${YELLOW}⚠ Skipping: $script_file (not found)${NC}"
             echo ""

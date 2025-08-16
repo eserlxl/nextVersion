@@ -61,9 +61,8 @@ run_test() {
     cd "$SCRIPT_DIR" || exit 1
     
     # Run the test with timeout and capture output
-    local output
     local exit_code
-    output=$(timeout "$TEST_TIMEOUT" bash "$test_file" 2>&1)
+    timeout "$TEST_TIMEOUT" bash "$test_file" >/dev/null 2>&1
     exit_code=$?
     
     if [[ $exit_code -eq 0 ]]; then
@@ -90,7 +89,7 @@ if [[ -d "$SCRIPT_DIR/tests" ]]; then
     echo -e "${BLUE}=== Running Tests ===${NC}"
     
     # Find all test files in the tests directory
-    local test_files
+    test_files=()
     mapfile -t test_files < <(find "$SCRIPT_DIR/tests" -name "*.sh" -type f | sort)
     
     if [[ ${#test_files[@]} -eq 0 ]]; then
