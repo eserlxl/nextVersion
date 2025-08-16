@@ -50,6 +50,26 @@ count_bash_tests() {
     echo "$count"
 }
 
+print_ascii_art() {
+  # Minimal color handling; uses tput if available
+  local magenta="" nc=""
+  if [[ "${NO_COLOR:-}" != "true" ]] && command -v tput >/dev/null 2>&1; then
+    magenta="$(tput setaf 5)"; nc="$(tput sgr0)"
+  fi
+
+  printf '%s%s' 
+  cat <<'ASCII'
+
+  ███╗   ██╗███████╗██╗  ██╗████████╗    ██╗   ██╗███████╗██████╗ ███████╗██╗ ██████╗ ███╗   ██╗
+  ████╗  ██║██╔════╝╚██╗██╔╝╚══██╔══╝    ██║   ██║██╔════╝██╔══██╗██╔════╝██║██╔═══██╗████╗  ██║
+  ██╔██╗ ██║█████╗   ╚███╔╝    ██║       ██║   ██║█████╗  ██████╔╝███████╗██║██║   ██║██╔██╗ ██║
+  ██║╚██╗██║██╔══╝   ██╔██╗    ██║       ╚██╗ ██╔╝██╔══╝  ██╔══██╗╚════██║██║██║   ██║██║╚██╗██║
+  ██║ ╚████║███████╗██╔╝ ██╗   ██║        ╚████╔╝ ███████╗██║  ██║███████║██║╚██████╔╝██║ ╚████║
+  ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝   ╚═╝         ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+ASCII
+  printf '%s' "$nc"
+}
+
 # Function to print colored output
 # Note: These functions are defined for potential future use but not currently called
 # print_status() {
@@ -185,6 +205,10 @@ print_suite_menu() {
     echo -e ""
     echo -e "Press [Enter] or wait 5 seconds to select ${BOLD}${AVAILABLE_SUITES[0]}${NC} (default)"
 }
+
+# Print ASCII art at the start
+print_ascii_art
+echo ""
 
 # Check for TEST_SUITE environment variable override
 if [[ -n "$TEST_SUITE" ]]; then
