@@ -124,6 +124,13 @@ run_test_script() {
         local parsed_failed
         parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/\\033\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
         
+        # If the above parsing failed, try a more flexible approach
+        if [[ ! "$parsed_passed" =~ ^[0-9]+$ ]] || [[ ! "$parsed_failed" =~ ^[0-9]+$ ]]; then
+            # Try to extract numbers after "Tests passed:" and "Tests failed:" more flexibly
+            parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/.*Tests passed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | grep -E '^[0-9]+$' || echo "0")
+            parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/.*Tests failed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | grep -E '^[0-9]+$' || echo "0")
+        fi
+        
         # Ensure we have valid numbers
         if [[ "$parsed_passed" =~ ^[0-9]+$ ]] && [[ "$parsed_failed" =~ ^[0-9]+$ ]]; then
             passed=$parsed_passed
@@ -211,12 +218,19 @@ run_test_script() {
         # Additional fallback: look for "Tests passed:" patterns in different formats
         if [[ "$passed" =~ ^[0-9]+$ ]] && [[ $passed -eq 0 ]]; then
             if echo "$output" | grep -q "Tests passed:"; then
-                # Extract the number after "Tests passed:"
+                # Extract the number after "Tests passed:" with more flexible parsing
                 local parsed_passed
-                parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/\\033\[[0-9;]*m//g' | awk '{print $3}' | grep -E '^[0-9]+$' || echo "0")
+                parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/.*Tests passed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | grep -E '^[0-9]+$' || echo "0")
                 if [[ "$parsed_passed" =~ ^[0-9]+$ ]]; then
                     passed=$parsed_passed
-                    failed=0
+                    # Also try to get failed count
+                    local parsed_failed
+                    parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/.*Tests failed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | grep -E '^[0-9]+$' || echo "0")
+                    if [[ "$parsed_failed" =~ ^[0-9]+$ ]]; then
+                        failed=$parsed_failed
+                    else
+                        failed=0
+                    fi
                 fi
             fi
         fi
@@ -230,6 +244,26 @@ run_test_script() {
                 if [[ "$parsed_passed" =~ ^[0-9]+$ ]]; then
                     passed=$parsed_passed
                     failed=0
+                fi
+            fi
+        fi
+        
+        # Final fallback: look for the specific format used by realistic repositories test
+        if [[ "$passed" =~ ^[0-9]+$ ]] && [[ $passed -eq 0 ]]; then
+            if echo "$output" | grep -q "Tests passed:"; then
+                # Extract the number after "Tests passed:" with very flexible parsing
+                local parsed_passed
+                parsed_passed=$(echo "$output" | grep "Tests passed:" | sed 's/.*Tests passed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | tr -d '[:space:]' | grep -E '^[0-9]+$' || echo "0")
+                if [[ "$parsed_passed" =~ ^[0-9]+$ ]]; then
+                    passed=$parsed_passed
+                    # Also try to get failed count
+                    local parsed_failed
+                    parsed_failed=$(echo "$output" | grep "Tests failed:" | sed 's/.*Tests failed:[[:space:]]*//' | sed 's/\\033\[[0-9;]*m//g' | tr -d '[:space:]' | grep -E '^[0-9]+$' || echo "0")
+                    if [[ "$parsed_failed" =~ ^[0-9]+$ ]]; then
+                        failed=$parsed_failed
+                    else
+                        failed=0
+                    fi
                 fi
             fi
         fi

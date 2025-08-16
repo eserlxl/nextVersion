@@ -15,6 +15,21 @@ IFS=
 # Source the test helper
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
+# Fallback: if PROJECT_ROOT doesn't exist, try to find it from current directory
+if [[ ! -d "$PROJECT_ROOT" ]] || [[ ! -f "$PROJECT_ROOT/bash-tests/test_helper.sh" ]]; then
+    # Try to find project root by looking for test_helper.sh in parent directories
+    local current_dir
+    current_dir="$(pwd)"
+    while [[ "$current_dir" != "/" ]]; do
+        if [[ -f "$current_dir/bash-tests/test_helper.sh" ]]; then
+            PROJECT_ROOT="$current_dir"
+            break
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+fi
+
 # shellcheck disable=SC1091
 source "$PROJECT_ROOT/bash-tests/test_helper.sh"
 
@@ -30,8 +45,8 @@ NC='\033[0m' # No Color
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# Script path
-SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
+# Script path - use absolute path from project root
+SCRIPT_PATH="$PROJECT_ROOT/bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
 # Ensure we're in the project root directory
@@ -644,14 +659,21 @@ test_substantial_history_repository() {
 
 # Main test execution
 main() {
+    echo "DEBUG: Starting main function" >&2
     log_info "Starting comprehensive realistic repository tests..."
     
     # Test various repository types
+    echo "DEBUG: About to test empty repository" >&2
     test_empty_repository
+    echo "DEBUG: About to test single commit repository" >&2
     test_single_commit_repository
+    echo "DEBUG: About to test breaking changes repository" >&2
     test_breaking_changes_repository
+    echo "DEBUG: About to test security fixes repository" >&2
     test_security_fixes_repository
+    echo "DEBUG: About to test CLI changes repository" >&2
     test_cli_changes_repository
+    echo "DEBUG: About to test substantial history repository" >&2
     test_substantial_history_repository
     
     # Print summary
