@@ -384,13 +384,26 @@ echo "=========================================="
 echo "          BASH TEST SUMMARY"
 echo "=========================================="
 echo "Total tests: $TOTAL_TESTS"
-echo -e "Passed: ${GREEN}$PASSED_TESTS${NC}"
-echo -e "Failed: ${RED}$FAILED_TESTS${NC}"
-echo -e "Skipped: ${YELLOW}$SKIPPED_TESTS${NC}"
 
 # Calculate success rate
 if [[ $TOTAL_TESTS -gt 0 ]]; then
     success_rate=$((PASSED_TESTS * 100 / TOTAL_TESTS))
+    
+    # Only show passed count if not all tests failed
+    if [ "$FAILED_TESTS" -lt "$TOTAL_TESTS" ]; then
+        echo -e "Passed: ${GREEN}$PASSED_TESTS${NC}"
+    fi
+    
+    # Only show failed count if not all tests passed
+    if [ "$PASSED_TESTS" -lt "$TOTAL_TESTS" ]; then
+        echo -e "Failed: ${RED}$FAILED_TESTS${NC}"
+    fi
+    
+    # Only show skipped if there are any
+    if [ "$SKIPPED_TESTS" -gt 0 ]; then
+        echo -e "Skipped: ${YELLOW}$SKIPPED_TESTS${NC}"
+    fi
+    
     echo "Success rate: $success_rate%"
 fi
 
@@ -403,9 +416,22 @@ find_longest_tests
     echo "Generated: $(date)"
     echo ""
     echo "Total tests: $TOTAL_TESTS"
-    echo "Passed: $PASSED_TESTS"
-    echo "Failed: $FAILED_TESTS"
-    echo "Skipped: $SKIPPED_TESTS"
+    
+    # Only show passed count if not all tests failed
+    if [ "$FAILED_TESTS" -lt "$TOTAL_TESTS" ]; then
+        echo "Passed: $PASSED_TESTS"
+    fi
+    
+    # Only show failed count if not all tests passed
+    if [ "$PASSED_TESTS" -lt "$TOTAL_TESTS" ]; then
+        echo "Failed: $FAILED_TESTS"
+    fi
+    
+    # Only show skipped if there are any
+    if [ "$SKIPPED_TESTS" -gt 0 ]; then
+        echo "Skipped: $SKIPPED_TESTS"
+    fi
+    
     if [[ $TOTAL_TESTS -gt 0 ]]; then
         echo "Success rate: $success_rate%"
     fi

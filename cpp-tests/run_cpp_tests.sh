@@ -236,13 +236,26 @@ echo "=========================================="
 echo "          C++ TEST SUMMARY"
 echo "=========================================="
 echo "Total tests: $TOTAL_INDIVIDUAL_TESTS"
-echo -e "Passed: ${GREEN}$PASSED_INDIVIDUAL_TESTS${NC}"
-echo -e "Failed: ${RED}$FAILED_INDIVIDUAL_TESTS${NC}"
-echo -e "Skipped: ${YELLOW}$SKIPPED_INDIVIDUAL_TESTS${NC}"
 
 # Calculate success rate
 if [[ $TOTAL_INDIVIDUAL_TESTS -gt 0 ]]; then
     success_rate=$((PASSED_INDIVIDUAL_TESTS * 100 / TOTAL_INDIVIDUAL_TESTS))
+    
+    # Only show passed count if not all tests failed
+    if [ "$FAILED_INDIVIDUAL_TESTS" -lt "$TOTAL_INDIVIDUAL_TESTS" ]; then
+        echo -e "Passed: ${GREEN}$PASSED_INDIVIDUAL_TESTS${NC}"
+    fi
+    
+    # Only show failed count if not all tests passed
+    if [ "$PASSED_INDIVIDUAL_TESTS" -lt "$TOTAL_INDIVIDUAL_TESTS" ]; then
+        echo -e "Failed: ${RED}$FAILED_INDIVIDUAL_TESTS${NC}"
+    fi
+    
+    # Only show skipped if there are any
+    if [ "$SKIPPED_INDIVIDUAL_TESTS" -gt 0 ]; then
+        echo -e "Skipped: ${YELLOW}$SKIPPED_INDIVIDUAL_TESTS${NC}"
+    fi
+    
     echo "Success rate: $success_rate%"
 fi
 
@@ -260,9 +273,22 @@ echo "Detailed log: $DETAILED_LOG"
     echo ""
     echo "INDIVIDUAL TESTS:"
     echo "  Total tests: $TOTAL_INDIVIDUAL_TESTS"
-    echo "  Passed: $PASSED_INDIVIDUAL_TESTS"
-    echo "  Failed: $FAILED_INDIVIDUAL_TESTS"
-    echo "  Skipped: $SKIPPED_INDIVIDUAL_TESTS"
+    
+    # Only show passed count if not all tests failed
+    if [ "$FAILED_INDIVIDUAL_TESTS" -lt "$TOTAL_INDIVIDUAL_TESTS" ]; then
+        echo "  Passed: $PASSED_INDIVIDUAL_TESTS"
+    fi
+    
+    # Only show failed count if not all tests passed
+    if [ "$PASSED_INDIVIDUAL_TESTS" -lt "$TOTAL_INDIVIDUAL_TESTS" ]; then
+        echo "  Failed: $FAILED_INDIVIDUAL_TESTS"
+    fi
+    
+    # Only show skipped if there are any
+    if [ "$SKIPPED_INDIVIDUAL_TESTS" -gt 0 ]; then
+        echo "  Skipped: $SKIPPED_INDIVIDUAL_TESTS"
+    fi
+    
     if [[ $TOTAL_INDIVIDUAL_TESTS -gt 0 ]]; then
         success_rate=$((PASSED_INDIVIDUAL_TESTS * 100 / TOTAL_INDIVIDUAL_TESTS))
         echo "  Success rate: $success_rate%"
