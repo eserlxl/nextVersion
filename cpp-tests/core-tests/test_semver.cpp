@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <string>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/semver.h"
 
 using namespace nv;

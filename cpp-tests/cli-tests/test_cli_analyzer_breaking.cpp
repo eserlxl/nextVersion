@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <fstream>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/git_helpers.h"
 #include "next_version/analyzers.h"
 

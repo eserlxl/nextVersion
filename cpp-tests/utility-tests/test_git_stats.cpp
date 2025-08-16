@@ -10,7 +10,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <unistd.h>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/git_helpers.h"
 
 using namespace nv;

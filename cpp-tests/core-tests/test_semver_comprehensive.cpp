@@ -5,7 +5,7 @@
 // the GNU General Public License v3.0 or later.
 // See the LICENSE file in the project root for details.
 
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/semver.h"
 #include <iostream>
 #include <vector>

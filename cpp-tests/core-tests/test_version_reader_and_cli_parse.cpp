@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <vector>
 #include <cstring>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/version_reader.h"
 #include "next_version/cli.h"
 

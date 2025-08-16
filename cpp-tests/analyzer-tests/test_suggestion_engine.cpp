@@ -6,7 +6,7 @@
 // See the LICENSE file in the project root for details.
 
 #include <iostream>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/suggestion_engine.h"
 #include "next_version/types.h"
 

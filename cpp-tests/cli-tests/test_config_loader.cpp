@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/analyzers.h"
 #include "next_version/types.h"
 

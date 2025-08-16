@@ -28,9 +28,9 @@
     } while(0)
 
 inline std::string trim(std::string_view s) {
-    auto start = s.find_first_not_of(" \t\r\n");
+    auto start = s.find_first_not_of(" \t\r\r\n");
     if (start == std::string_view::npos) return "";
-    auto end = s.find_last_not_of(" \t\r\n");
+    auto end = s.find_last_not_of(" \t\r\r\n");
     return std::string(s.substr(start, end - start + 1));
 }
 

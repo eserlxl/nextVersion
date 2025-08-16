@@ -13,7 +13,7 @@
 #include <cassert>
 #include <sstream>
 #include <regex>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 
 // Simple test framework
 // Remove TEST_ASSERT, TEST_PASS, trim, regex_replace_all, canon definitions

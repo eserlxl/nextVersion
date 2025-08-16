@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "test_helpers.h"
+#include "../test_helpers.h"
 #include "next_version/output_formatter.h"
 #include "next_version/types.h"
 #include "next_version/analyzers.h"
