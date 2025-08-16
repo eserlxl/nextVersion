@@ -30,7 +30,9 @@ TEST_DURATIONS=()  # Array to store test durations
 TEST_NAMES=()      # Array to store test names for duration tracking
 
 # Configuration
-FIXED_OUTPUT_DIR="test_results"
+# Get the project root directory (one level up from bash-tests)
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+FIXED_OUTPUT_DIR="$PROJECT_ROOT/test_results"
 SUMMARY_FILE="$FIXED_OUTPUT_DIR/summary.txt"
 DETAILED_LOG="$FIXED_OUTPUT_DIR/detailed.log"
 
