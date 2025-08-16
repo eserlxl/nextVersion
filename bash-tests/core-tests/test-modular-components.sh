@@ -309,8 +309,11 @@ main() {
     if [[ -x "$DEV_BIN/version-utils.sh" ]]; then
         run_test "version-utils last-tag" "\"$DEV_BIN/version-utils.sh\" last-tag v" ""
         run_test "version-utils hash-file VERSION" "\"$DEV_BIN/version-utils.sh\" hash-file VERSION" ""
-        # Read from repo root VERSION; default project repo VERSION is 1.0.1
-        run_test "version-utils read-version" "\"$DEV_BIN/version-utils.sh\" read-version VERSION" "1.0.1"
+        # Read from repo root VERSION; dynamically detect current version
+        # Read actual VERSION file content for dynamic testing
+        local expected_version
+        expected_version="$(cat VERSION | tr -d '[:space:]')"
+        run_test "version-utils read-version" "\"$DEV_BIN/version-utils.sh\" read-version VERSION" "$expected_version"
     fi
 
     if [[ -x "$DEV_BIN/version-validator.sh" ]]; then
