@@ -406,8 +406,10 @@ find_longest_tests
         echo ""
         echo "Test Timing Information:"
         echo "Top 5 Longest Running Tests:"
-        local -a sorted_indices
-        local i j temp
+        sorted_indices=()
+        i=0
+        j=0
+        temp=0
         
         # Create array of indices
         for ((i=0; i<${#TEST_DURATIONS[@]}; i++)); do
@@ -426,7 +428,7 @@ find_longest_tests
         done
         
         # Display top 5 longest tests
-        local count=0
+        count=0
         for i in "${sorted_indices[@]}"; do
             if [[ $count -lt 5 ]]; then
                 echo "  $((count+1)). ${TEST_NAMES[i]} - ${TEST_DURATIONS[i]}s"
