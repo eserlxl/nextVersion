@@ -19,7 +19,6 @@ PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # Fallback: if PROJECT_ROOT doesn't exist, try to find it from current directory
 if [[ ! -d "$PROJECT_ROOT" ]] || [[ ! -f "$PROJECT_ROOT/bash-tests/test_helper.sh" ]]; then
     # Try to find project root by looking for test_helper.sh in parent directories
-    local current_dir
     current_dir="$(pwd)"
     while [[ "$current_dir" != "/" ]]; do
         if [[ -f "$current_dir/bash-tests/test_helper.sh" ]]; then
