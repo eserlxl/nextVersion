@@ -143,8 +143,6 @@ run_test_category() {
     test_name=$(basename "$test_dir")
     local test_number=$((TOTAL_TEST_CATEGORIES + 1))
     
-    echo -n "[INFO] Running $test_name tests... "
-    
     local start_time
     start_time=$(date +%s)
     
@@ -165,7 +163,6 @@ run_test_category() {
     TOTAL_TEST_CATEGORIES=$((TOTAL_TEST_CATEGORIES + 1))
     
     if [ $exit_code -eq 0 ]; then
-        echo -e "${GREEN}✓ PASS${NC}"
         PASSED_TEST_CATEGORIES=$((PASSED_TEST_CATEGORIES + 1))
         log_test "$test_name" "PASS" "$output" "$duration"
         
@@ -175,14 +172,12 @@ run_test_category() {
         # Parse and display individual test results
         parse_individual_test_results "$test_name"
     elif [ $exit_code -eq 124 ]; then
-        echo -e "${YELLOW}⏰ TIMEOUT${NC}"
         SKIPPED_TEST_CATEGORIES=$((SKIPPED_TEST_CATEGORIES + 1))
         log_test "$test_name" "TIMEOUT" "Tests timed out after ${TEST_TIMEOUT}s" "$TEST_TIMEOUT"
         
         # Display table row
         printf "${CYAN}│ %02d  │ %-50s │ ${YELLOW}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "TIMEOUT" "$TEST_TIMEOUT"
     else
-        echo -e "${RED}✗ FAIL${NC}"
         FAILED_TEST_CATEGORIES=$((FAILED_TEST_CATEGORIES + 1))
         FAILED_TEST_CATEGORY_NAMES+=("$test_name")
         log_test "$test_name" "FAIL" "$output" "$duration"
@@ -196,7 +191,7 @@ run_test_category() {
 }
 
 # Main test execution
-echo "[INFO] Starting C++ test suite execution..."
+echo "Starting C++ test suite execution at $(date)"
 echo ""
 
 # Display table header for test categories
@@ -222,7 +217,7 @@ echo -e "${CYAN}└─────┴──────────────�
 # Generate final summary
 echo ""
 echo "=========================================="
-echo "           FINAL SUMMARY"
+echo "          C++ TEST SUMMARY"
 echo "=========================================="
 echo "Test Categories:"
 echo "  Total categories: $TOTAL_TEST_CATEGORIES"
@@ -251,14 +246,7 @@ fi
 echo "  Category success rate: $CATEGORY_SUCCESS_RATE%"
 echo "  Individual test success rate: $INDIVIDUAL_SUCCESS_RATE%"
 
-# Show failed test categories if any
-if [ ${#FAILED_TEST_CATEGORY_NAMES[@]} -gt 0 ]; then
-    echo ""
-    echo -e "${RED}Failed test categories:${NC}"
-    for test_name in "${FAILED_TEST_CATEGORY_NAMES[@]}"; do
-        echo -e "  ${RED}❌ $test_name${NC}"
-    done
-fi
+
 
 echo ""
 echo "Summary saved to: $SUMMARY_FILE"
@@ -266,7 +254,7 @@ echo "Detailed log: $DETAILED_LOG"
 
 # Save final summary to file
 {
-    echo "NEXTVERSION C++ TEST SUITE FINAL SUMMARY"
+    echo "NEXTVERSION C++ TEST SUITE SUMMARY"
     echo "Generated: $(date)"
     echo ""
     echo "TEST CATEGORIES:"
@@ -284,21 +272,26 @@ echo "Detailed log: $DETAILED_LOG"
     echo ""
     if [ ${#FAILED_TEST_CATEGORY_NAMES[@]} -gt 0 ]; then
         echo "Failed test categories:"
-        for test_name in "${FAILED_TEST_CATEGORY_NAMES[@]}"; do
-            echo "  - $test_name"
+        for failed_test in "${FAILED_TEST_CATEGORY_NAMES[@]}"; do
+            echo "  - $failed_test"
         done
         echo ""
     fi
     echo "Detailed results available in: $DETAILED_LOG"
 } > "$SUMMARY_FILE"
 
-# Exit with appropriate code
-if [ "$FAILED_TEST_CATEGORIES" -eq 0 ] && [ "$PASSED_TEST_CATEGORIES" -gt 0 ]; then
+# Display failed tests if any
+if [ "$FAILED_TEST_CATEGORIES" -gt 0 ]; then
     echo ""
-    echo -e "${GREEN}All C++ test categories passed!${NC}"
-    exit 0
-else
+    echo -e "${RED}Failed test categories:${NC}"
+    for failed_test in "${FAILED_TEST_CATEGORY_NAMES[@]}"; do
+        echo -e "  ${RED}❌ $failed_test${NC}"
+    done
     echo ""
     echo -e "${RED}Some C++ test categories failed!${NC}"
     exit 1
+else
+    echo ""
+    echo -e "${GREEN}All C++ test categories passed!${NC}"
+    exit 0
 fi
