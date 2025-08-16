@@ -34,8 +34,8 @@ TESTS_FAILED=0
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../bin/semantic-version-analyzer.sh"
 
 # Change to project root for tests
-# Change to project root (assume we're running from project root)
-cd "$(pwd)" || exit 1
+# Ensure we're in the project root directory
+cd "$PROJECT_ROOT" || exit 1
 
 # Helper functions
 log_info() {
