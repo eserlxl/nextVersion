@@ -117,11 +117,7 @@ run_test() {
         return
     fi
     
-    # Skip problematic tests that hang or take too long
-    if [[ "$test_file" == *"test_semantic_version_analyzer.sh" ]]; then
-        echo -e "${YELLOW}SKIPPING: test_semantic_version_analyzer.sh (moved to comparator/tests/)${NC}"
-        return
-    fi
+
     
     echo -n "Running $test_name... "
     
