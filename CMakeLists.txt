@@ -197,15 +197,29 @@ if (BUILD_TESTING)
     endif()
   endfunction()
 
-  add_test_exe(test_basic           "test/test_basic.cpp")
-  add_test_exe(test_semver          "test/test_semver.cpp")
-  add_test_exe(test_suggestion_engine "test/test_suggestion_engine.cpp")
-  add_test_exe(test_version_math    "test/test_version_math.cpp")
-  add_test_exe(test_config_loader   "test/test_config_loader.cpp")
-  add_test_exe(test_cli_analyzer_breaking "test/test_cli_analyzer_breaking.cpp")
-  add_test_exe(test_git_stats       "test/test_git_stats.cpp")
-  add_test_exe(test_output_json     "test/test_output_json.cpp")
-  add_test_exe(test_version_reader_and_cli_parse "test/test_version_reader_and_cli_parse.cpp")
+  # Core tests
+  add_test_exe(test_semver          "cpp-tests/core-tests/test_semver.cpp")
+  add_test_exe(test_version_math    "cpp-tests/core-tests/test_version_math.cpp")
+  add_test_exe(test_version_reader_and_cli_parse "cpp-tests/core-tests/test_version_reader_and_cli_parse.cpp")
+  add_test_exe(test_semver_comprehensive "cpp-tests/core-tests/test_semver_comprehensive.cpp")
+  add_test_exe(test_version_math_comprehensive "cpp-tests/core-tests/test_version_math_comprehensive.cpp")
+  add_test_exe(test_bonus_calculator_comprehensive "cpp-tests/core-tests/test_bonus_calculator_comprehensive.cpp")
+
+  # CLI tests
+  add_test_exe(test_config_loader   "cpp-tests/cli-tests/test_config_loader.cpp")
+  add_test_exe(test_cli_analyzer_breaking "cpp-tests/cli-tests/test_cli_analyzer_breaking.cpp")
+  add_test_exe(test_cli_comprehensive "cpp-tests/cli-tests/test_cli_comprehensive.cpp")
+
+  # Analyzer tests
+  add_test_exe(test_output_json     "cpp-tests/analyzer-tests/test_output_json.cpp")
+  add_test_exe(test_suggestion_engine "cpp-tests/analyzer-tests/test_suggestion_engine.cpp")
+  add_test_exe(test_analyzers_comprehensive "cpp-tests/analyzer-tests/test_analyzers_comprehensive.cpp")
+  add_test_exe(test_output_formatter_comprehensive "cpp-tests/analyzer-tests/test_output_formatter_comprehensive.cpp")
+
+  # Utility tests
+  add_test_exe(test_basic           "cpp-tests/utility-tests/test_basic.cpp")
+  add_test_exe(test_git_stats       "cpp-tests/utility-tests/test_git_stats.cpp")
+  add_test_exe(test_git_helpers_comprehensive "cpp-tests/utility-tests/test_git_helpers_comprehensive.cpp")
 
   # Convenience target to run tests with nice output
   add_custom_target(run-tests
