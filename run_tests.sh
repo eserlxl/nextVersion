@@ -291,18 +291,23 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "Bash" ]]; then
     if [ -f "./bash-tests/run_bash_tests.sh" ]; then
         echo -e "${BLUE}[INFO]${NC} Running bash tests to get live results..."
         echo -e "${BLUE}[INFO]${NC} This may take a few minutes for comprehensive tests..."
-        echo -e "${BLUE}[INFO]${NC} Note: The script will wait for tests to complete or timeout (300s)"
+        echo -e "${BLUE}[INFO]${NC} Note: The script will wait for tests to complete or timeout (calculated dynamically)"
+        
+        # Calculate dynamic timeout for bash tests (same logic as run_bash_tests.sh)
+        BASH_TEST_COUNT=$(find bash-tests -name "test_*.sh" -o -name "*.sh" | grep -v "run_.*\.sh" | wc -l)
+        BASH_TIMEOUT=$((BASH_TEST_COUNT * 30))  # 30 seconds per test
         
         # Run bash tests in background and show progress
         echo -e "${BLUE}[INFO]${NC} Starting bash test execution..."
+        echo -e "${BLUE}[INFO]${NC} Found $BASH_TEST_COUNT tests, calculated timeout: ${BASH_TIMEOUT}s"
         
         # Run the tests and show real-time progress
-        echo -e "${BLUE}[INFO]${NC} Tests are running... (timeout: 300s)"
+        echo -e "${BLUE}[INFO]${NC} Tests are running... (timeout: ${BASH_TIMEOUT}s)"
         echo -e "${BLUE}[INFO]${NC} Showing real-time progress:"
         echo ""
         
         # Run tests and display output in real-time
-        timeout 300 bash ./bash-tests/run_bash_tests.sh 2>&1 | tee /tmp/bash_test_output.tmp
+        timeout "${BASH_TIMEOUT}s" bash ./bash-tests/run_bash_tests.sh 2>&1 | tee /tmp/bash_test_output.tmp
         BASH_RESULT=${PIPESTATUS[0]}
         BASH_OUTPUT=$(cat /tmp/bash_test_output.tmp 2>/dev/null || echo "")
         rm -f /tmp/bash_test_output.tmp
@@ -399,14 +404,19 @@ if [[ "$SELECTED_SUITE" == "ALL" || "$SELECTED_SUITE" == "C++" ]]; then
         echo -e "${BLUE}[INFO]${NC} Running C++ tests to get live results..."
         echo -e "${BLUE}[INFO]${NC} This may take a few minutes for comprehensive tests..."
         
+        # Calculate dynamic timeout for C++ tests
+        CPP_TEST_COUNT=$(count_cpp_tests)
+        CPP_TIMEOUT=$((CPP_TEST_COUNT * 30))  # 30 seconds per test
+        
         # Run the tests and show real-time progress
         echo -e "${BLUE}[INFO]${NC} Starting C++ test execution..."
-        echo -e "${BLUE}[INFO]${NC} Tests are running... (timeout: 300s)"
+        echo -e "${BLUE}[INFO]${NC} Found $CPP_TEST_COUNT tests, calculated timeout: ${CPP_TIMEOUT}s"
+        echo -e "${BLUE}[INFO]${NC} Tests are running... (timeout: ${CPP_TIMEOUT}s)"
         echo -e "${BLUE}[INFO]${NC} Showing real-time progress:"
         echo ""
         
         # Run tests and display output in real-time
-        timeout 300 bash ./cpp-tests/run_cpp_tests.sh 2>&1 | tee /tmp/cpp_test_output.tmp
+        timeout "${CPP_TIMEOUT}s" bash ./cpp-tests/run_cpp_tests.sh 2>&1 | tee /tmp/cpp_test_output.tmp
         CPP_RESULT=${PIPESTATUS[0]}
         CPP_OUTPUT=$(cat /tmp/cpp_test_output.tmp 2>/dev/null || echo "")
         rm -f /tmp/cpp_test_output.tmp
