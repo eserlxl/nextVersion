@@ -24,6 +24,8 @@ PASSED_TESTS=0
 FAILED_TESTS=0
 SKIPPED_TESTS=0
 FAILED_TEST_NAMES=()
+TEST_DURATIONS=()  # Array to store test durations
+TEST_NAMES=()      # Array to store test names for duration tracking
 
 # Configuration
 FIXED_OUTPUT_DIR="test_results"
@@ -178,38 +180,42 @@ run_test() {
         end_time=$(date +%s)
         local duration=$((end_time - start_time))
         
+        # Store test duration and name for tracking
+        TEST_DURATIONS+=("$duration")
+        TEST_NAMES+=("$test_name")
+        
         # Check if this is a test that returns a specific exit code (like test_func.sh)
         if [[ "$test_name" == "test_func.sh" ]] && [[ $exit_code -eq 20 ]]; then
-            echo -e "${GREEN}PASSED${NC}"
+            echo -e "${GREEN}PASSED${NC} (${duration}s)"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ "$test_name" == "test_ere_fix.sh" ]] && [[ $exit_code -eq 0 ]]; then
             # test_ere_fix.sh exits with 0 when all tests pass (which is expected behavior)
-            echo -e "${GREEN}PASSED${NC}"
+            echo -e "${GREEN}PASSED${NC} (${duration}s)"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ "$test_name" == "test_compare_analyzers.sh" ]] && [[ $exit_code -eq 1 ]]; then
             # test_compare_analyzers.sh exits with 1 when it finds differences (which is expected behavior)
             # Note: This test has been moved to comparator/tests/
-            echo -e "${GREEN}PASSED${NC}"
+            echo -e "${GREEN}PASSED${NC} (${duration}s)"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 11 ]]; then
             # Exit code 11 indicates success for tests that expect it
-            echo -e "${GREEN}PASSED${NC}"
+            echo -e "${GREEN}PASSED${NC} (${duration}s)"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 0 ]]; then
-            echo -e "${GREEN}PASSED${NC}"
+            echo -e "${GREEN}PASSED${NC} (${duration}s)"
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
         elif [[ $exit_code -eq 124 ]]; then
-            echo -e "${RED}TIMEOUT${NC}"
+            echo -e "${RED}TIMEOUT${NC} (${duration}s)"
             log_test "$test_name" "TIMEOUT" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name (TIMEOUT)")
         else
-            echo -e "${RED}FAILED${NC}"
+            echo -e "${RED}FAILED${NC} (${duration}s)"
             log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name")
@@ -224,14 +230,24 @@ run_test() {
                 local end_time
                 end_time=$(date +%s)
                 local duration=$((end_time - start_time))
-                echo -e "${GREEN}PASSED${NC}"
+                
+                # Store test duration and name for tracking
+                TEST_DURATIONS+=("$duration")
+                TEST_NAMES+=("$test_name")
+                
+                echo -e "${GREEN}PASSED${NC} (${duration}s)"
                 log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
                 ((PASSED_TESTS++))
             else
                 local end_time
                 end_time=$(date +%s)
                 local duration=$((end_time - start_time))
-                echo -e "${RED}FAILED${NC}"
+                
+                # Store test duration and name for tracking
+                TEST_DURATIONS+=("$duration")
+                TEST_NAMES+=("$test_name")
+                
+                echo -e "${RED}FAILED${NC} (${duration}s)"
                 log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
                 ((FAILED_TESTS++))
                 FAILED_TEST_NAMES+=("$test_name")
@@ -240,7 +256,12 @@ run_test() {
             local end_time
             end_time=$(date +%s)
             local duration=$((end_time - start_time))
-            echo -e "${YELLOW}SKIPPED (compilation failed)${NC}"
+            
+            # Store test duration and name for tracking
+            TEST_DURATIONS+=("$duration")
+            TEST_NAMES+=("$test_name")
+            
+            echo -e "${YELLOW}SKIPPED (compilation failed)${NC} (${duration}s)"
             log_test "$test_name" "SKIPPED" "Compilation failed: $(cat "$output_file")" "$duration"
             ((SKIPPED_TESTS++))
         fi
@@ -248,7 +269,12 @@ run_test() {
         local end_time
         end_time=$(date +%s)
         local duration=$((end_time - start_time))
-        echo -e "${YELLOW}SKIPPED (unknown file type)${NC}"
+        
+        # Store test duration and name for tracking
+        TEST_DURATIONS+=("$duration")
+        TEST_NAMES+=("$test_name")
+        
+        echo -e "${YELLOW}SKIPPED (unknown file type)${NC} (${duration}s)"
         log_test "$test_name" "SKIPPED" "Unknown file type" "$duration"
         ((SKIPPED_TESTS++))
     fi
@@ -301,6 +327,41 @@ run_tests_in_directory "bash-tests/ere-tests"
 run_tests_in_directory "bash-tests/cli-tests"
 run_tests_in_directory "bash-tests/core-tests"
 
+# Function to find longest running tests
+find_longest_tests() {
+    local -a sorted_indices
+    local i j temp
+    
+    # Create array of indices
+    for ((i=0; i<${#TEST_DURATIONS[@]}; i++)); do
+        sorted_indices[i]=$i
+    done
+    
+    # Simple bubble sort to find top 5 longest tests
+    for ((i=0; i<${#TEST_DURATIONS[@]}-1; i++)); do
+        for ((j=0; j<${#TEST_DURATIONS[@]}-i-1; j++)); do
+            if [[ ${TEST_DURATIONS[sorted_indices[j]]} -lt ${TEST_DURATIONS[sorted_indices[j+1]]} ]]; then
+                temp=${sorted_indices[j]}
+                sorted_indices[j]=${sorted_indices[j+1]}
+                sorted_indices[j+1]=$temp
+            fi
+        done
+    done
+    
+    # Display top 5 longest tests
+    if [[ ${#TEST_DURATIONS[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "${BLUE}Top 5 Longest Running Tests:${NC}"
+        local count=0
+        for i in "${sorted_indices[@]}"; do
+            if [[ $count -lt 5 ]]; then
+                echo "  $((count+1)). ${TEST_NAMES[i]} - ${TEST_DURATIONS[i]}s"
+                ((count++))
+            fi
+        done
+    fi
+}
+
 # Generate summary
 echo ""
 echo "=========================================="
@@ -316,6 +377,9 @@ if [[ $TOTAL_TESTS -gt 0 ]]; then
     success_rate=$((PASSED_TESTS * 100 / TOTAL_TESTS))
     echo "Success rate: $success_rate%"
 fi
+
+# Show longest running tests
+find_longest_tests
 
 # Save summary to file
 {
@@ -336,6 +400,41 @@ fi
             echo "  - $failed_test"
         done
     fi
+    
+    # Add timing information to summary file
+    if [[ ${#TEST_DURATIONS[@]} -gt 0 ]]; then
+        echo ""
+        echo "Test Timing Information:"
+        echo "Top 5 Longest Running Tests:"
+        local -a sorted_indices
+        local i j temp
+        
+        # Create array of indices
+        for ((i=0; i<${#TEST_DURATIONS[@]}; i++)); do
+            sorted_indices[i]=$i
+        done
+        
+        # Simple bubble sort to find top 5 longest tests
+        for ((i=0; i<${#TEST_DURATIONS[@]}-1; i++)); do
+            for ((j=0; j<${#TEST_DURATIONS[@]}-i-1; j++)); do
+                if [[ ${TEST_DURATIONS[sorted_indices[j]]} -lt ${TEST_DURATIONS[sorted_indices[j+1]]} ]]; then
+                    temp=${sorted_indices[j]}
+                    sorted_indices[j]=${sorted_indices[j+1]}
+                    sorted_indices[j+1]=$temp
+                fi
+            done
+        done
+        
+        # Display top 5 longest tests
+        local count=0
+        for i in "${sorted_indices[@]}"; do
+            if [[ $count -lt 5 ]]; then
+                echo "  $((count+1)). ${TEST_NAMES[i]} - ${TEST_DURATIONS[i]}s"
+                ((count++))
+            fi
+        done
+    fi
+    
     echo ""
     echo "Detailed results available in: $DETAILED_LOG"
     echo "Test outputs available in: $FIXED_OUTPUT_DIR/"
