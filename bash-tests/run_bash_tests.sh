@@ -151,7 +151,7 @@ run_test() {
         log_test "$test_name" "SKIPPED" "File not found" "0"
         ((SKIPPED_TESTS++))
         ((TOTAL_TESTS++))
-        printf "${CYAN}│ %02d  │ %-35s │ ${YELLOW}%-6s${NC} │ ${PINK}%-7s${NC} │\n" "$test_number" "$test_name" "SKIP" "0.00s"
+        printf "${CYAN}│ %02d  │ %-50s │ ${YELLOW}%-6s${NC} │ ${PINK}%-7s${NC} │\n" "$test_number" "$test_name" "SKIP" "0.00s"
         return
     fi
     
@@ -191,37 +191,37 @@ run_test() {
         if [[ "$test_name" == "test_func.sh" ]] && [[ $exit_code -eq 20 ]]; then
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
-            printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
         elif [[ "$test_name" == "test_ere_fix.sh" ]] && [[ $exit_code -eq 0 ]]; then
             # test_ere_fix.sh exits with 0 when all tests pass (which is expected behavior)
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
-            printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
         elif [[ "$test_name" == "test_compare_analyzers.sh" ]] && [[ $exit_code -eq 1 ]]; then
             # test_compare_analyzers.sh exits with 1 when it finds differences (which is expected behavior)
             # Note: This test has been moved to comparator/tests/
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
-            printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
         elif [[ $exit_code -eq 11 ]]; then
             # Exit code 11 indicates success for tests that expect it
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
-            printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
         elif [[ $exit_code -eq 0 ]]; then
             log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
             ((PASSED_TESTS++))
-            printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
         elif [[ $exit_code -eq 124 ]]; then
             log_test "$test_name" "TIMEOUT" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name (TIMEOUT)")
-            printf "${CYAN}│ %02d  │ %-35s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "TIMEOUT" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "TIMEOUT" "$duration"
         else
             log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
             ((FAILED_TESTS++))
             FAILED_TEST_NAMES+=("$test_name")
-            printf "${CYAN}│ %02d  │ %-35s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "FAIL" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "FAIL" "$duration"
         fi
     elif [[ "$test_file" == *.c ]]; then
         # C file test - compile and run if possible
@@ -238,7 +238,7 @@ run_test() {
                 TEST_DURATIONS+=("$duration")
                 TEST_NAMES+=("$test_name")
                 
-                printf "${CYAN}│ %02d  │ %-35s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
+                printf "${CYAN}│ %02d  │ %-50s │ ${GREEN}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "PASS" "$duration"
                 log_test "$test_name" "PASSED" "$(cat "$output_file")" "$duration"
                 ((PASSED_TESTS++))
             else
@@ -250,7 +250,7 @@ run_test() {
                 TEST_DURATIONS+=("$duration")
                 TEST_NAMES+=("$test_name")
                 
-                printf "${CYAN}│ %02d  │ %-35s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "FAIL" "$duration"
+                printf "${CYAN}│ %02d  │ %-50s │ ${RED}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "FAIL" "$duration"
                 log_test "$test_name" "FAILED" "$(cat "$output_file")" "$duration"
                 ((FAILED_TESTS++))
                 FAILED_TEST_NAMES+=("$test_name")
@@ -264,7 +264,7 @@ run_test() {
             TEST_DURATIONS+=("$duration")
             TEST_NAMES+=("$test_name")
             
-            printf "${CYAN}│ %02d  │ %-35s │ ${YELLOW}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "SKIP" "$duration"
+            printf "${CYAN}│ %02d  │ %-50s │ ${YELLOW}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "SKIP" "$duration"
             log_test "$test_name" "SKIPPED" "Compilation failed: $(cat "$output_file")" "$duration"
             ((SKIPPED_TESTS++))
         fi
@@ -277,7 +277,7 @@ run_test() {
         TEST_DURATIONS+=("$duration")
         TEST_NAMES+=("$test_name")
         
-        printf "${CYAN}│ %02d  │ %-35s │ ${YELLOW}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "SKIP" "$duration"
+        printf "${CYAN}│ %02d  │ %-50s │ ${YELLOW}%-6s${NC} │ ${PINK}%6.2fs${NC} │\n" "$test_number" "$test_name" "SKIP" "$duration"
         log_test "$test_name" "SKIPPED" "Unknown file type" "$duration"
         ((SKIPPED_TESTS++))
     fi
@@ -307,9 +307,9 @@ run_tests_in_directory() {
     # Display table header
     echo ""
     echo -e "${CYAN}=== $dir_name (${#test_files[@]} tests) ===${NC}"
-    echo -e "${CYAN}┌─────┬─────────────────────────────────────┬────────┬─────────┐${NC}"
-    echo -e "${CYAN}│ #   │ Test                                │ Result │ Time    │${NC}"
-    echo -e "${CYAN}├─────┼─────────────────────────────────────┼────────┼─────────┤${NC}"
+    echo -e "${CYAN}┌─────┬──────────────────────────────────────────────────────────────────┬────────┬─────────┐${NC}"
+    echo -e "${CYAN}│ #   │ Test                                                              │ Result │ Time    │${NC}"
+    echo -e "${CYAN}├─────┼──────────────────────────────────────────────────────────────────┼────────┼─────────┤${NC}"
     
     # Run tests and collect results for table display
     local test_count=1
@@ -320,7 +320,7 @@ run_tests_in_directory() {
     done
     
     # Close table
-    echo -e "${CYAN}└─────┴─────────────────────────────────────┴────────┴─────────┘${NC}"
+    echo -e "${CYAN}└─────┴──────────────────────────────────────────────────────────────────┴────────┴─────────┘${NC}"
 }
 
 # Main execution
