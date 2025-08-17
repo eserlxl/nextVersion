@@ -31,9 +31,9 @@ ok()   { colorize "${c_grn}";  printf '[✓] %s\n' "$*"; colorize "${c_rst}"; }
 warn() { colorize "${c_ylw}";  printf '[!] %s\n' "$*"; colorize "${c_rst}"; }
 
 # ---------- defaults ----------
-NAME="next-version CI Bot"
-EMAIL="ci@next-version.local"
-COMMENT="Automated CI signing key"
+NAME=""
+EMAIL=""
+COMMENT=""
 EXPIRE="2y"
 ALGO="ed25519"     # ed25519 | rsa4096
 OUT_DIR="./ci-gpg-out"
@@ -80,15 +80,68 @@ to_oneline_b64() {
   fi
 }
 
+# ---------- interactive prompts ----------
+prompt_for_identity() {
+  local input_name="" input_email="" input_comment=""
+  
+  echo "=== GPG Key Identity Setup ==="
+  echo "Please provide the identity information for your GPG key."
+  echo "This will be used to sign commits and should match your GitHub identity."
+  echo ""
+  
+  # Prompt for name
+  while [[ -z "$input_name" ]]; do
+    read -p "Enter your full name (e.g., 'John Doe'): " input_name
+    if [[ -z "$input_name" ]]; then
+      echo "Name cannot be empty. Please try again."
+    fi
+  done
+  
+  # Prompt for email
+  while [[ -z "$input_email" ]]; do
+    read -p "Enter your email address (e.g., 'john.doe@example.com'): " input_email
+    if [[ -z "$input_email" ]]; then
+      echo "Email cannot be empty. Please try again."
+    elif ! echo "$input_email" | grep -qE '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'; then
+      echo "Please enter a valid email address."
+      input_email=""
+    fi
+  done
+  
+  # Prompt for comment
+  read -p "Enter a comment (optional, e.g., 'CI signing key'): " input_comment
+  
+  # Set the values
+  NAME="$input_name"
+  EMAIL="$input_email"
+  COMMENT="${input_comment:-CI signing key for nextVersion}"
+  
+  echo ""
+  echo "=== Identity Summary ==="
+  echo "Name: $NAME"
+  echo "Email: $EMAIL"
+  echo "Comment: $COMMENT"
+  echo ""
+  
+  # Confirm with user
+  read -p "Is this correct? (y/N): " confirm
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    echo "Identity confirmed. Proceeding with key generation..."
+  else
+    echo "Identity not confirmed. Exiting."
+    exit 1
+  fi
+}
+
 # ---------- usage ----------
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
 Options:
-  --name STR           Real name (default: "$NAME")
-  --email STR          Email (default: "$EMAIL")
-  --comment STR        Comment (default: "$COMMENT")
+  --name STR           Real name (will prompt if not provided)
+  --email STR          Email (will prompt if not provided)
+  --comment STR        Comment (will prompt if not provided)
   --expire STR         Expire date (default: "$EXPIRE", e.g. 1y, 0 for never)
   --algo ALG           Key algorithm: ed25519 | rsa4096 (default: $ALGO)
   --with-subkey        Create a signing subkey; primary is certification-only
@@ -98,6 +151,9 @@ Options:
   --print-secrets      Also print secret key & passphrase to stdout (NOT default)
   --passphrase STR     Use provided passphrase (otherwise a random one is created)
   -h, --help           Show this help
+
+Note: If --name, --email, or --comment are not provided, the script will
+      interactively prompt for these values to ensure proper GitHub verification.
 
 Outputs (in --out-dir):
   public.asc           ASCII-armored public key
@@ -138,6 +194,16 @@ done
 umask "$UMASK_SET"
 require_cmd gpg
 gen_passphrase
+
+# Prompt for identity if not provided via command line
+if [[ -z "$NAME" ]] || [[ -z "$EMAIL" ]]; then
+  prompt_for_identity
+fi
+
+# Validate required fields
+[[ -n "$NAME" ]] || die "Name is required"
+[[ -n "$EMAIL" ]] || die "Email is required"
+COMMENT="${COMMENT:-CI signing key for nextVersion}"
 
 # Prefer ed25519; fall back to RSA if unsupported
 if [[ "$ALGO" == "ed25519" ]] && ! supports_ed25519; then
