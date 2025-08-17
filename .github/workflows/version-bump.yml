@@ -189,9 +189,11 @@ jobs:
           git config --local user.email "$GPG_KEY_EMAIL"
           
           # Store key details for later use
-          echo "GPG_KEY_FPR=$GPG_KEY_FPR" >> "$GITHUB_ENV"
-          echo "GPG_KEY_EMAIL=$GPG_KEY_EMAIL" >> "$GITHUB_ENV"
-          echo "GPG_KEY_NAME=$GPG_KEY_NAME" >> "$GITHUB_ENV"
+          {
+            echo "GPG_KEY_FPR=$GPG_KEY_FPR"
+            echo "GPG_KEY_EMAIL=$GPG_KEY_EMAIL"
+            echo "GPG_KEY_NAME=$GPG_KEY_NAME"
+          } >> "$GITHUB_ENV"
 
           # Prime gpg-agent cache with the passphrase without chaining operators
           if ! echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "$GPG_KEY_FPR" --output /dev/null --sign /dev/null; then
