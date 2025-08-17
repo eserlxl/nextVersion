@@ -69,11 +69,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Git
-        run: |
-          set -euo pipefail
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+
 
       - name: Determine version bump type
         id: version-analysis
@@ -181,10 +177,21 @@ jobs:
           # Trust the key ultimately to avoid prompts
           echo "$GPG_KEY_FPR:6:" | gpg --import-ownertrust
 
-          # Configure Git to use the GPG key
+          # Get key details for Git configuration
+          GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
+          GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
+          
+          # Configure Git to use the GPG key and identity
           git config --local user.signingkey "$GPG_KEY_FPR"
           git config --local commit.gpgsign true
           git config --local gpg.program gpg
+          git config --local user.name "$GPG_KEY_NAME"
+          git config --local user.email "$GPG_KEY_EMAIL"
+          
+          # Store key details for later use
+          echo "GPG_KEY_FPR=$GPG_KEY_FPR" >> "$GITHUB_ENV"
+          echo "GPG_KEY_EMAIL=$GPG_KEY_EMAIL" >> "$GITHUB_ENV"
+          echo "GPG_KEY_NAME=$GPG_KEY_NAME" >> "$GITHUB_ENV"
 
           # Prime gpg-agent cache with the passphrase without chaining operators
           if ! echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "$GPG_KEY_FPR" --output /dev/null --sign /dev/null; then
@@ -194,6 +201,11 @@ jobs:
       - name: Bump version
         id: bump
         if: steps.version-analysis.outputs.bump_type != 'skip'
+        env:
+          GNUPGHOME: ${{ env.GNUPGHOME }}
+          GPG_KEY_FPR: ${{ env.GPG_KEY_FPR }}
+          GPG_KEY_EMAIL: ${{ env.GPG_KEY_EMAIL }}
+          GPG_KEY_NAME: ${{ env.GPG_KEY_NAME }}
         run: |
           set -euo pipefail
           echo "Bumping version using mathematical analysis"
@@ -217,11 +229,11 @@ jobs:
 
           # Add [skip ci] to prevent triggering other workflows
           ANALYSIS_MESSAGE="[skip ci] Auto version bump triggered by ${{ github.event_name }}" \
-            ./bin/mathematical-version-bump.sh --commit
+            ./bin/mathematical-version-bump.sh --commit --sign-commit
 
           # Ensure [skip ci] present even if the script didn't include it
           if ! git log -1 --pretty=%B | grep -q '\[skip ci\]'; then
-            git commit --amend -m "$(git log -1 --pretty=%B) [skip ci]"
+            git commit --amend -m "$(git log -1 --pretty=%B) [skip ci]" --no-edit
           fi
 
           NEW_VERSION="$(cat VERSION)"
@@ -238,6 +250,9 @@ jobs:
 
       - name: Create annotated tag
         if: steps.version-analysis.outputs.bump_type != 'skip'
+        env:
+          GNUPGHOME: ${{ env.GNUPGHOME }}
+          GPG_KEY_FPR: ${{ env.GPG_KEY_FPR }}
         run: |
           set -euo pipefail
           # Ensure we see the latest tags
