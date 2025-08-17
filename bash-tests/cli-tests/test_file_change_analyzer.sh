@@ -211,5 +211,4 @@ test_error_condition "No git repository" "${PROJECT_ROOT}/bin/file-change-analyz
 }
 
 # Run main function
-# shellcheck disable=SC2317
 main "$@"

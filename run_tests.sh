@@ -598,9 +598,10 @@ fi
     fi
     
     # Only show skipped if there are any (C++ tests don't have skipped, but keeping logic consistent)
-    if [ 0 -gt 0 ]; then
-        echo "  Skipped: 0"
-    fi
+    # C++ tests don't have skipped tests, so this is always false
+    # if [ "$CPP_SKIPPED" -gt 0 ]; then
+    #     echo "  Skipped: $CPP_SKIPPED"
+    # fi
     
     if [ "$CPP_TOTAL" -gt 0 ]; then
         CPP_RATE=$((CPP_PASSED * 100 / CPP_TOTAL))

@@ -224,5 +224,4 @@ run_test "Repository root option" 11 "${PROJECT_ROOT}/bin/semantic-version-analy
 }
 
 # Run main function
-# shellcheck disable=SC2317
 main

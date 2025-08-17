@@ -312,7 +312,7 @@ main() {
         # Read from repo root VERSION; dynamically detect current version
         # Read actual VERSION file content for dynamic testing
         local expected_version
-        expected_version="$(cat VERSION | tr -d '[:space:]')"
+        expected_version="$(tr -d '[:space:]' < VERSION)"
         run_test "version-utils read-version" "\"$DEV_BIN/version-utils.sh\" read-version VERSION" "$expected_version"
     fi
 
