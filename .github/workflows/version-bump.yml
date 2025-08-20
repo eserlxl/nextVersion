@@ -181,25 +181,47 @@ jobs:
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
 
-          # Configure GitHub Actions bot identity and disable local GPG commit signing
-          # Commits will be authored by the Actions bot and Verified by GitHub
+          # Randomly choose between GitHub Actions bot and actions-user bot for version commits
+          # This adds variety and shows different bot identities handling versioning
+          if [[ $((RANDOM % 2)) -eq 0 ]]; then
+            # Use GitHub Actions bot (50% chance)
+            BOT_NAME="github-actions[bot]"
+            BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+            echo "Using GitHub Actions bot for this version bump"
+          else
+            # Use actions-user bot (50% chance)
+            BOT_NAME="actions-user"
+            BOT_EMAIL="lxldev.contact@gmail.com"
+            echo "Using actions-user bot for this version bump"
+          fi
+          
+          # Configure Git identity and disable local GPG commit signing
+          # Commits will be authored by the randomly selected bot and Verified by GitHub
           git config --local user.signingkey "$GPG_KEY_FPR"
           git config --local commit.gpgsign false
           git config --local gpg.program gpg
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "$BOT_NAME"
+          git config --local user.email "$BOT_EMAIL"
           
-          # Store key details for later use
+          # Store key details for later use (including randomly selected bot identity)
           {
             echo "GPG_KEY_FPR=$GPG_KEY_FPR"
-            echo "GPG_KEY_EMAIL=$GPG_KEY_EMAIL"
-            echo "GPG_KEY_NAME=$GPG_KEY_NAME"
+            echo "GPG_KEY_EMAIL=$BOT_EMAIL"
+            echo "GPG_KEY_NAME=$BOT_NAME"
           } >> "$GITHUB_ENV"
 
           # Prime gpg-agent cache with the passphrase without chaining operators
           if ! echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "$GPG_KEY_FPR" --output /dev/null --sign /dev/null; then
             echo "WARNING: Initial GPG signing to prime agent failed; continuing without aborting."
           fi
+
+      - name: Show selected bot identity
+        if: steps.version-analysis.outputs.bump_type != 'skip'
+        run: |
+          echo "🤖 **Selected Bot Identity for Version Bump:**"
+          echo "- Bot Name: ${{ env.GPG_KEY_NAME }}"
+          echo "- Bot Email: ${{ env.GPG_KEY_EMAIL }}"
+          echo "- This bot will author the version bump commit"
 
       - name: Bump version
         id: bump
