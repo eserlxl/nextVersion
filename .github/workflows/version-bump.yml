@@ -177,16 +177,17 @@ jobs:
           # Trust the key ultimately to avoid prompts
           echo "$GPG_KEY_FPR:6:" | gpg --import-ownertrust
 
-          # Get key details for Git configuration
+          # Get key details for Git configuration (kept for reference)
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
-          
-          # Configure Git to use the GPG key and identity
+
+          # Configure GitHub Actions bot identity and disable local GPG commit signing
+          # Commits will be authored by the Actions bot and Verified by GitHub
           git config --local user.signingkey "$GPG_KEY_FPR"
-          git config --local commit.gpgsign true
+          git config --local commit.gpgsign false
           git config --local gpg.program gpg
-          git config --local user.name "$GPG_KEY_NAME"
-          git config --local user.email "$GPG_KEY_EMAIL"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           # Store key details for later use
           {
@@ -231,7 +232,7 @@ jobs:
 
           # Add [skip ci] to prevent triggering other workflows
           ANALYSIS_MESSAGE="[skip ci] Auto version bump triggered by ${{ github.event_name }}" \
-            ./bin/mathematical-version-bump.sh --commit --sign-commit
+            ./bin/mathematical-version-bump.sh --commit
 
           # Ensure [skip ci] present even if the script didn't include it
           if ! git log -1 --pretty=%B | grep -q '\[skip ci\]'; then
