@@ -181,41 +181,21 @@ jobs:
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
 
-          # Use time-based selection between three GitHub bots for version commits
-          # This provides predictable, deterministic bot selection based on current timestamp
-          CURRENT_TIME=$(date +%s)
-          BOT_SELECTION=$((CURRENT_TIME % 3))
-          
-          case $BOT_SELECTION in
-            0)
-              # Use GitHub Actions bot (when timestamp % 3 = 0)
-              BOT_NAME="github-actions[bot]"
-              BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
-              echo "Using GitHub Actions bot for this version bump (timestamp: ${CURRENT_TIME}, % 3 = 0)"
-              ;;
-            1)
-              # Use actions-user (when timestamp % 3 = 1)
-              BOT_NAME="actions-user"
-              BOT_EMAIL="41898282+actions-user@users.noreply.github.com"
-              echo "Using actions-user for this version bump (timestamp: ${CURRENT_TIME}, % 3 = 1)"
-              ;;
-            2)
-              # Use GitHub CLI bot (when timestamp % 3 = 2)
-              BOT_NAME="github-cli[bot]"
-              BOT_EMAIL="github-cli[bot]@users.noreply.github.com"
-              echo "Using GitHub CLI bot for this version bump (timestamp: ${CURRENT_TIME}, % 3 = 2)"
-              ;;
-          esac
+          # Use actions-user for all version commits
+          # This provides consistent, predictable authorship from a single verified GitHub bot
+          BOT_NAME="actions-user"
+          BOT_EMAIL="41898282+actions-user@users.noreply.github.com"
+          echo "Using actions-user for this version bump"
           
           # Configure Git identity and disable local GPG commit signing
-          # Commits will be authored by the randomly selected bot and Verified by GitHub
+          # Commits will be authored by actions-user and Verified by GitHub
           git config --local user.signingkey "$GPG_KEY_FPR"
           git config --local commit.gpgsign false
           git config --local gpg.program gpg
           git config --local user.name "$BOT_NAME"
           git config --local user.email "$BOT_EMAIL"
           
-          # Store key details for later use (including randomly selected bot identity)
+          # Store key details for later use (including bot identity)
           {
             echo "GPG_KEY_FPR=$GPG_KEY_FPR"
             echo "GPG_KEY_EMAIL=$BOT_EMAIL"
@@ -227,13 +207,13 @@ jobs:
             echo "WARNING: Initial GPG signing to prime agent failed; continuing without aborting."
           fi
 
-      - name: Show selected bot identity
+      - name: Show bot identity
         if: steps.version-analysis.outputs.bump_type != 'skip'
         run: |
-          echo "🤖 **Selected Bot Identity for Version Bump:**"
+          echo "🤖 **Bot Identity for Version Bump:**"
           echo "- Bot Name: ${{ env.GPG_KEY_NAME }}"
           echo "- Bot Email: ${{ env.GPG_KEY_EMAIL }}"
-          echo "- Time-based selection between 3 GitHub bots (github-actions[bot], actions-user, github-cli[bot])"
+          echo "- Using actions-user for consistent version bump authorship"
 
       - name: Bump version
         id: bump
