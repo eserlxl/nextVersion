@@ -69,7 +69,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-
+      - name: Setup Git
+        run: |
+          set -euo pipefail
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
       - name: Determine version bump type
         id: version-analysis
@@ -157,9 +161,17 @@ jobs:
             exit 1
           fi
           
-          # Configure Git to use the GPG key
+          # Configure Git to use the GPG key (preserve existing user identity)
           git config --local user.signingkey "$GPG_KEY_ID"
           git config --local commit.gpgsign true
+          
+          # Ensure Git identity is set (in case it was cleared)
+          if [[ -z "$(git config --local --get user.name)" ]]; then
+            git config --local user.name "GitHub Action"
+          fi
+          if [[ -z "$(git config --local --get user.email)" ]]; then
+            git config --local user.email "action@github.com"
+          fi
           
           # Set up gpg-agent with the passphrase
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback --sign --local-user "$GPG_KEY_ID" /dev/null >/dev/null 2>&1 || true
