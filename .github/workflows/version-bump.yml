@@ -83,22 +83,18 @@ jobs:
           fi
 
           if [[ "$BUMP_TYPE" == "auto" ]]; then
-            if [[ ! -x ./bin/semantic-version-analyzer.sh ]]; then
+            if [[ ! -x ./dev-bin/semantic-version-analyzer.sh ]]; then
               echo "semantic-version-analyzer.sh not found; skipping version bump analysis for this repo" >&2
               BUMP_TYPE="skip"
             else
-              # Run analyzer and capture output and exit code without failing the script
+              # Run analyzer and capture only stdout, redirect stderr to /dev/null
               # Add debug output to help troubleshoot analyzer issues
               echo "DEBUG: Running semantic-version-analyzer.sh..." >&2
-              set +e
-              ANALYZER_RAW_OUTPUT="$(./bin/semantic-version-analyzer.sh --suggest-only 2>/dev/null)"
-              ANALYZER_STATUS="$?"
-              set -e
-              echo "DEBUG: Analyzer exit code: ${ANALYZER_STATUS}" >&2
-              if [[ -n "${ANALYZER_RAW_OUTPUT}" ]]; then
-                BUMP_TYPE_TRIMMED="$(printf '%s' "${ANALYZER_RAW_OUTPUT}" | tr -d '\n' | tr -d '\r' | tr '[:upper:]' '[:lower:]')"
-                BUMP_TYPE="${BUMP_TYPE_TRIMMED}"
-                echo "DEBUG: Analyzer output: '${ANALYZER_RAW_OUTPUT}' -> BUMP_TYPE: '${BUMP_TYPE}'" >&2
+              BUMP_TYPE_OUTPUT="$(./dev-bin/semantic-version-analyzer.sh --suggest-only 2>/dev/null || true)"
+              echo "DEBUG: Analyzer exit code: $?" >&2
+              if [[ -n "$BUMP_TYPE_OUTPUT" ]]; then
+                BUMP_TYPE="$(printf '%s' "$BUMP_TYPE_OUTPUT" | tr -d '\n' | tr -d '\r')"
+                echo "DEBUG: Analyzer output: '$BUMP_TYPE_OUTPUT' -> BUMP_TYPE: '$BUMP_TYPE'" >&2
               else
                 BUMP_TYPE="skip"
                 echo "DEBUG: No analyzer output, using skip" >&2
@@ -141,95 +137,45 @@ jobs:
 
       - name: Setup GPG for CI signing
         if: steps.version-analysis.outputs.bump_type != 'skip'
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
-
+          
           # Check if GPG secrets are available
-          if [[ -z "${GPG_PRIVATE_KEY:-}" ]] || [[ -z "${GPG_PASSPHRASE:-}" ]]; then
-            echo "WARNING: GPG secrets not available, proceeding without GPG signing"
-            echo "To enable GPG signing, run ./bin/generate-ci-gpg-key.sh and add the secrets to your repository"
-            exit 0
+          if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]] || [[ -z "${{ secrets.GPG_PASSPHRASE }}" ]]; then
+            echo "ERROR: GPG_PRIVATE_KEY and GPG_PASSPHRASE secrets are required for signed commits"
+            echo "Please run ./dev-bin/generate-ci-gpg-key.sh and add the secrets to your repository"
+            exit 1
           fi
-
-          # Create an isolated GNUPGHOME under /tmp and persist it across steps
-          GNUPGHOME="$(mktemp -d /tmp/gnupg-XXXXXX)"
-          export GNUPGHOME
-          chmod 700 "$GNUPGHOME"
-          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
-
-          # Configure GPG for non-interactive signing
-          printf '%s\n' 'allow-loopback-pinentry' >> "$GNUPGHOME/gpg-agent.conf"
-          printf '%s\n' 'pinentry-mode loopback' >> "$GNUPGHOME/gpg.conf"
-
+          
           # Import the GPG private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
-
-          # Get the fingerprint (fpr) of the imported key
-          GPG_KEY_FPR="$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr:/{print $10; exit}')"
-          if [[ -z "$GPG_KEY_FPR" ]]; then
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          
+          # Get the key ID from the imported key
+          GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr:/{print $10; exit}')
+          if [[ -z "$GPG_KEY_ID" ]]; then
             echo "ERROR: Failed to import GPG key"
             exit 1
           fi
-
-          # Trust the key ultimately to avoid prompts
-          echo "$GPG_KEY_FPR:6:" | gpg --import-ownertrust
-
-          # Get key details for Git configuration (kept for reference)
-          GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
-          GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
-
-          # Use actions-user for all version commits
-          # This provides consistent, predictable authorship from a single verified GitHub bot
-          BOT_NAME="actions-user"
-          BOT_EMAIL="41898282+actions-user@users.noreply.github.com"
-          echo "Using actions-user for this version bump"
           
-          # Configure Git identity and disable local GPG commit signing
-          # Commits will be authored by actions-user and Verified by GitHub
-          git config --local user.signingkey "$GPG_KEY_FPR"
-          git config --local commit.gpgsign false
-          git config --local gpg.program gpg
-          git config --local user.name "$BOT_NAME"
-          git config --local user.email "$BOT_EMAIL"
+          # Configure Git to use the GPG key
+          git config --local user.signingkey "$GPG_KEY_ID"
+          git config --local commit.gpgsign true
           
-          # Store key details for later use (including bot identity)
-          {
-            echo "GPG_KEY_FPR=$GPG_KEY_FPR"
-            echo "GPG_KEY_EMAIL=$BOT_EMAIL"
-            echo "GPG_KEY_NAME=$BOT_NAME"
-          } >> "$GITHUB_ENV"
+          # Set up gpg-agent with the passphrase
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback --sign --local-user "$GPG_KEY_ID" /dev/null >/dev/null 2>&1 || true
 
-          # Prime gpg-agent cache with the passphrase without chaining operators
-          if ! echo "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --local-user "$GPG_KEY_FPR" --output /dev/null --sign /dev/null; then
-            echo "WARNING: Initial GPG signing to prime agent failed; continuing without aborting."
-          fi
 
-      - name: Show bot identity
-        if: steps.version-analysis.outputs.bump_type != 'skip'
-        run: |
-          echo "🤖 **Bot Identity for Version Bump:**"
-          echo "- Bot Name: ${{ env.GPG_KEY_NAME }}"
-          echo "- Bot Email: ${{ env.GPG_KEY_EMAIL }}"
-          echo "- Using actions-user for consistent version bump authorship"
 
       - name: Bump version
         id: bump
         if: steps.version-analysis.outputs.bump_type != 'skip'
-        env:
-          GNUPGHOME: ${{ env.GNUPGHOME }}
-          GPG_KEY_FPR: ${{ env.GPG_KEY_FPR }}
-          GPG_KEY_EMAIL: ${{ env.GPG_KEY_EMAIL }}
-          GPG_KEY_NAME: ${{ env.GPG_KEY_NAME }}
         run: |
           set -euo pipefail
           echo "Bumping version using mathematical analysis"
 
           # Ensure mathematical-version-bump exists early
-          if [[ ! -x ./bin/mathematical-version-bump.sh ]]; then
-            echo "mathematical-version-bump.sh not found or not executable at ./bin/mathematical-version-bump.sh" >&2
+          if [[ ! -x ./dev-bin/mathematical-version-bump.sh ]]; then
+            echo "mathematical-version-bump.sh not found or not executable at ./dev-bin/mathematical-version-bump.sh" >&2
             exit 1
           fi
 
@@ -246,7 +192,7 @@ jobs:
 
           # Add [skip ci] to prevent triggering other workflows
           ANALYSIS_MESSAGE="[skip ci] Auto version bump triggered by ${{ github.event_name }}" \
-            ./bin/mathematical-version-bump.sh --commit
+            ./dev-bin/mathematical-version-bump.sh --commit
 
           # Ensure [skip ci] present even if the script didn't include it
           if ! git log -1 --pretty=%B | grep -q '\[skip ci\]'; then
@@ -267,9 +213,6 @@ jobs:
 
       - name: Create annotated tag
         if: steps.version-analysis.outputs.bump_type != 'skip'
-        env:
-          GNUPGHOME: ${{ env.GNUPGHOME }}
-          GPG_KEY_FPR: ${{ env.GPG_KEY_FPR }}
         run: |
           set -euo pipefail
           # Ensure we see the latest tags
@@ -278,16 +221,7 @@ jobs:
           if git rev-parse --verify --quiet "refs/tags/v${NEW_VERSION}" >/dev/null; then
             echo "Tag v${NEW_VERSION} already exists; skipping tag creation."
           else
-            SIGN_TAGS="false"
-            if git config --get commit.gpgsign | grep -qi 'true'; then
-              SIGN_TAGS="true"
-            fi
-
-            if [[ "$SIGN_TAGS" == "true" ]]; then
-              git -c tag.gpgSign=true tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-            else
-              git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-            fi
+            git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
             git push origin "v${NEW_VERSION}"
           fi
 
