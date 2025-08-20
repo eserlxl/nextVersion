@@ -181,19 +181,11 @@ jobs:
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
 
-          # Randomly choose between GitHub Actions bot and your custom bot for version commits
-          # This adds variety and shows different bot identities handling versioning
-          if [[ $((RANDOM % 2)) -eq 0 ]]; then
-            # Use GitHub Actions bot (50% chance)
-            BOT_NAME="github-actions[bot]"
-            BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
-            echo "Using GitHub Actions bot for this version bump"
-          else
-            # Use your custom bot account (50% chance)
-            BOT_NAME="VersionGPG Bot"
-            BOT_EMAIL="lxldev.contact@gmail.com"
-            echo "Using your custom VersionGPG Bot for this version bump"
-          fi
+          # Use GitHub Actions bot for all version commits
+          # This ensures consistent, verified commits from GitHub's official Actions bot
+          BOT_NAME="github-actions[bot]"
+          BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+          echo "Using GitHub Actions bot for this version bump"
           
           # Configure Git identity and disable local GPG commit signing
           # Commits will be authored by the randomly selected bot and Verified by GitHub
@@ -215,13 +207,13 @@ jobs:
             echo "WARNING: Initial GPG signing to prime agent failed; continuing without aborting."
           fi
 
-      - name: Show selected bot identity
+      - name: Show bot identity
         if: steps.version-analysis.outputs.bump_type != 'skip'
         run: |
-          echo "🤖 **Selected Bot Identity for Version Bump:**"
+          echo "🤖 **Bot Identity for Version Bump:**"
           echo "- Bot Name: ${{ env.GPG_KEY_NAME }}"
           echo "- Bot Email: ${{ env.GPG_KEY_EMAIL }}"
-          echo "- This bot will author the version bump commit"
+          echo "- All version bumps use GitHub Actions bot for consistency"
 
       - name: Bump version
         id: bump
