@@ -181,18 +181,19 @@ jobs:
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
 
-          # Randomly choose between GitHub Actions bot and actions-user for version commits
-          # This adds variety while using GitHub's verified system accounts
-          if [[ $((RANDOM % 2)) -eq 0 ]]; then
-            # Use GitHub Actions bot (50% chance)
+          # Use time-based selection between GitHub Actions bot and actions-user for version commits
+          # This provides predictable, deterministic bot selection based on current timestamp
+          CURRENT_TIME=$(date +%s)
+          if [[ $((CURRENT_TIME % 2)) -eq 0 ]]; then
+            # Use GitHub Actions bot (when timestamp is even)
             BOT_NAME="github-actions[bot]"
             BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
-            echo "Using GitHub Actions bot for this version bump"
+            echo "Using GitHub Actions bot for this version bump (timestamp: ${CURRENT_TIME}, even)"
           else
-            # Use actions-user (50% chance)
+            # Use actions-user (when timestamp is odd)
             BOT_NAME="actions-user"
             BOT_EMAIL="41898282+actions-user@users.noreply.github.com"
-            echo "Using actions-user for this version bump"
+            echo "Using actions-user for this version bump (timestamp: ${CURRENT_TIME}, odd)"
           fi
           
           # Configure Git identity and disable local GPG commit signing
@@ -221,7 +222,7 @@ jobs:
           echo "🤖 **Selected Bot Identity for Version Bump:**"
           echo "- Bot Name: ${{ env.GPG_KEY_NAME }}"
           echo "- Bot Email: ${{ env.GPG_KEY_EMAIL }}"
-          echo "- Randomly selected between github-actions[bot] and actions-user"
+          echo "- Time-based selection between github-actions[bot] and actions-user"
 
       - name: Bump version
         id: bump
