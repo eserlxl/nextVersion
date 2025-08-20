@@ -91,7 +91,7 @@ prompt_for_identity() {
   
   # Prompt for name
   while [[ -z "$input_name" ]]; do
-    read -p "Enter your full name (e.g., 'John Doe'): " input_name
+    read -r -p "Enter your full name (e.g., 'John Doe'): " input_name
     if [[ -z "$input_name" ]]; then
       echo "Name cannot be empty. Please try again."
     fi
@@ -99,7 +99,7 @@ prompt_for_identity() {
   
   # Prompt for email
   while [[ -z "$input_email" ]]; do
-    read -p "Enter your email address (e.g., 'john.doe@example.com'): " input_email
+    read -r -p "Enter your email address (e.g., 'john.doe@example.com'): " input_email
     if [[ -z "$input_email" ]]; then
       echo "Email cannot be empty. Please try again."
     elif ! echo "$input_email" | grep -qE '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'; then
@@ -109,7 +109,7 @@ prompt_for_identity() {
   done
   
   # Prompt for comment
-  read -p "Enter a comment (optional, e.g., 'CI signing key'): " input_comment
+  read -r -p "Enter a comment (optional, e.g., 'CI signing key'): " input_comment
   
   # Set the values
   NAME="$input_name"
@@ -124,7 +124,7 @@ prompt_for_identity() {
   echo ""
   
   # Confirm with user
-  read -p "Is this correct? (y/N): " confirm
+  read -r -p "Is this correct? (y/N): " confirm
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
     echo "Identity confirmed. Proceeding with key generation..."
   else
