@@ -181,7 +181,7 @@ jobs:
           GPG_KEY_EMAIL="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/.*<\([^>]*\)>.*/\1/')"
           GPG_KEY_NAME="$(gpg --list-secret-keys --with-colons "$GPG_KEY_FPR" | awk -F: '/^uid:/{print $10; exit}' | sed 's/^\([^<]*\)<.*/\1/' | sed 's/^ *//;s/ *$//')"
 
-          # Randomly choose between GitHub Actions bot and actions-user bot for version commits
+          # Randomly choose between GitHub Actions bot and your custom bot for version commits
           # This adds variety and shows different bot identities handling versioning
           if [[ $((RANDOM % 2)) -eq 0 ]]; then
             # Use GitHub Actions bot (50% chance)
@@ -189,10 +189,10 @@ jobs:
             BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
             echo "Using GitHub Actions bot for this version bump"
           else
-            # Use actions-user bot (50% chance)
-            BOT_NAME="actions-user"
+            # Use your custom bot account (50% chance)
+            BOT_NAME="VersionGPG Bot"
             BOT_EMAIL="lxldev.contact@gmail.com"
-            echo "Using actions-user bot for this version bump"
+            echo "Using your custom VersionGPG Bot for this version bump"
           fi
           
           # Configure Git identity and disable local GPG commit signing
