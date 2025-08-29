@@ -8,6 +8,16 @@
 #
 # Alpha sync script for nextVersion
 # Syncs alpha versions between branches
+#
+# Bot Configuration:
+# The script reads bot identity settings from the current git configuration
+# when working with the alpha branch. You can set these values using:
+#
+# git config user.name "🤖"
+# git config user.email "your-bot@example.com"
+#
+# If no git config is set, the script will use default values.
+# Command-line arguments (--bot-name, --bot-email) override the configuration.
 
 set -Eeuo pipefail
 IFS=$'\n\t'
@@ -40,11 +50,61 @@ MERGE_COMMIT=0            # for strategy=merge: allow non-ff merge commit
 REMOTE="origin"
 ALPHA="alpha"
 BASE_BRANCH=""            # default auto-detected main/master if empty
-BOT_NAME="🤖"
-BOT_EMAIL="lxldev.contact@gmail.com"
+BOT_NAME=""
+BOT_EMAIL=""
 IDENTITY_SCOPE="local"    # local | global
 APPLY_IDENTITY=1          # default to true for backward compatibility
 FORCE=0                   # when pushing reset, use --force instead of --force-with-lease
+
+# Function to read bot configuration from alpha branch
+read_alpha_bot_config() {
+  local config_key="$1"
+  local default_value="$2"
+  
+  # Try to read from alpha branch git config
+  if git show-ref --verify --quiet "refs/remotes/$REMOTE/$ALPHA" 2>/dev/null; then
+    local config_value
+    
+    # Try to read from git config in the alpha branch context
+    case "$config_key" in
+      "name")
+        config_value=$(git config --get user.name 2>/dev/null || true)
+        ;;
+      "email")
+        config_value=$(git config --get user.email 2>/dev/null || true)
+        ;;
+    esac
+    
+    if [[ -n "$config_value" ]]; then
+      echo "$config_value"
+      return 0
+    fi
+  fi
+  
+  # Fallback to default value
+  echo "$default_value"
+}
+
+# Function to initialize bot configuration from alpha branch or defaults
+init_bot_config() {
+  # Read bot configuration from alpha branch if available
+  if [[ -z "$BOT_NAME" ]]; then
+    BOT_NAME=$(read_alpha_bot_config "name" "🤖")
+  fi
+  
+  if [[ -z "$BOT_EMAIL" ]]; then
+    BOT_EMAIL=$(read_alpha_bot_config "email" "lxldev.contact@gmail.com")
+  fi
+  
+  # Log the source of configuration
+  if git show-ref --verify --quiet "refs/remotes/$REMOTE/$ALPHA" 2>/dev/null; then
+    info "Bot configuration loaded from alpha branch"
+  else
+    info "Bot configuration using defaults (no alpha branch found)"
+  fi
+  
+  info "Bot configuration: $BOT_NAME <$BOT_EMAIL>"
+}
 
 usage() {
   cat <<EOF
@@ -151,6 +211,10 @@ if [[ -z "$BASE_BRANCH" ]]; then
   BASE_BRANCH=$(detect_base)
   info "Auto-detected base branch: $BASE_BRANCH"
 fi
+
+# -------------------- bot configuration --------------------
+# Initialize bot configuration from alpha branch or defaults
+init_bot_config
 
 # -------------------- identity management --------------------
 if (( APPLY_IDENTITY )); then
